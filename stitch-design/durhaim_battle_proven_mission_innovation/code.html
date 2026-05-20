@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DURHAIM - Battle Proven</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-container": "#b8bfa3",
+                      "charcoal-field": "#1A1A1B",
+                      "background": "#131313",
+                      "tactical-black": "#0D0D0D",
+                      "error": "#ffb4ab",
+                      "surface": "#131313",
+                      "on-tertiary-fixed-variant": "#464747",
+                      "on-surface-variant": "#e3bfb4",
+                      "primary-fixed-dim": "#ffb59e",
+                      "on-error": "#690005",
+                      "on-tertiary-fixed": "#1b1c1c",
+                      "stark-white": "#FFFFFF",
+                      "secondary-fixed-dim": "#c3c9ae",
+                      "surface-container-low": "#1c1b1b",
+                      "secondary-container": "#484e38",
+                      "on-secondary-fixed": "#181e0c",
+                      "on-error-container": "#ffdad6",
+                      "secondary-fixed": "#dfe6c9",
+                      "on-secondary-fixed-variant": "#434934",
+                      "secondary": "#c3c9ae",
+                      "on-tertiary-container": "#292a2a",
+                      "surface-container-lowest": "#0e0e0e",
+                      "inverse-primary": "#ad3300",
+                      "on-primary-container": "#521400",
+                      "tertiary-fixed-dim": "#c7c6c6",
+                      "on-primary-fixed": "#390b00",
+                      "primary-container": "#f85e27",
+                      "surface-container-highest": "#353534",
+                      "primary": "#ffb59e",
+                      "surface-bright": "#3a3939",
+                      "surface-tint": "#ffb59e",
+                      "tertiary": "#c7c6c6",
+                      "outline-variant": "#5a4139",
+                      "signal-orange": "#FF5F1F",
+                      "surface-container": "#201f1f",
+                      "error-container": "#93000a",
+                      "primary-fixed": "#ffdbd0",
+                      "on-secondary": "#2d331f",
+                      "on-background": "#e5e2e1",
+                      "on-tertiary": "#303031",
+                      "on-surface": "#e5e2e1",
+                      "tertiary-fixed": "#e3e2e2",
+                      "surface-variant": "#353534",
+                      "surface-container-high": "#2a2a2a",
+                      "surface-dim": "#131313",
+                      "outline": "#aa8a80",
+                      "tertiary-container": "#919190",
+                      "on-primary-fixed-variant": "#842500",
+                      "operator-green": "#2E3325",
+                      "inverse-on-surface": "#313030",
+                      "on-primary": "#5d1800",
+                      "inverse-surface": "#e5e2e1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "section-gap": "80px",
+                      "stack-lg": "32px",
+                      "margin-edge": "32px",
+                      "stack-md": "16px",
+                      "unit": "8px",
+                      "stack-sm": "8px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Archivo Narrow"
+                      ],
+                      "data-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-md": [
+                              "Archivo Narrow"
+                      ],
+                      "display-xl": [
+                              "Archivo Narrow"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Archivo Narrow"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "data-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-caps": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.0",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-xl": [
+                              "72px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .topographic-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23333333' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        }
+        .mesh-overlay {
+            background-image: radial-gradient(rgba(0, 0, 0, 0.4) 1px, transparent 1px);
+            background-size: 4px 4px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
+<!-- TopNavBar -->
+<nav class="bg-tactical-black w-full top-0 sticky z-50 border-b border-surface-container-highest">
+<div class="flex justify-between items-center px-margin-edge py-stack-md max-w-[1440px] mx-auto">
+<!-- Brand Logo -->
+<a class="font-display-xl text-headline-lg text-stark-white tracking-tighter hover:text-signal-orange transition-colors duration-200" href="/">
+                DURHAIM
+            </a>
+<!-- Navigation Links (Desktop) -->
+<div class="hidden md:flex space-x-gutter items-center">
+<a class="font-label-caps text-label-caps text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200 uppercase" href="#">Home</a>
+<a class="font-label-caps text-label-caps text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200 uppercase" href="#">Catalogue</a>
+<a class="font-label-caps text-label-caps text-signal-orange border-b-2 border-signal-orange pb-2 uppercase" href="#">Battle Proven</a>
+<a class="font-label-caps text-label-caps text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200 uppercase" href="#">Social Engagement</a>
+<a class="font-label-caps text-label-caps text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200 uppercase" href="#">Our Story</a>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center space-x-stack-md">
+<!-- Search Bar (Desktop) -->
+<div class="hidden md:flex items-center bg-charcoal-field border border-surface-container-highest rounded-none focus-within:border-signal-orange transition-colors duration-200">
+<span class="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
+<input class="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-48 placeholder-stark-white placeholder-opacity-40" placeholder="Search..." type="text"/>
+</div>
+<button class="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined">shopping_cart</span>
+</button>
+<!-- Mobile Menu Toggle -->
+<button class="md:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-grow flex flex-col relative w-full">
+<!-- Hero Section -->
+<section class="relative w-full h-[70vh] md:h-[85vh] flex items-center justify-center overflow-hidden bg-tactical-black">
+<!-- Background Image -->
+<div class="absolute inset-0 w-full h-full">
+<img class="w-full h-full object-cover object-center opacity-60" data-alt="A gritty, high-contrast photograph of heavily armed tactical operators moving through a dense, smoke-filled urban combat environment. They are wearing advanced, modular combat vests and helmets, showcasing the rugged durability of the gear. The lighting is dramatic, with stark highlights and deep shadows characteristic of a high-stress operational setting. The overall aesthetic is heavily industrial, authoritative, and uncompromising, dominating the composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoGDo8VtaYCZZEFVyBHWjZPjikCVuvj945yL1GNZpDpwdPxSOhNr-o76lNV8vTqzFZ9N76uChrxDaI1ltyT1abEy-DQnjljEtyB0wWVGytFyHQ8HuHxoT9eKjia1ZyogetGHIyGg1OMHn-28CmA4TmZgEg5zApp1yz8XMz9u8Ajso-kNJyDVtTc7NwLKxYH6PDXmSbmdgVCenBHDn_QucsCHMRyvzF11NnoGLUMWiWtmnh8rciBLA-QHZ0IyA2LEJLv_rLDLgU2Y-J"/>
+<!-- Tactical Mesh Overlay -->
+<div class="absolute inset-0 mesh-overlay"></div>
+<!-- Gradient Overlay for Text Readability -->
+<div class="absolute inset-0 bg-gradient-to-t from-tactical-black via-tactical-black/50 to-transparent"></div>
+</div>
+<!-- Hero Content -->
+<div class="relative z-10 flex flex-col items-center text-center px-margin-edge max-w-[1000px] mx-auto mt-16">
+<div class="inline-block border border-signal-orange bg-tactical-black/80 px-4 py-2 mb-stack-lg backdrop-blur-sm">
+<span class="font-data-mono text-data-mono text-signal-orange uppercase tracking-widest">Operationally Ready</span>
+</div>
+<h1 class="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter mb-stack-md">
+                    Battle Proven
+                </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-stack-lg border-l-2 border-signal-orange pl-4 text-left md:text-center md:border-l-0 md:border-b-2 md:pb-4 md:pl-0">
+                    "Rasakan Kekuatan Inovasi yang Terbukti dalam Pertempuran." Gear engineered for high-performance, where reliability is not an option but a requirement.
+                </p>
+<div class="flex flex-col sm:flex-row gap-stack-md mt-stack-md">
+<a class="inline-flex items-center justify-center bg-signal-orange text-tactical-black font-label-caps text-label-caps uppercase px-8 py-4 border border-signal-orange hover:bg-tactical-black hover:text-signal-orange transition-all duration-300 active:scale-95 group" href="#innovation">
+                        Explore The Mission
+                        <span class="material-symbols-outlined ml-2 group-hover:translate-x-1 transition-transform">arrow_downward</span>
+</a>
+</div>
+</div>
+<!-- Scroll Indicator -->
+<div class="absolute bottom-stack-lg left-1/2 transform -translate-x-1/2 flex flex-col items-center animate-bounce">
+<span class="font-data-mono text-data-mono text-stark-white/50 mb-2 uppercase">Descend</span>
+<span class="material-symbols-outlined text-signal-orange">south</span>
+</div>
+</section>
+<!-- Section 2: Innovation Born in Combat -->
+<section class="relative w-full py-section-gap px-margin-edge bg-charcoal-field topographic-pattern" id="innovation">
+<div class="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-gutter items-center">
+<!-- Text Content -->
+<div class="lg:col-span-5 flex flex-col order-2 lg:order-1 relative z-10">
+<div class="flex items-center gap-2 mb-stack-md">
+<div class="h-px w-8 bg-signal-orange"></div>
+<span class="font-data-mono text-data-mono text-signal-orange uppercase">Phase 01 // R&amp;D</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-stark-white uppercase tracking-tight mb-stack-lg leading-tight">
+                        Innovation Born <br/>In Combat
+                    </h2>
+<div class="space-y-stack-md text-on-surface-variant font-body-md border-l border-surface-container-highest pl-stack-md">
+<p>
+                            Every stitch, every buckle, every millimeter of webbing is scrutinized. We do not design for the range; we engineer for the frontline. Our R&amp;D process begins where standard testing ends.
+                        </p>
+<p>
+                            Working directly with active-duty operators, we iterate through prototypes until the gear functions as an extension of the user. Sharp, unyielding, and devoid of unnecessary decoration.
+                        </p>
+</div>
+<div class="mt-stack-lg grid grid-cols-2 gap-stack-md">
+<div class="bg-tactical-black border border-surface-container-highest p-stack-md flex flex-col">
+<span class="material-symbols-outlined text-signal-orange mb-2 text-3xl">precision_manufacturing</span>
+<span class="font-label-caps text-label-caps text-stark-white uppercase">Machined Precision</span>
+</div>
+<div class="bg-tactical-black border border-surface-container-highest p-stack-md flex flex-col">
+<span class="material-symbols-outlined text-signal-orange mb-2 text-3xl">science</span>
+<span class="font-label-caps text-label-caps text-stark-white uppercase">Iterative Testing</span>
+</div>
+</div>
+</div>
+<!-- Image / Visual -->
+<div class="lg:col-span-7 order-1 lg:order-2 relative mb-stack-lg lg:mb-0">
+<div class="relative w-full aspect-[4/3] bg-tactical-black border border-surface-container-highest overflow-hidden group">
+<img alt="Blue training pistols in a rigid black tactical holster" class="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 ease-in-out scale-105 group-hover:scale-100" src="https://lh3.googleusercontent.com/aida/ADBb0ugrAelWM6pjlCEXK29kjLnl08EANiuoMVnhqa1g5v0-PWJE9uZp8EAuooeG85bABWMkm8sVUdvsLjQmqfqTVc_-Svuoig1iTY1MnHFoO4g0Qq6ncXemt4YNrFidJLcM0zqWo3snwTJtY_46swWdw5zDJ7rZrR-IJ0HuXQc9GDfclhdU8-Q5rkbF_tIIhKLbodZdibDDVpWWn3F4mYxJzSMIy3OzJdGKVCS-L6C_uL42_sh4_cUBD4oDyRTI"/>
+<!-- Overlay elements -->
+<div class="absolute top-4 right-4 bg-tactical-black/80 border border-signal-orange px-3 py-1 backdrop-blur-sm">
+<span class="font-data-mono text-data-mono text-signal-orange">STATUS: ACTIVE</span>
+</div>
+<!-- Technical Crosshairs -->
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border border-stark-white/20 rounded-full flex items-center justify-center opacity-50">
+<div class="w-1 h-1 bg-signal-orange rounded-full"></div>
+<div class="absolute w-full h-px bg-stark-white/20"></div>
+<div class="absolute h-full w-px bg-stark-white/20"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: High-Durability Details (Bento Grid) -->
+<section class="w-full py-section-gap px-margin-edge bg-background border-t border-surface-container-highest">
+<div class="max-w-[1440px] mx-auto flex flex-col">
+<div class="flex flex-col md:flex-row justify-between items-end mb-stack-lg gap-stack-md">
+<div>
+<div class="flex items-center gap-2 mb-stack-sm">
+<div class="h-px w-8 bg-signal-orange"></div>
+<span class="font-data-mono text-data-mono text-signal-orange uppercase">Phase 02 // Specifications</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-stark-white uppercase tracking-tight">
+                            Uncompromising Hardware
+                        </h2>
+</div>
+<a class="inline-flex items-center text-stark-white font-label-caps text-label-caps uppercase hover:text-signal-orange transition-colors group" href="https://durhaim.com/catalogue/">
+                        View Full Specs
+                        <span class="material-symbols-outlined ml-1 text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter auto-rows-[300px]">
+<!-- Card 1: Large Feature -->
+<div class="md:col-span-2 bg-charcoal-field border border-surface-container-highest relative overflow-hidden group flex flex-col justify-end p-stack-lg">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-30 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700" data-alt="Close up macro photography of heavy duty ballistic nylon fabric texture. The weave is thick, rugged, and industrial, rendered in deep tactical black with harsh, high-contrast side lighting highlighting the raw durability of the material. A functional, heavy-duty metallic buckle is partially visible." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNh_HqBy2thPMIm8736Jz96oeGAPdcwqLpwUEGhdL-i-L6zu4rQriemDislVSQ_8YkOkY7eUZJeVP3e6i9OIn_GHO6drN61AuzLosmeqoVL6FC7fxtTtMlv_kuw-QgK4QJoXJW5hTTI6A-d5wInU2D5sjrH--ItmntHj_IJX-unFxgS5YZjKees7kWEzEgA-_rT8EiRSGTBRAjywHaKdgaMAjEQANWidELHWgJaAZ3Rn8uLXGHk47m4VFYtlD3OEiTuKm0lAGL7sl9"/>
+<div class="absolute inset-0 bg-gradient-to-t from-tactical-black to-transparent"></div>
+</div>
+<div class="relative z-10">
+<div class="inline-block bg-tactical-black border border-stark-white/20 px-2 py-1 mb-stack-sm">
+<span class="font-data-mono text-data-mono text-stark-white uppercase">Material Base</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase mb-2">Ballistic Polymers</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">Engineered to withstand extreme tensile stress and abrasive environments without structural failure.</p>
+</div>
+</div>
+<!-- Card 2: Stat/Icon -->
+<div class="bg-tactical-black border border-surface-container-highest flex flex-col items-center justify-center p-stack-lg text-center group hover:border-signal-orange transition-colors">
+<span class="material-symbols-outlined text-signal-orange text-6xl mb-stack-md font-light" style="font-variation-settings: 'wght' 200;">shield</span>
+<div class="font-display-xl text-headline-lg text-stark-white mb-2">MIL-SPEC</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Exceeds standard operational requirements for hard impact resistance.</p>
+</div>
+<!-- Card 3: Modular -->
+<div class="bg-charcoal-field border border-surface-container-highest relative overflow-hidden group p-stack-lg flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-stark-white text-3xl">view_module</span>
+<span class="font-data-mono text-data-mono text-signal-orange">MOD-01</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase mb-2">Total Modularity</h3>
+<div class="w-full h-2 bg-surface-container mt-stack-md flex gap-1">
+<div class="h-full w-1/4 bg-signal-orange"></div>
+<div class="h-full w-1/4 bg-signal-orange"></div>
+<div class="h-full w-1/4 bg-surface-container-highest"></div>
+<div class="h-full w-1/4 bg-surface-container-highest"></div>
+</div>
+</div>
+</div>
+<!-- Card 4: Action Feature -->
+<div class="md:col-span-2 bg-tactical-black border border-surface-container-highest flex flex-col md:flex-row items-center p-stack-lg gap-stack-lg group hover:bg-surface-container-low transition-colors">
+<div class="w-24 h-24 rounded-full border-2 border-signal-orange flex items-center justify-center flex-shrink-0 relative">
+<div class="absolute inset-0 rounded-full border border-signal-orange animate-ping opacity-20"></div>
+<span class="material-symbols-outlined text-signal-orange text-4xl">my_location</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase mb-stack-sm">Always Forward.</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md max-w-lg">
+                                Gear that adapts to the mission parameters dynamically. Built for those who move towards the chaos.
+                            </p>
+<a class="font-data-mono text-data-mono text-stark-white uppercase border-b border-stark-white pb-1 hover:text-signal-orange hover:border-signal-orange transition-colors" href="https://durhaim.com/our-story/">Read Our Story</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Call to Action -->
+<section class="w-full py-section-gap px-margin-edge bg-signal-orange flex flex-col items-center text-center">
+<div class="max-w-3xl mx-auto flex flex-col items-center">
+<span class="material-symbols-outlined text-tactical-black text-5xl mb-stack-md" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<h2 class="font-display-xl text-headline-lg-mobile md:text-headline-lg text-tactical-black uppercase tracking-tighter mb-stack-md">
+                    Equip For The Unknown
+                </h2>
+<p class="font-body-lg text-body-lg text-tactical-black/80 font-medium mb-stack-lg max-w-xl">
+                    Our catalogue is restricted to hardware that has survived rigorous field testing. Browse the current operational inventory.
+                </p>
+<a class="inline-flex items-center justify-center bg-tactical-black text-stark-white font-label-caps text-label-caps uppercase px-10 py-5 border-2 border-tactical-black hover:bg-transparent hover:text-tactical-black transition-all duration-300 active:scale-95 group" href="https://durhaim.com/catalogue/">
+                    Explore Full Catalogue
+                    <span class="material-symbols-outlined ml-2 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-tactical-black w-full mt-section-gap border-t border-surface-container-highest">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-edge py-section-gap max-w-[1440px] mx-auto">
+<!-- Brand Column -->
+<div class="flex flex-col">
+<a class="font-display-xl text-headline-md text-stark-white mb-stack-md" href="/">
+                    DURHAIM
+                </a>
+<p class="font-label-caps text-label-caps text-signal-orange mb-stack-lg uppercase">
+                    "Always Forward"
+                </p>
+<div class="flex space-x-stack-sm">
+<!-- Social Icons (simulated with Material Icons) -->
+<a class="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200" href="https://www.facebook.com/durhaimarmygear/?ref=pages_you_manage">
+<span class="font-data-mono text-data-mono">Fb</span>
+</a>
+<a class="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200" href="whatsapp://send?text=Hello&amp;phone=+6282120101473​">
+<span class="font-data-mono text-data-mono">Wa</span>
+</a>
+<a class="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200" href="https://www.youtube.com/channel/UCRQa9l9_warxaVLGWLPVsXw">
+<span class="font-data-mono text-data-mono">Yt</span>
+</a>
+<a class="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200" href="https://www.instagram.com/durhaimgear/?hl=id">
+<span class="font-data-mono text-data-mono">Ig</span>
+</a>
+</div>
+</div>
+<!-- Contacts Column -->
+<div class="flex flex-col">
+<h4 class="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">Contacts</h4>
+<ul class="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-sm mt-1">location_on</span>
+<span>Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung</span>
+</li>
+<li class="flex items-center gap-2 hover:text-signal-orange transition-colors">
+<span class="material-symbols-outlined text-sm">mail</span>
+<a href="mailto:durhaimgear@gmail.com">durhaimgear@gmail.com</a>
+</li>
+<li class="flex items-center gap-2 hover:text-signal-orange transition-colors">
+<span class="material-symbols-outlined text-sm">phone</span>
+<a href="tel:+6282120101473">0821-2010-1473</a>
+</li>
+</ul>
+</div>
+<!-- Links Column -->
+<div class="flex flex-col">
+<h4 class="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">Navigation</h4>
+<ul class="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant flex flex-col">
+<a class="hover:text-signal-orange hover:underline w-fit" href="https://durhaim.com/catalogue/#vest">Vest &amp; Chestrig</a>
+<a class="hover:text-signal-orange hover:underline w-fit" href="https://durhaim.com/catalogue/#pack">Pack &amp; Pouches</a>
+<a class="hover:text-signal-orange hover:underline w-fit" href="https://durhaim.com/catalogue/#belt">Belt</a>
+<a class="hover:text-signal-orange hover:underline w-fit" href="#">Contact</a>
+<a class="hover:text-signal-orange hover:underline w-fit" href="https://durhaim.com/project-2/">Latest Projects</a>
+</ul>
+</div>
+<!-- Subscribe Column -->
+<div class="flex flex-col">
+<h4 class="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">Subscribe</h4>
+<p class="font-body-md text-body-md text-on-tertiary-fixed-variant mb-stack-md">
+                    Follow our newsletter to stay updated about agency.
+                </p>
+<div class="flex">
+<input class="bg-charcoal-field border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 w-full focus:outline-none focus:border-signal-orange rounded-none placeholder-on-tertiary-fixed-variant" placeholder="ENTER EMAIL" type="email"/>
+<button class="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200">
+<span class="material-symbols-outlined">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Copyright Bottom Bar -->
+<div class="w-full border-t border-surface-container-highest py-stack-md text-center">
+<span class="font-data-mono text-data-mono text-on-tertiary-fixed-variant uppercase">
+                2024 DURHAIM TACTICAL. ALWAYS FORWARD.
+            </span>
+</div>
+</footer>
+<!-- Fixed FAB (Whatsapp) - Contextually relevant for standard pages -->
+<a class="fixed bottom-margin-edge right-margin-edge w-14 h-14 bg-operator-green border-2 border-stark-white rounded-full flex items-center justify-center shadow-lg hover:bg-signal-orange hover:border-tactical-black transition-all duration-300 z-50 group" href="https://web.whatsapp.com/send?phone=6282120101473&amp;text=Halo">
+<span class="material-symbols-outlined text-stark-white group-hover:text-tactical-black">chat</span>
+</a>
+</body></html>

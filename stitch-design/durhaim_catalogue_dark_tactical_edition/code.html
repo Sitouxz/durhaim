@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DURHAIM - Catalogue</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400..700;1,400..700&amp;family=Inter:wght@400..700&amp;family=JetBrains+Mono:wght@400..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#b8bfa3",
+                        "charcoal-field": "#1A1A1B",
+                        "background": "#131313",
+                        "tactical-black": "#0D0D0D",
+                        "error": "#ffb4ab",
+                        "surface": "#131313",
+                        "on-tertiary-fixed-variant": "#464747",
+                        "on-surface-variant": "#e3bfb4",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "stark-white": "#FFFFFF",
+                        "secondary-fixed-dim": "#c3c9ae",
+                        "surface-container-low": "#1c1b1b",
+                        "secondary-container": "#484e38",
+                        "on-secondary-fixed": "#181e0c",
+                        "on-error-container": "#ffdad6",
+                        "secondary-fixed": "#dfe6c9",
+                        "on-secondary-fixed-variant": "#434934",
+                        "secondary": "#c3c9ae",
+                        "on-tertiary-container": "#292a2a",
+                        "surface-container-lowest": "#0e0e0e",
+                        "inverse-primary": "#ad3300",
+                        "on-primary-container": "#521400",
+                        "tertiary-fixed-dim": "#c7c6c6",
+                        "on-primary-fixed": "#390b00",
+                        "primary-container": "#f85e27",
+                        "surface-container-highest": "#353534",
+                        "primary": "#ffb59e",
+                        "surface-bright": "#3a3939",
+                        "surface-tint": "#ffb59e",
+                        "tertiary": "#c7c6c6",
+                        "outline-variant": "#5a4139",
+                        "signal-orange": "#FF5F1F",
+                        "surface-container": "#201f1f",
+                        "error-container": "#93000a",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary": "#2d331f",
+                        "on-background": "#e5e2e1",
+                        "on-tertiary": "#303031",
+                        "on-surface": "#e5e2e1",
+                        "tertiary-fixed": "#e3e2e2",
+                        "surface-variant": "#353534",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-dim": "#131313",
+                        "outline": "#aa8a80",
+                        "tertiary-container": "#919190",
+                        "on-primary-fixed-variant": "#842500",
+                        "operator-green": "#2E3325",
+                        "inverse-on-surface": "#313030",
+                        "on-primary": "#5d1800",
+                        "inverse-surface": "#e5e2e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "80px",
+                        "stack-lg": "32px",
+                        "margin-edge": "32px",
+                        "stack-md": "16px",
+                        "unit": "8px",
+                        "stack-sm": "8px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Archivo Narrow"],
+                        "data-mono": ["JetBrains Mono"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-md": ["Archivo Narrow"],
+                        "display-xl": ["Archivo Narrow"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Archivo Narrow"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "data-mono": ["12px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "label-caps": ["14px", { "lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "display-xl": ["72px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["48px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.surface-container-lowest'); color: theme('colors.stark-white'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .bg-texture {
+            background-image: url('https://lh3.googleusercontent.com/aida/ADBb0ug5VOOB_0c2-ieAjBX3UPDigk5Q8GcN5DTu4Pycgu-eD9TkHsLud4E7RyGTa7P7vCmFb8nU7Rb45n3_Mq7KGW6usIbOrgPT6Tywa9lb2sn8N4tfcOMyjkTmlnOOoB7PhzxkwKCuTma9QLqcP1FXkxZ1Bz7MDwCYCnkBR0NGPu-AOkqV8cgnpzZVmXsXKKMbh4dGqgw-dwd6zE1qyqaM4VCYfHSHMyF54X88YPeq67-Dx0k92Xf_HHCvHne8');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .bg-texture::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-color: rgba(14, 14, 14, 0.85); /* surface-container-lowest with opacity */
+            z-index: -1;
+        }
+        main { position: relative; z-index: 1; }
+    </style>
+</head>
+<body class="antialiased selection:bg-signal-orange selection:text-stark-white bg-texture">
+<!-- TopNavBar -->
+<nav class="bg-tactical-black/90 backdrop-blur-sm w-full top-0 sticky z-50 border-b border-surface-container-highest">
+<div class="flex justify-between items-center px-margin-edge py-stack-md max-w-[1440px] mx-auto">
+<div class="font-display-xl text-headline-lg text-stark-white tracking-tighter uppercase cursor-pointer hover:text-signal-orange transition-colors duration-200">
+                DURHAIM
+            </div>
+<div class="hidden md:flex items-center space-x-8 font-label-caps text-label-caps">
+<a class="text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200" href="#">Home</a>
+<a class="text-signal-orange border-b-2 border-signal-orange pb-2 hover:text-signal-orange transition-colors duration-200 active:scale-95 duration-100" href="#">Catalogue</a>
+<a class="text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200" href="#">Battle Proven</a>
+<a class="text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200" href="#">Social Engagement</a>
+<a class="text-stark-white opacity-80 hover:text-signal-orange transition-colors duration-200" href="#">Our Story</a>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[24px]">search</span>
+</button>
+<button class="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[24px]">shopping_cart</span>
+</button>
+<button class="md:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="max-w-[1440px] mx-auto px-margin-edge py-section-gap grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Sidebar Filter -->
+<aside class="lg:col-span-3 space-y-stack-lg">
+<div class="bg-surface-container/50 backdrop-blur p-stack-md border border-surface-container-highest">
+<h2 class="font-headline-md text-headline-md text-stark-white uppercase tracking-wider mb-stack-md border-b border-surface-container-highest pb-unit">Equipment Categories</h2>
+<ul class="space-y-stack-sm font-label-caps text-label-caps">
+<li>
+<label class="flex items-center space-x-3 cursor-pointer group">
+<input checked="" class="form-checkbox bg-surface-container-lowest border-surface-container-highest text-signal-orange focus:ring-signal-orange focus:ring-offset-background w-5 h-5 rounded-none" type="checkbox"/>
+<span class="text-signal-orange group-hover:text-signal-orange transition-colors">ALL GEAR</span>
+</label>
+</li>
+<li class="border-t border-surface-container-highest/50 pt-stack-sm">
+<label class="flex items-center space-x-3 cursor-pointer group">
+<input class="form-checkbox bg-surface-container-lowest border-surface-container-highest text-signal-orange focus:ring-signal-orange focus:ring-offset-background w-5 h-5 rounded-none" type="checkbox"/>
+<span class="text-stark-white opacity-80 group-hover:text-signal-orange transition-colors">VESTS</span>
+</label>
+</li>
+<li class="border-t border-surface-container-highest/50 pt-stack-sm">
+<label class="flex items-center space-x-3 cursor-pointer group">
+<input class="form-checkbox bg-surface-container-lowest border-surface-container-highest text-signal-orange focus:ring-signal-orange focus:ring-offset-background w-5 h-5 rounded-none" type="checkbox"/>
+<span class="text-stark-white opacity-80 group-hover:text-signal-orange transition-colors">CHEST RIGS</span>
+</label>
+</li>
+<li class="border-t border-surface-container-highest/50 pt-stack-sm">
+<label class="flex items-center space-x-3 cursor-pointer group">
+<input class="form-checkbox bg-surface-container-lowest border-surface-container-highest text-signal-orange focus:ring-signal-orange focus:ring-offset-background w-5 h-5 rounded-none" type="checkbox"/>
+<span class="text-stark-white opacity-80 group-hover:text-signal-orange transition-colors">PACKS &amp; POUCHES</span>
+</label>
+</li>
+<li class="border-t border-surface-container-highest/50 pt-stack-sm">
+<label class="flex items-center space-x-3 cursor-pointer group">
+<input class="form-checkbox bg-surface-container-lowest border-surface-container-highest text-signal-orange focus:ring-signal-orange focus:ring-offset-background w-5 h-5 rounded-none" type="checkbox"/>
+<span class="text-stark-white opacity-80 group-hover:text-signal-orange transition-colors">BELTS</span>
+</label>
+</li>
+<li class="border-t border-surface-container-highest/50 pt-stack-sm">
+<label class="flex items-center space-x-3 cursor-pointer group">
+<input class="form-checkbox bg-surface-container-lowest border-surface-container-highest text-signal-orange focus:ring-signal-orange focus:ring-offset-background w-5 h-5 rounded-none" type="checkbox"/>
+<span class="text-stark-white opacity-80 group-hover:text-signal-orange transition-colors">ACCESSORIES</span>
+</label>
+</li>
+</ul>
+</div>
+<div class="bg-surface-container/50 backdrop-blur p-stack-md border border-surface-container-highest">
+<h3 class="font-headline-md text-headline-md-mobile text-stark-white uppercase mb-stack-sm">Search Catalog</h3>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 focus:border-signal-orange focus:ring-0 rounded-none placeholder-on-tertiary-fixed-variant" placeholder="ENTER SERIAL / KEYWORD" type="text"/>
+<button class="absolute right-0 top-0 h-full px-3 text-signal-orange hover:bg-signal-orange hover:text-tactical-black transition-colors">
+<span class="material-symbols-outlined text-[20px] translate-y-[2px]">search</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Product Grid -->
+<section class="lg:col-span-9">
+<div class="flex justify-between items-end mb-stack-lg border-b border-surface-container-highest pb-stack-md">
+<div>
+<h1 class="font-display-xl text-headline-lg lg:text-display-xl text-stark-white uppercase tracking-tighter">Tactical Arsenal</h1>
+<p class="font-data-mono text-data-mono text-signal-orange mt-2">DURABILITY HARD IMPACT &amp; MODULAR</p>
+</div>
+<div class="hidden sm:flex items-center space-x-2 font-data-mono text-data-mono text-stark-white opacity-60">
+<span>SORT BY:</span>
+<select class="bg-transparent border-none text-signal-orange focus:ring-0 uppercase cursor-pointer">
+<option class="bg-surface-container">NEWEST DEPLOYMENT</option>
+<option class="bg-surface-container">BATTLE PROVEN</option>
+<option class="bg-surface-container">PRICE: HIGH TO LOW</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
+<!-- Product Card 1 -->
+<article class="bg-surface-container/80 backdrop-blur border border-surface-container-highest group flex flex-col hover:border-signal-orange transition-colors duration-300">
+<div class="relative aspect-[4/5] bg-surface-container-lowest/50 p-stack-md flex items-center justify-center overflow-hidden">
+<div class="absolute top-4 left-4 bg-signal-orange text-tactical-black font-data-mono text-data-mono px-2 py-1 uppercase z-10">
+                            BATTLE PROVEN
+                        </div>
+<img alt="Cobra Multicam Black Vest" class="object-contain w-full h-full max-h-[300px] group-hover:scale-105 transition-transform duration-500 z-0" src="https://lh3.googleusercontent.com/aida/ADBb0uhHmarY6x8tQQajILZYGhdMrE_-8N5sRpGivbjfVr7JV1GKgh1VPOJ5UwwZq8boGUAATN8Qo2TJt70_N3aFkd0KyOTZdkRBzyUxSj2dm9l1ZquJ2XLAk_BfM1vXPEdXbeOy3ZRiMPtCuihStQPqlz-Ljk89EELaFmWl1P5VsCg2rZ5Tgknyxr3uqk4ZdS-STDpVubokBOe0xfV1lk0DyQ6J3FtvcnBqUk1-fyua1f5e22SHPkccNAigEb-M"/>
+</div>
+<div class="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">Cobra Multicam Black Vest</h3>
+<p class="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">MODULAR TACTICAL CARRIER / QUICK RELEASE SYSTEM / LASER CUT MOLLE</p>
+<button class="w-full bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 uppercase hover:bg-stark-white transition-colors duration-200 mt-auto flex items-center justify-center space-x-2">
+<span>VIEW DETAILS</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</article>
+<!-- Product Card 2 -->
+<article class="bg-surface-container/80 backdrop-blur border border-surface-container-highest group flex flex-col hover:border-signal-orange transition-colors duration-300">
+<div class="relative aspect-[4/5] bg-surface-container-lowest/50 p-stack-md flex items-center justify-center overflow-hidden">
+<img alt="Black Thunder Vest" class="object-contain w-full h-full max-h-[300px] group-hover:scale-105 transition-transform duration-500 z-0" src="https://lh3.googleusercontent.com/aida/ADBb0uizMNhgZuQE8K5Kr6MB6l2F2tLSm2LxztpQ3QQyiGc3k1a4bGCHPtrGwYPx8k2WqeccGyjcgZJshyffU5xjr5qVTeDFDCeE7mlP2goKZvi1in6qX913WsCOquO9vIIVh3ufOl2KN7ypB0O02wgPOafINEHz9ZTxLEGLnZYTzjOL50QdIetgXo3UyuoAPX_Mufg0sPa5bq6ZIqhMOr1nHbKLlYBpDtNgbVpxNb7AESjvTfIfFkilq2wM8r4"/>
+</div>
+<div class="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">Black Thunder Vest</h3>
+<p class="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">HEAVY DUTY PLATE CARRIER / TRIPLE MAG POUCH INCLUDED / ADJUSTABLE HARNESS</p>
+<button class="w-full bg-transparent border border-stark-white text-stark-white font-label-caps text-label-caps py-3 uppercase hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 mt-auto flex items-center justify-center space-x-2">
+<span>VIEW DETAILS</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</article>
+<!-- Product Card 3 -->
+<article class="bg-surface-container/80 backdrop-blur border border-surface-container-highest group flex flex-col hover:border-signal-orange transition-colors duration-300">
+<div class="relative aspect-[4/5] bg-surface-container-lowest/50 p-stack-md flex items-center justify-center overflow-hidden">
+<div class="absolute top-4 left-4 bg-stark-white text-tactical-black font-data-mono text-data-mono px-2 py-1 uppercase z-10">
+                            NEW ARRIVAL
+                        </div>
+<img alt="Anaconda MCB Pack" class="object-contain w-full h-full max-h-[300px] group-hover:scale-105 transition-transform duration-500 z-0" src="https://lh3.googleusercontent.com/aida/ADBb0uiJ-0dldTUMcqTvYSs4D2qAbjpDJQUr1-nPktRvlp2KIzJkPY6OUjsjU7jtBcOMDLls2lxCoX8DdrqcJOVZ-SaP5Yxj2W0LZo3R0Wf03VwUSnWBlUfRTBOsMQdAPm4DdS9G-QksTMT-qMn50Zo5D7WaKpB7okI3X0r5vkblC2RlaxER_YVu-AoV7tJpTOL7d59f_eqEQyNdrY6eLdJvUDITW3mYc-iOy0r_MDFWHF8x3Ayuz_EkEfG5Kso"/>
+</div>
+<div class="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">Anaconda MCB Pack</h3>
+<p class="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">30L CAPACITY / HYDRATION COMPATIBLE / MULTICAM BLACK CORDURA</p>
+<button class="w-full bg-transparent border border-stark-white text-stark-white font-label-caps text-label-caps py-3 uppercase hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 mt-auto flex items-center justify-center space-x-2">
+<span>VIEW DETAILS</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</article>
+<!-- Product Card 4 -->
+<article class="bg-surface-container/80 backdrop-blur border border-surface-container-highest group flex flex-col hover:border-signal-orange transition-colors duration-300">
+<div class="relative aspect-[4/5] bg-surface-container-lowest/50 p-stack-md flex items-center justify-center overflow-hidden">
+<img alt="Black Trojan Pro Belt" class="object-contain w-full h-full max-h-[200px] group-hover:scale-105 transition-transform duration-500 z-0" src="https://lh3.googleusercontent.com/aida/ADBb0uiGfLUwNlkyOM4_t7brXJ7tRUTTlJpCltHvq0-kb43jSMjb2P8nA8rI7yeAqXqA1l0A2NKuMA_g7ZGZRMZsdoWwXws8auj2Vx9W47RF88WNrVdVck5TfFTMrdA2Csu_6-Gp5nlSPZeUk1h0OJ00Hxh9T-PStsy_SHG4JWoqe_Q34Xg3EA0-40b71L7fOfkBfgaDUrLeKyBWIaSyBkBRKMUIbXiIBHGz_dHG7Hy2SzHjGsBxZ-PrtvxTLSPn"/>
+</div>
+<div class="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">Black Trojan Pro Belt</h3>
+<p class="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">RIGGER BELT / QUICK RELEASE BUCKLE / INTEGRATED POUCH SYSTEM</p>
+<button class="w-full bg-transparent border border-stark-white text-stark-white font-label-caps text-label-caps py-3 uppercase hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 mt-auto flex items-center justify-center space-x-2">
+<span>VIEW DETAILS</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</article>
+<!-- Product Card 5 -->
+<article class="bg-surface-container/80 backdrop-blur border border-surface-container-highest group flex flex-col hover:border-signal-orange transition-colors duration-300">
+<div class="relative aspect-[4/5] bg-surface-container-lowest/50 p-stack-md flex items-center justify-center overflow-hidden">
+<div class="absolute top-4 left-4 bg-signal-orange text-tactical-black font-data-mono text-data-mono px-2 py-1 uppercase z-10">
+                            LIMITED STOCK
+                        </div>
+<img alt="Rattle Belt MCB" class="object-contain w-full h-full max-h-[200px] group-hover:scale-105 transition-transform duration-500 z-0" src="https://lh3.googleusercontent.com/aida/ADBb0ugf8XCbATiLEBjkn4DG_EzmdZ7e87WonQUAZr1pHTPTAyo899lkLlCQrpA9aoSe9P3H-FkgE1PdKjWcgjphJo71Z3slpAoQdacw2f8FZ-5qekwbdbfpX7tTfZ5Kiiw9IAwfIKasrBb_-XcOX1EPYyNDxOkMhSbxVGuj0IXD9Hmka3jPhQY84q3DyZ91hJRc5FDoeLRco0kHcm_3rvnR8f9mD9B70urXJobfLZHPJKQLSGzsrBWLeH5SyZY"/>
+</div>
+<div class="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
+<h3 class="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">Rattle Belt MCB</h3>
+<p class="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">TACTICAL WAIST BELT / MULTICAM BLACK / COBRA STYLE BUCKLE / MAG POUCHES</p>
+<button class="w-full bg-transparent border border-stark-white text-stark-white font-label-caps text-label-caps py-3 uppercase hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 mt-auto flex items-center justify-center space-x-2">
+<span>VIEW DETAILS</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</article>
+</div>
+<!-- Pagination -->
+<div class="flex justify-center items-center space-x-2 mt-stack-lg pt-stack-lg border-t border-surface-container-highest">
+<button class="w-10 h-10 flex items-center justify-center border border-surface-container-highest text-stark-white hover:border-signal-orange hover:text-signal-orange transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center bg-signal-orange text-tactical-black font-data-mono text-data-mono">1</button>
+<button class="w-10 h-10 flex items-center justify-center border border-surface-container-highest bg-surface-container/50 text-stark-white hover:border-signal-orange hover:text-signal-orange transition-colors font-data-mono text-data-mono">2</button>
+<button class="w-10 h-10 flex items-center justify-center border border-surface-container-highest bg-surface-container/50 text-stark-white hover:border-signal-orange hover:text-signal-orange transition-colors font-data-mono text-data-mono">3</button>
+<button class="w-10 h-10 flex items-center justify-center border border-surface-container-highest text-stark-white hover:border-signal-orange hover:text-signal-orange transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-tactical-black/95 backdrop-blur-sm w-full mt-section-gap border-t border-surface-container-highest relative z-10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-edge py-section-gap max-w-[1440px] mx-auto">
+<div class="flex flex-col space-y-stack-md">
+<div class="font-display-xl text-headline-md text-stark-white uppercase">DURHAIM</div>
+<p class="font-data-mono text-data-mono text-on-surface-variant">DURABILITY HARD IMPACT &amp; MODULAR</p>
+<div class="font-body-md text-body-md text-stark-white opacity-80">
+                    Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung
+                </div>
+</div>
+<div class="flex flex-col space-y-stack-md">
+<h4 class="font-label-caps text-label-caps text-signal-orange uppercase">Explore</h4>
+<ul class="font-body-md text-body-md space-y-stack-sm">
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="#">Vest &amp; Chestrig</a></li>
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="#">Pack &amp; Pouches</a></li>
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="#">Belt</a></li>
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="#">Latest Projects</a></li>
+</ul>
+</div>
+<div class="flex flex-col space-y-stack-md">
+<h4 class="font-label-caps text-label-caps text-signal-orange uppercase">Support</h4>
+<ul class="font-body-md text-body-md space-y-stack-sm">
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="#">Contact</a></li>
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="#">durhaimgear@gmail.com</a></li>
+<li><a class="text-on-surface-variant hover:text-signal-orange transition-colors active:opacity-80" href="tel:+6282120101473">0821-2010-1473</a></li>
+</ul>
+</div>
+<div class="flex flex-col space-y-stack-md">
+<h4 class="font-label-caps text-label-caps text-signal-orange uppercase">Newsletter</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Follow our newsletter to stay updated.</p>
+<div class="flex">
+<input class="w-full bg-surface-container-lowest border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 focus:border-signal-orange focus:ring-0 rounded-none placeholder-on-tertiary-fixed-variant" placeholder="EMAIL ADDRESS" type="email"/>
+<button class="bg-signal-orange text-tactical-black px-4 hover:bg-stark-white transition-colors">
+<span class="material-symbols-outlined text-[20px] translate-y-[2px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="border-t border-surface-container-highest">
+<div class="px-margin-edge py-stack-md max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center font-data-mono text-data-mono text-on-surface-variant">
+<span>2024 DURHAIM TACTICAL. ALWAYS FORWARD.</span>
+<div class="flex space-x-4 mt-stack-sm md:mt-0">
+<a class="hover:text-signal-orange transition-colors" href="#">INSTAGRAM</a>
+<a class="hover:text-signal-orange transition-colors" href="#">FACEBOOK</a>
+<a class="hover:text-signal-orange transition-colors" href="#">YOUTUBE</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>
