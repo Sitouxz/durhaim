@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 const navLinks = [
@@ -14,7 +14,16 @@ const navLinks = [
 
 export default function TopNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = search.trim();
+    router.push(query ? `/catalogue?search=${encodeURIComponent(query)}` : '/catalogue');
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -48,17 +57,19 @@ export default function TopNavBar() {
           {/* Trailing Actions */}
           <div className="flex items-center space-x-stack-md">
             {/* Search Bar (Desktop) */}
-            <div className="hidden md:flex items-center bg-charcoal-field border border-surface-container-highest rounded-none focus-within:border-signal-orange transition-colors duration-200">
+            <form onSubmit={submitSearch} className="hidden md:flex items-center bg-charcoal-field border border-surface-container-highest rounded-none focus-within:border-signal-orange transition-colors duration-200">
               <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
               <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
                 className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-48 placeholder-stark-white placeholder-opacity-40"
                 placeholder="Search..."
-                type="text"
+                type="search"
               />
-            </div>
-            <button className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95">
+            </form>
+            <Link href="/cart" className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95" aria-label="Open cart">
               <span className="material-symbols-outlined">shopping_cart</span>
-            </button>
+            </Link>
             {/* Mobile Menu Toggle */}
             <button
               className="md:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95"
@@ -89,14 +100,16 @@ export default function TopNavBar() {
                 );
               })}
               {/* Mobile Search */}
-              <div className="flex items-center bg-charcoal-field border border-surface-container-highest">
+              <form onSubmit={submitSearch} className="flex items-center bg-charcoal-field border border-surface-container-highest">
                 <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
                 <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
                   className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 flex-1 placeholder-stark-white placeholder-opacity-40"
                   placeholder="Search..."
-                  type="text"
+                  type="search"
                 />
-              </div>
+              </form>
             </div>
           </div>
         )}

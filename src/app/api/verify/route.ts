@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isMissingSchemaError } from '@/lib/catalogue-data';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +24,13 @@ export async function POST(req: NextRequest) {
       .select('id, serial, status, verification_count, products(name, id)')
       .eq('serial', normalizedSerial)
       .single();
+
+    if (isMissingSchemaError(error)) {
+      return NextResponse.json({
+        found: false,
+        message: 'Database schema is not installed. Apply supabase/schema.sql.',
+      }, { status: 503 });
+    }
 
     if (error || !data) {
       return NextResponse.json({

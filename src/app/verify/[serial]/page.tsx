@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function VerifyPage({ params }: PageProps) {
   const data = await getSerialData(params.serial);
   const serial = params.serial.toUpperCase();
-  const isAuthentic = !!data && data.status !== 'REVOKED';
+  const status = !data ? 'UNVERIFIED' : data.status === 'REVOKED' ? 'REVOKED' : 'AUTHENTIC';
 
   return (
     <main className="flex-grow bg-background min-h-screen">
@@ -51,11 +51,11 @@ export default async function VerifyPage({ params }: PageProps) {
 
           {/* Status Badge */}
           <div className={`inline-block px-6 py-3 mb-stack-lg font-label-caps text-label-caps uppercase tracking-wider ${
-            isAuthentic
-              ? 'bg-operator-green border border-signal-orange text-signal-orange'
+            status === 'AUTHENTIC'
+              ? 'bg-operator-green/20 border border-operator-green text-operator-green'
               : 'bg-error-container border border-error text-error'
           }`}>
-            {isAuthentic ? '✅ AUTHENTIC' : '⚠️ UNVERIFIED'}
+            {status}
           </div>
 
           {/* Serial Number */}
@@ -81,7 +81,15 @@ export default async function VerifyPage({ params }: PageProps) {
             </div>
           )}
 
-          {!data && (
+          {status === 'REVOKED' && (
+            <div className="mb-stack-lg">
+              <p className="font-body-md text-body-md text-error">
+                This serial number exists but has been revoked by DURHAIM. Please contact support before using this product certificate.
+              </p>
+            </div>
+          )}
+
+          {status === 'UNVERIFIED' && (
             <div className="mb-stack-lg">
               <p className="font-body-md text-body-md text-on-surface-variant">
                 This serial number is not registered in the DURHAIM system. If you believe this is an error, please contact our support team.

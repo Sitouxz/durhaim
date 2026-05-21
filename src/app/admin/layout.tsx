@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { LayoutDashboard, Box, QrCode, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Box, QrCode, Settings } from "lucide-react";
+import AdminSignOutButton from "@/components/AdminSignOutButton";
 
 export default function AdminLayout({
   children,
@@ -47,10 +48,7 @@ export default function AdminLayout({
         </nav>
 
         <div className="p-stack-md border-t border-surface-container-highest">
-          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-md hover:bg-surface-container-highest text-on-surface-variant hover:text-error transition-colors">
-            <LogOut className="w-5 h-5" />
-            <span className="font-label-caps uppercase">Sign Out</span>
-          </button>
+          <AdminSignOutButton />
         </div>
       </aside>
 

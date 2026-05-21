@@ -184,7 +184,7 @@ export default function BattleProvenPage() {
                 </p>
                 <Link
                   className="font-data-mono text-data-mono text-stark-white uppercase border-b border-stark-white pb-1 hover:text-signal-orange hover:border-signal-orange transition-colors"
-                  href="#"
+                  href="/catalogue?category=vest"
                 >
                   Read Our Story
                 </Link>

@@ -1,6 +1,26 @@
+'use client';
+
 import Link from 'next/link';
+import { FormEvent, useState } from 'react';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage('');
+
+    const res = await fetch('/api/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setMessage(data.message || (res.ok ? 'Subscribed.' : 'Subscription failed.'));
+    if (res.ok) setEmail('');
+  };
+
   return (
     <footer className="bg-tactical-black w-full mt-section-gap border-t border-surface-container-highest">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-edge py-section-gap max-w-[1440px] mx-auto">
@@ -74,8 +94,8 @@ export default function Footer() {
             <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=vest">Vest &amp; Chestrig</Link>
             <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=pack">Pack &amp; Pouches</Link>
             <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=belt">Belt</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="#">Contact</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="#">Latest Projects</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/contact">Contact</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/latest-projects">Latest Projects</Link>
           </ul>
         </div>
 
@@ -85,16 +105,20 @@ export default function Footer() {
           <p className="font-body-md text-body-md text-on-tertiary-fixed-variant mb-stack-md">
             Follow our newsletter to stay updated about agency.
           </p>
-          <div className="flex">
+          <form onSubmit={submitNewsletter} className="flex">
             <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               className="bg-charcoal-field border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 w-full focus:outline-none focus:border-signal-orange rounded-none placeholder-on-tertiary-fixed-variant"
               placeholder="ENTER EMAIL"
               type="email"
+              required
             />
-            <button className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200">
+            <button type="submit" className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200" aria-label="Subscribe to newsletter">
               <span className="material-symbols-outlined">arrow_upward</span>
             </button>
-          </div>
+          </form>
+          {message && <p className="mt-2 font-data-mono text-data-mono text-signal-orange">{message}</p>}
         </div>
       </div>
 

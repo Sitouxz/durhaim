@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "audit:routes": "node scripts/audit-routes.js",
+    "audit:controls": "node scripts/audit-inert-controls.js",
+    "audit:admin-auth": "node scripts/audit-admin-auth.js",
+    "supabase:apply": "node scripts/apply-supabase-schema.js",
+    "supabase:verify": "node scripts/verify-supabase.js",
+    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:admin-auth && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",
@@ -25,6 +31,7 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "pg": "^8.21.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
