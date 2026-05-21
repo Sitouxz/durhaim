@@ -153,13 +153,30 @@ export default function SerialsPage() {
   };
 
   const printQR = async (serial: string) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Pop-up blocked. Please allow pop-ups for this site to print QR labels.');
+      return;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print QR - ${serial}</title>
+          <style>
+            body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: monospace; background: white; color: black; }
+          </style>
+        </head>
+        <body>Generating QR label...</body>
+      </html>
+    `);
+    printWindow.document.close();
+
     try {
       const verifyUrl = `${window.location.origin}/verify/${serial}`;
       const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 300, margin: 2 });
 
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) return;
-
+      printWindow.document.open();
       printWindow.document.write(`
         <html>
           <head>
@@ -189,6 +206,7 @@ export default function SerialsPage() {
       printWindow.document.close();
     } catch (e) {
       console.error(e);
+      printWindow.close();
       alert('Error generating QR code');
     }
   };
