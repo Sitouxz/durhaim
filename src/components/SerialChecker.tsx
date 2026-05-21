@@ -29,7 +29,7 @@ export default function SerialChecker() {
       const res = await fetch('/api/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serial: serial.trim() }),
+        body: JSON.stringify({ serial: serial.trim().toUpperCase() }),
       });
       const data = await res.json();
       setResult(data);
@@ -97,7 +97,7 @@ export default function SerialChecker() {
       </form>
       <Link
         className="inline-block mt-2 border border-surface-container-highest text-stark-white font-label-caps text-label-caps py-2 px-6 hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 backdrop-blur-sm bg-tactical-black/50"
-        href="#"
+        href="/qr-guide"
       >
         Guidelines if you have a QR code
       </Link>

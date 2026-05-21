@@ -9,8 +9,9 @@ export default function VerificationPage() {
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
-    if (serial.trim()) {
-      router.push(`/verification/${encodeURIComponent(serial.trim())}`);
+    const normalizedSerial = serial.trim().toUpperCase();
+    if (normalizedSerial) {
+      router.push(`/verify/${encodeURIComponent(normalizedSerial)}`);
     }
   };
 
