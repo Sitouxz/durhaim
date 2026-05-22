@@ -3,6 +3,7 @@
 import { Plus, Search, Filter, Download } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import QRCode from 'qrcode';
+import { jsPDF } from 'jspdf';
 
 type Product = {
   id: string;
@@ -107,6 +108,59 @@ export default function SerialsPage() {
     a.download = 'durhaim-serials.csv';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadBulkQR = async () => {
+    if (serials.length === 0) {
+      alert('No serials available to download. Adjust filters or generate serials first.');
+      return;
+    }
+
+    try {
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 12;
+      const columns = 2;
+      const labelWidth = (pageWidth - margin * 2) / columns;
+      const labelHeight = 82;
+      const qrSize = 38;
+
+      for (let index = 0; index < serials.length; index++) {
+        if (index > 0 && index % 6 === 0) {
+          pdf.addPage();
+        }
+
+        const pageIndex = index % 6;
+        const col = pageIndex % columns;
+        const row = Math.floor(pageIndex / columns);
+        const x = margin + col * labelWidth;
+        const y = margin + row * labelHeight;
+        const serial = serials[index];
+        const productName = getProductName(serial.products);
+        const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
+        const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 320, margin: 2 });
+
+        pdf.setDrawColor(40, 40, 40);
+        pdf.rect(x + 2, y + 2, labelWidth - 4, labelHeight - 6);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(14);
+        pdf.text('DURHAIM', x + labelWidth / 2, y + 11, { align: 'center' });
+        pdf.addImage(dataUrl, 'PNG', x + (labelWidth - qrSize) / 2, y + 15, qrSize, qrSize);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.text(serial.serial, x + labelWidth / 2, y + 60, { align: 'center' });
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.text(productName.slice(0, 42), x + labelWidth / 2, y + 67, { align: 'center' });
+        pdf.text('Scan to Verify Authenticity', x + labelWidth / 2, y + 74, { align: 'center' });
+      }
+
+      const date = new Date().toISOString().slice(0, 10);
+      pdf.save(`durhaim-qr-labels-${date}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Error generating bulk QR PDF.');
+    }
   };
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -270,6 +324,10 @@ export default function SerialsPage() {
             <button type="button" onClick={exportCsv} className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
               <Download className="w-4 h-4" />
               <span className="font-label-caps">EXPORT</span>
+            </button>
+            <button type="button" onClick={downloadBulkQR} className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
+              <Download className="w-4 h-4" />
+              <span className="font-label-caps">QR PDF</span>
             </button>
           </div>
         </div>
