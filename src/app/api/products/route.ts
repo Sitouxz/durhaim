@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from('products')
-      .select('*, categories(name, slug)', { count: 'exact' })
+      .select('*, categories!inner(name, slug)', { count: 'exact' })
       .eq('is_published', true)
       .range(offset, offset + Math.max(limit, 1) - 1);
 
