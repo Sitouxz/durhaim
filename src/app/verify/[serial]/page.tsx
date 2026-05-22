@@ -1,12 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import { headers } from 'next/headers';
+import { unstable_noStore as noStore } from 'next/cache';
+import { createAdminClient } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: { serial: string };
 }
 
 async function getSerialData(serial: string) {
+  noStore();
+
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +27,41 @@ async function getSerialData(serial: string) {
     return data;
   } catch {
     return null;
+  }
+}
+
+async function recordVerificationView(data: Awaited<ReturnType<typeof getSerialData>>) {
+  if (!data || data.status === 'REVOKED') return data?.verification_count;
+
+  try {
+    const supabase = createAdminClient();
+    const { data: currentSerial, error: currentError } = await supabase
+      .from('serial_numbers')
+      .select('verification_count')
+      .eq('id', data.id)
+      .single();
+
+    if (currentError) throw currentError;
+
+    const nextCount = (currentSerial?.verification_count ?? 0) + 1;
+    const requestHeaders = headers();
+    const ip = requestHeaders.get('x-forwarded-for') ?? requestHeaders.get('x-real-ip') ?? 'unknown';
+
+    await supabase
+      .from('serial_numbers')
+      .update({ verification_count: nextCount })
+      .eq('id', data.id);
+
+    await supabase.from('verification_logs').insert({
+      serial_id: data.id,
+      ip_address: ip,
+      user_agent: requestHeaders.get('user-agent') ?? '',
+    });
+
+    return nextCount;
+  } catch (error) {
+    console.error('Failed to record verification view:', error);
+    return data.verification_count;
   }
 }
 
@@ -38,6 +80,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VerifyPage({ params }: PageProps) {
   const data = await getSerialData(params.serial);
+  const verificationCount = await recordVerificationView(data);
   const serial = params.serial.toUpperCase();
   const status = !data ? 'UNVERIFIED' : data.status === 'REVOKED' ? 'REVOKED' : 'AUTHENTIC';
 
@@ -73,9 +116,9 @@ export default async function VerifyPage({ params }: PageProps) {
                   Registered: {new Date(data.created_at).toLocaleDateString('id-ID')}
                 </p>
               )}
-              {data.verification_count !== undefined && (
+              {verificationCount !== undefined && (
                 <p className="font-data-mono text-data-mono text-on-tertiary-fixed-variant">
-                  Verified {data.verification_count} times
+                  Verified {verificationCount} times
                 </p>
               )}
             </div>

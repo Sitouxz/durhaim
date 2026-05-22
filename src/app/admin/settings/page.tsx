@@ -23,7 +23,7 @@ const settings = [
     icon: KeyRound,
     title: 'Admin Access',
     value: 'Protected',
-    note: 'Authentication wiring can be connected to Supabase Auth.',
+    note: 'Password-protected admin sessions are enforced before operational pages load.',
   },
 ];
 

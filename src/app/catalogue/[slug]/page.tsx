@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { fallbackProducts, isMissingSchemaError, normalizeProduct, type CatalogueProduct } from '@/lib/catalogue-data';
+import AddToCartButton from '@/components/AddToCartButton';
 
 interface PageProps {
   params: { slug: string };
@@ -88,6 +89,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             >
               Enquire on WhatsApp
             </a>
+            <AddToCartButton product={{ slug: product.slug, name: product.name, price: product.price }} />
             <Link href="/catalogue" className="inline-flex justify-center border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps uppercase text-stark-white hover:border-signal-orange hover:text-signal-orange">
               Back to Catalogue
             </Link>

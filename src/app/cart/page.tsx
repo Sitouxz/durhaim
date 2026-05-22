@@ -34,7 +34,7 @@ export default function CartPage() {
       <div className="mx-auto max-w-[1000px]">
         <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">Enquiry Cart</h1>
         <p className="mt-stack-md max-w-2xl border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">
-          Collect products for a WhatsApp enquiry. Product detail pages can add items here as the catalogue grows.
+          Collect products from catalogue detail pages and send them to Durhaim in one WhatsApp enquiry.
         </p>
 
         <div className="mt-stack-lg border border-surface-container-highest bg-charcoal-field p-stack-lg">
