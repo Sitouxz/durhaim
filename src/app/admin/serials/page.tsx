@@ -244,23 +244,40 @@ export default function SerialsPage() {
               @media print { body { height: auto; } .label { border: none; } }
             </style>
           </head>
-          <body>
-            <div class="label">
-              <div class="logo">DURHAIM</div>
-              <img src="${dataUrl}" />
-              <div class="serial">${serial}</div>
-              <div style="font-size: 12px; margin-top: 5px;">Scan to Verify Authenticity</div>
-            </div>
-            <script>
-              window.onload = () => { window.print(); window.close(); }
-            </script>
-          </body>
+          <body></body>
         </html>
       `);
       printWindow.document.close();
+
+      const label = printWindow.document.createElement('div');
+      label.className = 'label';
+
+      const logo = printWindow.document.createElement('div');
+      logo.className = 'logo';
+      logo.textContent = 'DURHAIM';
+
+      const qrImage = printWindow.document.createElement('img');
+      qrImage.alt = `QR code for ${serial}`;
+      qrImage.onload = () => {
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 100);
+      };
+
+      const serialText = printWindow.document.createElement('div');
+      serialText.className = 'serial';
+      serialText.textContent = serial;
+
+      const caption = printWindow.document.createElement('div');
+      caption.style.fontSize = '12px';
+      caption.style.marginTop = '5px';
+      caption.textContent = 'Scan to Verify Authenticity';
+
+      label.append(logo, qrImage, serialText, caption);
+      printWindow.document.body.replaceChildren(label);
+      qrImage.src = dataUrl;
     } catch (e) {
       console.error(e);
-      printWindow.close();
+      printWindow.document.body.textContent = 'Error generating QR code. Please close this tab and try again.';
       alert('Error generating QR code');
     }
   };

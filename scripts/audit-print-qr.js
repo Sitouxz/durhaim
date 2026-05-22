@@ -24,4 +24,14 @@ if (qrAwaitIndex !== -1 && qrAwaitIndex < windowOpenIndex) {
   process.exit(1);
 }
 
+if (body.includes('window.close()') || body.includes('printWindow.close()')) {
+  console.error('printQR closes the print window automatically, which can make the QR popup blink and disappear.');
+  process.exit(1);
+}
+
+if (!body.includes('qrImage.onload')) {
+  console.error('printQR does not wait for the QR image to load before printing.');
+  process.exit(1);
+}
+
 console.log('QR print popup opens synchronously.');
