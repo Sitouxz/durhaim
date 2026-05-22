@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS public.serial_numbers (
   serial TEXT UNIQUE NOT NULL,
   product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
   list_id UUID REFERENCES public.serial_lists(id) ON DELETE SET NULL,
-  status TEXT DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'USED', 'REVOKED')),
+  status TEXT DEFAULT 'INACTIVE' CHECK (status IN ('INACTIVE', 'ACTIVE', 'REVOKED')),
   link TEXT,
   ordered BOOLEAN DEFAULT false,
   svp TEXT,
@@ -66,6 +66,17 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
   value TEXT NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+UPDATE public.serial_numbers SET status = 'ACTIVE' WHERE status = 'USED';
+
+ALTER TABLE public.serial_numbers
+  ALTER COLUMN status SET DEFAULT 'INACTIVE';
+
+ALTER TABLE public.serial_numbers
+  DROP CONSTRAINT IF EXISTS serial_numbers_status_check;
+
+ALTER TABLE public.serial_numbers
+  ADD CONSTRAINT serial_numbers_status_check CHECK (status IN ('INACTIVE', 'ACTIVE', 'REVOKED'));
 
 INSERT INTO public.categories (name, slug) VALUES
   ('Vest & Chestrig', 'vest'),

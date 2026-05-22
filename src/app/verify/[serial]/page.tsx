@@ -49,7 +49,7 @@ async function recordVerificationView(data: Awaited<ReturnType<typeof getSerialD
 
     await supabase
       .from('serial_numbers')
-      .update({ verification_count: nextCount })
+      .update({ status: 'ACTIVE', verification_count: nextCount })
       .eq('id', data.id);
 
     await supabase.from('verification_logs').insert({

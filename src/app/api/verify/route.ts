@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     // Increment verification count
     await supabase
       .from('serial_numbers')
-      .update({ verification_count: (data.verification_count ?? 0) + 1 })
+      .update({ status: 'ACTIVE', verification_count: (data.verification_count ?? 0) + 1 })
       .eq('id', data.id);
 
     // Log verification attempt
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       serial: data.serial,
       product: {
         name: productName,
-        status: data.status,
+        status: 'ACTIVE',
       },
     });
   } catch (err) {

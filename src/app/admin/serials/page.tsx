@@ -188,7 +188,7 @@ export default function SerialsPage() {
     setIsGenerating(false);
   };
 
-  const updateSerialStatus = async (id: string, status: 'ACTIVE' | 'USED' | 'REVOKED') => {
+  const updateSerialStatus = async (id: string, status: 'INACTIVE' | 'ACTIVE' | 'REVOKED') => {
     if (!confirm(`Are you sure you want to change this serial to ${status}?`)) return;
 
     try {
@@ -333,8 +333,8 @@ export default function SerialsPage() {
               className="border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors font-label-caps"
             >
               <option value="ALL">ALL STATUS</option>
+              <option value="INACTIVE">UNACTIVATED</option>
               <option value="ACTIVE">ACTIVE</option>
-              <option value="USED">USED</option>
               <option value="REVOKED">REVOKED</option>
             </select>
             <button type="button" onClick={() => fetchSerials(search, statusFilter)} className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
@@ -376,8 +376,8 @@ export default function SerialsPage() {
                     <td className="py-3 px-4 text-signal-orange">{s.serial}</td>
                     <td className="py-3 px-4">{getProductName(s.products)}</td>
                     <td className="py-3 px-4">
+                      {s.status === 'INACTIVE' && <span className="bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded-full text-xs">UNACTIVATED</span>}
                       {s.status === 'ACTIVE' && <span className="bg-operator-green/20 text-operator-green px-2 py-1 rounded-full text-xs">ACTIVE</span>}
-                      {s.status === 'USED' && <span className="bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded-full text-xs">USED</span>}
                       {s.status === 'REVOKED' && <span className="bg-error/20 text-error px-2 py-1 rounded-full text-xs">REVOKED</span>}
                     </td>
                     <td className="py-3 px-4">{s.verification_count || 0}</td>
@@ -386,12 +386,12 @@ export default function SerialsPage() {
                       <button onClick={() => printQR(s.serial)} className="text-on-surface-variant hover:text-signal-orange underline mr-3">Print QR</button>
                       {s.status !== 'ACTIVE' && (
                         <button onClick={() => updateSerialStatus(s.id, 'ACTIVE')} className="text-stark-white hover:text-signal-orange underline mr-3">
-                          Restore
+                          Activate
                         </button>
                       )}
-                      {s.status !== 'USED' && (
-                        <button onClick={() => updateSerialStatus(s.id, 'USED')} className="text-on-surface-variant hover:text-signal-orange underline mr-3">
-                          Mark Used
+                      {s.status !== 'INACTIVE' && s.status !== 'REVOKED' && (
+                        <button onClick={() => updateSerialStatus(s.id, 'INACTIVE')} className="text-on-surface-variant hover:text-signal-orange underline mr-3">
+                          Reset
                         </button>
                       )}
                       {s.status !== 'REVOKED' && (

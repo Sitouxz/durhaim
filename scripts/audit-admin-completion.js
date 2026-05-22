@@ -14,11 +14,6 @@ function requireText(relativePath, needle, message) {
 
 requireText(
   'src/app/admin/serials/page.tsx',
-  "updateSerialStatus(s.id, 'USED')",
-  'serial admin must provide an explicit Mark Used action',
-);
-requireText(
-  'src/app/admin/serials/page.tsx',
   "updateSerialStatus(s.id, 'REVOKED')",
   'serial admin must provide an explicit Revoke action',
 );
@@ -26,6 +21,37 @@ requireText(
   'src/app/admin/serials/page.tsx',
   "updateSerialStatus(s.id, 'ACTIVE')",
   'serial admin must provide an explicit Restore/Activate action',
+);
+requireText(
+  'src/app/admin/serials/page.tsx',
+  "value=\"INACTIVE\"",
+  'serial admin must expose unactivated serial status',
+);
+
+for (const relativePath of [
+  'src/app/admin/serials/page.tsx',
+  'src/app/api/admin/serials/route.ts',
+]) {
+  const text = read(relativePath);
+  if (text.includes('USED') || text.includes('Mark Used')) {
+    failures.push(`${relativePath}: USED/Mark Used should not exist in serial workflow`);
+  }
+}
+
+requireText(
+  'src/app/api/admin/serials/route.ts',
+  "status: 'INACTIVE'",
+  'generated serials must start as unactivated/inactive',
+);
+requireText(
+  'src/app/api/verify/route.ts',
+  "update({ status: 'ACTIVE'",
+  'customer verification must activate serial status',
+);
+requireText(
+  'src/app/verify/[serial]/page.tsx',
+  "status: 'ACTIVE'",
+  'direct QR certificate view must activate serial status',
 );
 
 const productsApi = read('src/app/api/admin/products/route.ts');

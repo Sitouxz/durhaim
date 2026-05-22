@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       query = query.ilike('serial', `%${search}%`);
     }
 
-    if (status && ['ACTIVE', 'USED', 'REVOKED'].includes(status)) {
+    if (status && ['INACTIVE', 'ACTIVE', 'REVOKED'].includes(status)) {
       query = query.eq('status', status);
     }
 
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       serialsToInsert.push({
         product_id: productId,
         serial: `DRH-${catPrefix}-${yymmdd}-${generateRandom4Char()}`,
-        status: 'ACTIVE'
+        status: 'INACTIVE'
       });
     }
 
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
         retrySerials.push({
           product_id: productId,
           serial: `DRH-${catPrefix}-${yymmdd}-${generateRandom4Char()}`,
-          status: 'ACTIVE'
+          status: 'INACTIVE'
         });
       }
 
@@ -157,14 +157,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PATCH to update serial status (Revoke/Restore)
+// PATCH to update serial status (Activate/Revoke/Reset)
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = createAdminClient();
     const body = await req.json();
     const { serialId, status } = body;
 
-    if (!serialId || !['ACTIVE', 'REVOKED', 'USED'].includes(status)) {
+    if (!serialId || !['INACTIVE', 'ACTIVE', 'REVOKED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
