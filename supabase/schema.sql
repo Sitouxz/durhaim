@@ -61,6 +61,12 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 INSERT INTO public.categories (name, slug) VALUES
   ('Vest & Chestrig', 'vest'),
   ('Pack & Pouches', 'pack'),
@@ -115,3 +121,13 @@ VALUES (
 ON CONFLICT (serial) DO UPDATE SET
   product_id = EXCLUDED.product_id,
   status = EXCLUDED.status;
+
+INSERT INTO public.site_settings (key, value)
+VALUES
+  ('public_domain', 'durhaim.com'),
+  ('whatsapp_contact', '+62 821-2010-1473'),
+  ('support_email', 'durhaimgear@gmail.com'),
+  ('location', 'Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung')
+ON CONFLICT (key) DO UPDATE SET
+  value = EXCLUDED.value,
+  updated_at = NOW();

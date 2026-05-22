@@ -27,6 +27,7 @@ async function main() {
     ['serial_numbers', supabase.from('serial_numbers').select('id, serial, status, products(name)').limit(1)],
     ['verification_logs', supabase.from('verification_logs').select('*').limit(1)],
     ['newsletter_subscribers', supabase.from('newsletter_subscribers').select('*').limit(1)],
+    ['site_settings', supabase.from('site_settings').select('key, value').limit(1)],
   ];
 
   let failed = false;

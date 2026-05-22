@@ -1,7 +1,7 @@
 'use client';
 
-import { Archive, Boxes, CheckCircle2, Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Archive, Boxes, CheckCircle2, Edit, Plus, Search } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 type CategoryRelation = { name: string; slug: string } | { name: string; slug: string }[] | null;
@@ -10,40 +10,105 @@ type Product = {
   id: string;
   name: string;
   slug: string;
+  description?: string;
   price?: number;
+  images?: string[];
   is_published?: boolean;
   categories: CategoryRelation;
 };
 
+type ProductForm = {
+  id?: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: string;
+  categorySlug: string;
+  imageUrls: string;
+  is_published: boolean;
+};
+
+const emptyForm: ProductForm = {
+  name: '',
+  slug: '',
+  description: '',
+  price: '0',
+  categorySlug: 'vest',
+  imageUrls: '',
+  is_published: true,
+};
+
+const categories = [
+  { name: 'Vest & Chestrig', slug: 'vest' },
+  { name: 'Pack & Pouches', slug: 'pack' },
+  { name: 'Belt', slug: 'belt' },
+  { name: 'Accessories', slug: 'accessories' },
+];
+
+function getCategory(category: CategoryRelation) {
+  if (Array.isArray(category)) return category[0] ?? null;
+  return category;
+}
+
 function getCategoryName(category: CategoryRelation) {
-  if (Array.isArray(category)) return category[0]?.name ?? 'Unassigned';
-  return category?.name ?? 'Unassigned';
+  return getCategory(category)?.name ?? 'Unassigned';
+}
+
+function getCategorySlug(category: CategoryRelation) {
+  return getCategory(category)?.slug ?? 'vest';
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function productToForm(product: Product): ProductForm {
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    description: product.description ?? '',
+    price: String(product.price ?? 0),
+    categorySlug: getCategorySlug(product.categories),
+    imageUrls: (product.images ?? []).join('\n'),
+    is_published: product.is_published !== false,
+  };
 }
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [form, setForm] = useState<ProductForm>(emptyForm);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/products');
+      if (res.ok) {
+        setProducts(await res.json());
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Failed to load products.');
+      }
+    } catch (fetchError) {
+      console.error('Failed to load products:', fetchError);
+      setError('Failed to connect to products API.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch('/api/admin/products');
-        if (res.ok) {
-          setProducts(await res.json());
-        } else {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error || 'Failed to load products.');
-        }
-      } catch (error) {
-        console.error('Failed to load products:', error);
-        setError('Failed to connect to products API.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchProducts();
   }, []);
 
@@ -59,12 +124,107 @@ export default function AdminProductsPage() {
     });
   }, [products, query]);
 
+  const openNewProductForm = () => {
+    setForm(emptyForm);
+    setMessage('');
+    setShowProductForm(true);
+  };
+
+  const openEditProductForm = (product: Product) => {
+    setForm(productToForm(product));
+    setMessage('');
+    setShowProductForm(true);
+  };
+
+  const setField = (field: keyof ProductForm, value: string | boolean) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleNameChange = (value: string) => {
+    setForm((current) => ({
+      ...current,
+      name: value,
+      slug: current.id ? current.slug : slugify(value),
+    }));
+  };
+
+  const saveProductPayload = (nextForm: ProductForm) => ({
+    id: nextForm.id,
+    name: nextForm.name,
+    slug: nextForm.slug,
+    description: nextForm.description,
+    price: Number(nextForm.price),
+    categorySlug: nextForm.categorySlug,
+    images: nextForm.imageUrls.split(/\r?\n|,/).map((image) => image.trim()).filter(Boolean),
+    is_published: nextForm.is_published,
+  });
+
+  const handleSaveProduct = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: form.id ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveProductPayload(form)),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to save product.');
+        return;
+      }
+
+      setMessage('Product saved.');
+      setShowProductForm(false);
+      await fetchProducts();
+    } catch (saveError) {
+      console.error('Failed to save product:', saveError);
+      setError('Failed to connect to products API.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const togglePublished = async (product: Product) => {
+    const nextForm = productToForm(product);
+    nextForm.is_published = product.is_published === false;
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveProductPayload(nextForm)),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update product.');
+        return;
+      }
+
+      setMessage(nextForm.is_published ? 'Product published.' : 'Product unpublished.');
+      await fetchProducts();
+    } catch (saveError) {
+      console.error('Failed to update product:', saveError);
+      setError('Failed to connect to products API.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-stack-lg animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="font-display-xl text-headline-lg text-stark-white uppercase">Products</h1>
-          <p className="font-body-md text-on-surface-variant">Catalogue records available for serial generation and storefront publishing.</p>
+          <p className="font-body-md text-on-surface-variant">Create, edit, publish, and prepare catalogue records for serial generation.</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:flex">
@@ -78,9 +238,9 @@ export default function AdminProductsPage() {
           <div className="border border-surface-container-highest bg-charcoal-field px-4 py-3">
             <div className="flex items-center gap-2 text-operator-green">
               <CheckCircle2 className="h-4 w-4" />
-              <span className="font-data-mono text-data-mono">Live</span>
+              <span className="font-data-mono text-data-mono">{products.filter((product) => product.is_published !== false).length}</span>
             </div>
-            <div className="font-label-caps text-xs uppercase text-on-surface-variant">Status</div>
+            <div className="font-label-caps text-xs uppercase text-on-surface-variant">Published</div>
           </div>
         </div>
       </div>
@@ -91,7 +251,12 @@ export default function AdminProductsPage() {
             {error}
           </div>
         )}
-        <div className="border-b border-surface-container-highest p-4">
+        {message && (
+          <div className="border-b border-operator-green bg-operator-green/10 p-4 font-body-md text-operator-green">
+            {message}
+          </div>
+        )}
+        <div className="border-b border-surface-container-highest p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <form className="flex max-w-md items-center border border-surface-container-highest bg-tactical-black px-3 py-2">
             <Search className="mr-2 h-5 w-5 text-on-surface-variant" />
             <input
@@ -102,7 +267,56 @@ export default function AdminProductsPage() {
               type="search"
             />
           </form>
+          <button
+            type="button"
+            onClick={openNewProductForm}
+            className="inline-flex items-center justify-center gap-2 bg-signal-orange px-4 py-2 font-label-caps text-tactical-black hover:bg-stark-white"
+          >
+            <Plus className="h-4 w-4" />
+            New Product
+          </button>
         </div>
+
+        {showProductForm && (
+          <form onSubmit={handleSaveProduct} className="grid gap-4 border-b border-surface-container-highest p-4 lg:grid-cols-2">
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Name</label>
+              <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
+              <input value={form.slug} onChange={(event) => setField('slug', slugify(event.target.value))} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Category</label>
+              <select value={form.categorySlug} onChange={(event) => setField('categorySlug', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white">
+                {categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Price</label>
+              <input type="number" min="0" value={form.price} onChange={(event) => setField('price', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="block font-label-caps text-on-surface-variant mb-2">Description</label>
+              <textarea value={form.description} onChange={(event) => setField('description', event.target.value)} className="min-h-24 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="block font-label-caps text-on-surface-variant mb-2">Image URLs</label>
+              <textarea value={form.imageUrls} onChange={(event) => setField('imageUrls', event.target.value)} className="min-h-24 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="One URL per line" />
+            </div>
+            <label className="flex items-center gap-3 font-label-caps text-stark-white">
+              <input type="checkbox" checked={form.is_published} onChange={(event) => setField('is_published', event.target.checked)} />
+              Published
+            </label>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setShowProductForm(false)} className="border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">Cancel</button>
+              <button type="submit" disabled={saving} className="bg-signal-orange px-4 py-2 font-label-caps text-tactical-black hover:bg-stark-white disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save Product'}
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
@@ -134,10 +348,19 @@ export default function AdminProductsPage() {
                     <td className="px-4 py-3 text-on-surface-variant">{product.price ? `IDR ${Number(product.price).toLocaleString('id-ID')}` : '-'}</td>
                     <td className="px-4 py-3 text-on-surface-variant">{product.slug}</td>
                     <td className="px-4 py-3 text-right">
-                      <span className="inline-flex items-center gap-2 bg-operator-green/15 px-2 py-1 text-xs text-operator-green">
-                        <Archive className="h-3 w-3" />
-                        SERIAL READY
-                      </span>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <span className={`inline-flex items-center gap-2 px-2 py-1 text-xs ${product.is_published === false ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-operator-green/15 text-operator-green'}`}>
+                          <Archive className="h-3 w-3" />
+                          {product.is_published === false ? 'DRAFT' : 'SERIAL READY'}
+                        </span>
+                        <button type="button" onClick={() => openEditProductForm(product)} className="inline-flex items-center gap-1 text-on-surface-variant underline hover:text-signal-orange">
+                          <Edit className="h-3 w-3" />
+                          Edit
+                        </button>
+                        <button type="button" onClick={() => togglePublished(product)} className="text-on-surface-variant underline hover:text-signal-orange">
+                          {product.is_published === false ? 'Publish' : 'Unpublish'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -188,21 +188,24 @@ export default function SerialsPage() {
     setIsGenerating(false);
   };
 
-  const toggleStatus = async (id: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'REVOKED' ? 'ACTIVE' : 'REVOKED';
-    if (!confirm(`Are you sure you want to change this serial to ${newStatus}?`)) return;
+  const updateSerialStatus = async (id: string, status: 'ACTIVE' | 'USED' | 'REVOKED') => {
+    if (!confirm(`Are you sure you want to change this serial to ${status}?`)) return;
 
     try {
       const res = await fetch('/api/admin/serials', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serialId: id, status: newStatus })
+        body: JSON.stringify({ serialId: id, status })
       });
       if (res.ok) {
         fetchSerials(search, statusFilter);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to update serial status.');
       }
     } catch (e) {
       console.error(e);
+      alert('Error updating serial status.');
     }
   };
 
@@ -381,12 +384,21 @@ export default function SerialsPage() {
                     <td className="py-3 px-4 text-on-surface-variant">{new Date(s.created_at).toLocaleDateString()}</td>
                     <td className="py-3 px-4 text-right">
                       <button onClick={() => printQR(s.serial)} className="text-on-surface-variant hover:text-signal-orange underline mr-3">Print QR</button>
-                      <button
-                        onClick={() => toggleStatus(s.id, s.status)}
-                        className={`underline ${s.status === 'REVOKED' ? 'text-stark-white' : 'text-error hover:text-error/80'}`}
-                      >
-                        {s.status === 'REVOKED' ? 'Restore' : 'Revoke'}
-                      </button>
+                      {s.status !== 'ACTIVE' && (
+                        <button onClick={() => updateSerialStatus(s.id, 'ACTIVE')} className="text-stark-white hover:text-signal-orange underline mr-3">
+                          Restore
+                        </button>
+                      )}
+                      {s.status !== 'USED' && (
+                        <button onClick={() => updateSerialStatus(s.id, 'USED')} className="text-on-surface-variant hover:text-signal-orange underline mr-3">
+                          Mark Used
+                        </button>
+                      )}
+                      {s.status !== 'REVOKED' && (
+                        <button onClick={() => updateSerialStatus(s.id, 'REVOKED')} className="text-error hover:text-error/80 underline">
+                          Revoke
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
