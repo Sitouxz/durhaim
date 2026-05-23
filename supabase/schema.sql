@@ -93,7 +93,7 @@ VALUES
     'DURABILITY HARD IMPACT & MODULAR',
     1850000,
     (SELECT id FROM public.categories WHERE slug = 'vest'),
-    ARRAY['https://lh3.googleusercontent.com/aida/ADBb0uhHmarY6x8tQQajILZYGhdMrE_-8N5sRpGivbjfVr7JV1GKgh1VPOJ5UwwZq8boGUAATN8Qo2TJt70_N3aFkd0KyOTZdkRBzyUxSj2dm9l1ZquJ2XLAk_BfM1vXPEdXbeOy3ZRiMPtCuihStQPqlz-Ljk89EELaFmWl1P5VsCg2rZ5Tgknyxr3uqk4ZdS-STDpVubokBOe0xfV1lk0DyQ6J3FtvcnBqUk1-fyua1f5e22SHPkccNAigEb-M'],
+    ARRAY['/images/29_VC-1.png'],
     true
   ),
   (
@@ -102,7 +102,7 @@ VALUES
     'PERFECT FOR CARRYING YOUR EQUIPMENT',
     1250000,
     (SELECT id FROM public.categories WHERE slug = 'pack'),
-    ARRAY['https://lh3.googleusercontent.com/aida/ADBb0uiJ-0dldTUMcqTvYSs4D2qAbjpDJQUr1-nPktRvlp2KIzJkPY6OUjsjU7jtBcOMDLls2lxCoX8DdrqcJOVZ-SaP5Yxj2W0LZo3R0Wf03VwUSnWBlUfRTBOsMQdAPm4DdS9G-QksTMT-qMn50Zo5D7WaKpB7okI3X0r5vkblC2RlaxER_YVu-AoV7tJpTOL7d59f_eqEQyNdrY6eLdJvUDITW3mYc-iOy0r_MDFWHF8x3Ayuz_EkEfG5Kso'],
+    ARRAY['/images/31_PP-1.png'],
     true
   ),
   (
@@ -111,7 +111,7 @@ VALUES
     'IT''S ALL ABOUT THE WAIST',
     850000,
     (SELECT id FROM public.categories WHERE slug = 'belt'),
-    ARRAY['https://lh3.googleusercontent.com/aida/ADBb0uiGfLUwNlkyOM4_t7brXJ7tRUTTlJpCltHvq0-kb43jSMjb2P8nA8rI7yeAqXqA1l0A2NKuMA_g7ZGZRMZsdoWwXws8auj2Vx9W47RF88WNrVdVck5TfFTMrdA2Csu_6-Gp5nlSPZeUk1h0OJ00Hxh9T-PStsy_SHG4JWoqe_Q34Xg3EA0-40b71L7fOfkBfgaDUrLeKyBWIaSyBkBRKMUIbXiIBHGz_dHG7Hy2SzHjGsBxZ-PrtvxTLSPn'],
+    ARRAY['/images/33_B-1.png'],
     true
   )
 ON CONFLICT (slug) DO UPDATE SET
