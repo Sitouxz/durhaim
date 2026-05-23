@@ -24,7 +24,35 @@ export async function GET() {
       throw error;
     }
 
-    return NextResponse.json(data);
+    const productIds = (data ?? []).map((product) => product.id);
+    const { data: serialRows, error: serialsError } = productIds.length > 0
+      ? await supabase
+          .from('serial_numbers')
+          .select('product_id')
+          .in('product_id', productIds)
+      : { data: [], error: null };
+
+    if (serialsError) {
+      if (isMissingSchemaError(serialsError)) {
+        return NextResponse.json(
+          { error: 'Database schema is not installed. Apply supabase/schema.sql.' },
+          { status: 503 },
+        );
+      }
+
+      throw serialsError;
+    }
+
+    const serialCounts = new Map<string, number>();
+    for (const serial of serialRows ?? []) {
+      const productId = String(serial.product_id);
+      serialCounts.set(productId, (serialCounts.get(productId) ?? 0) + 1);
+    }
+
+    return NextResponse.json((data ?? []).map((product) => ({
+      ...product,
+      serial_count: serialCounts.get(product.id) ?? 0,
+    })));
   } catch (error) {
     console.error('Error fetching admin products:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -143,6 +171,62 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error updating product:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = createAdminClient();
+    const { searchParams } = new URL(req.url);
+    const productId = searchParams.get('id');
+
+    if (!productId) {
+      return NextResponse.json({ error: 'Product id is required.' }, { status: 400 });
+    }
+
+    const { count, error: serialsError } = await supabase
+      .from('serial_numbers')
+      .select('id', { count: 'exact', head: true })
+      .eq('product_id', productId);
+
+    if (serialsError) {
+      if (isMissingSchemaError(serialsError)) {
+        return NextResponse.json(
+          { error: 'Database schema is not installed. Apply supabase/schema.sql.' },
+          { status: 503 },
+        );
+      }
+
+      throw serialsError;
+    }
+
+    if ((count ?? 0) > 0) {
+      return NextResponse.json(
+        { error: 'Product is tied to QR serials and cannot be deleted.' },
+        { status: 409 },
+      );
+    }
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+
+    if (error) {
+      if (isMissingSchemaError(error)) {
+        return NextResponse.json(
+          { error: 'Database schema is not installed. Apply supabase/schema.sql.' },
+          { status: 503 },
+        );
+      }
+
+      throw error;
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

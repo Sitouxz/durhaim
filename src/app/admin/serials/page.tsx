@@ -1,7 +1,7 @@
 'use client';
 
-import { Plus, Search, Filter, Download } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { Plus, Search, Filter, Download, RotateCcw, CalendarDays, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
@@ -23,35 +23,210 @@ type Serial = {
   } | { id: string; name: string }[] | null;
 };
 
+type SerialFilters = {
+  search: string;
+  statusFilter: string;
+  productId: string;
+  dateFrom: string;
+  dateTo: string;
+  minScans: string;
+  maxScans: string;
+};
+
+type SerialPagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+type SerialListResponse = {
+  data: Serial[];
+  pagination: SerialPagination;
+};
+
+type SortField = 'serial' | 'product' | 'status' | 'scans' | 'generated';
+type SortDirection = 'asc' | 'desc';
+type QrExportScope = 'SELECTED_SERIALS' | 'CURRENT_PAGE_SERIALS' | 'ALL_FILTERED_SERIALS';
+type ExportAction = '' | 'CSV' | 'QR_PDF' | 'QR_PNG';
+
+const defaultFilters: SerialFilters = {
+  search: '',
+  statusFilter: 'ALL',
+  productId: 'ALL',
+  dateFrom: '',
+  dateTo: '',
+  minScans: '',
+  maxScans: '',
+};
+
+const ALL_DURHAIM_PRODUCTS = 'ALL_DURHAIM_PRODUCTS';
+const ALL_FILTERED_SERIALS: QrExportScope = 'ALL_FILTERED_SERIALS';
+
+type DateFilterInputProps = {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+type SortableHeaderProps = {
+  label: string;
+  field: SortField;
+  activeSortBy: SortField;
+  sortDirection: SortDirection;
+  onSort: (field: SortField) => void;
+  align?: 'left' | 'right';
+};
+
+function SortableHeader({ label, field, activeSortBy, sortDirection, onSort, align = 'left' }: SortableHeaderProps) {
+  const isActive = field === activeSortBy;
+  const Icon = !isActive ? ArrowUpDown : sortDirection === 'asc' ? ArrowUp : ArrowDown;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(field)}
+      className={`flex w-full items-center gap-2 font-label-caps uppercase transition-colors hover:text-signal-orange ${
+        isActive ? 'text-signal-orange' : 'text-on-surface-variant'
+      } ${align === 'right' ? 'justify-end' : 'justify-start'}`}
+      aria-label={`Sort by ${label.toLowerCase()} ${isActive && sortDirection === 'asc' ? 'descending' : 'ascending'}`}
+    >
+      <span>{label}</span>
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+    </button>
+  );
+}
+
+function DateFilterInput({ id, label, value, onChange }: DateFilterInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
+
+    if (pickerInput.showPicker) {
+      pickerInput.showPicker();
+      return;
+    }
+
+    input.focus();
+  };
+
+  return (
+    <label htmlFor={id} className="space-y-1">
+      <span className="block font-label-caps text-on-surface-variant">{label}</span>
+      <div className="flex border border-surface-container-highest bg-tactical-black focus-within:border-signal-orange">
+        <input
+          ref={inputRef}
+          id={id}
+          type="date"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-stark-white font-data-mono focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={openPicker}
+          className="flex w-11 items-center justify-center border-l border-surface-container-highest text-on-surface-variant hover:text-signal-orange transition-colors"
+          aria-label={`Open ${label.toLowerCase()} date picker`}
+        >
+          <CalendarDays className="h-4 w-4" />
+        </button>
+      </div>
+    </label>
+  );
+}
+
 export default function SerialsPage() {
   const [serials, setSerials] = useState<Serial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [pagination, setPagination] = useState<SerialPagination>({
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    totalPages: 1,
+  });
+  const [sortBy, setSortBy] = useState<SortField>('generated');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [productId, setProductId] = useState('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [minScans, setMinScans] = useState('');
+  const [maxScans, setMaxScans] = useState('');
+  const [selectedSerialIds, setSelectedSerialIds] = useState<string[]>([]);
+  const [qrExportScope, setQrExportScope] = useState<QrExportScope>('SELECTED_SERIALS');
+  const [qrLayoutColumns, setQrLayoutColumns] = useState(3);
+  const [qrLayoutRows, setQrLayoutRows] = useState(3);
+  const [exportAction, setExportAction] = useState<ExportAction>('');
+  const [isExportingQr, setIsExportingQr] = useState(false);
   const [error, setError] = useState('');
 
   // Modal state
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(ALL_DURHAIM_PRODUCTS);
   const [generateCount, setGenerateCount] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const fetchSerials = useCallback(async (searchQuery = '', nextStatus = 'ALL') => {
+  const fetchSerials = useCallback(async (
+    filters: SerialFilters = defaultFilters,
+    nextPage = 1,
+    nextPageSize = 25,
+    nextSortBy: SortField = 'generated',
+    nextSortDirection: SortDirection = 'desc',
+  ) => {
     setLoading(true);
     setError('');
     try {
       const url = new URL('/api/admin/serials', window.location.origin);
-      if (searchQuery) url.searchParams.set('search', searchQuery);
-      if (nextStatus !== 'ALL') url.searchParams.set('status', nextStatus);
+      url.searchParams.set('page', String(nextPage));
+      url.searchParams.set('pageSize', String(nextPageSize));
+      url.searchParams.set('sortBy', nextSortBy);
+      url.searchParams.set('sortDirection', nextSortDirection);
+      if (filters.search.trim()) url.searchParams.set('search', filters.search.trim());
+      if (filters.statusFilter !== 'ALL') url.searchParams.set('status', filters.statusFilter);
+      if (filters.productId !== 'ALL') url.searchParams.set('productId', filters.productId);
+      if (filters.dateFrom) url.searchParams.set('dateFrom', filters.dateFrom);
+      if (filters.dateTo) url.searchParams.set('dateTo', filters.dateTo);
+      if (filters.minScans) url.searchParams.set('minScans', filters.minScans);
+      if (filters.maxScans) url.searchParams.set('maxScans', filters.maxScans);
       const res = await fetch(url.toString());
       if (res.ok) {
-        const data = await res.json();
-        setSerials(data);
+        const data: SerialListResponse | Serial[] = await res.json();
+        const nextSerials = Array.isArray(data) ? data : data.data;
+        const nextPagination = Array.isArray(data)
+          ? {
+              page: nextPage,
+              pageSize: nextPageSize,
+              total: nextSerials.length,
+              totalPages: 1,
+            }
+          : data.pagination;
+
+        setSerials(nextSerials);
+        setPagination(nextPagination);
+        setCurrentPage(nextPagination.page);
+        setPageSize(nextPagination.pageSize);
+        setSortBy(nextSortBy);
+        setSortDirection(nextSortDirection);
+        setSelectedSerialIds((current) => current.filter((id) => nextSerials.some((serial: Serial) => serial.id === id)));
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'Failed to load serial numbers.');
         setSerials([]);
+        setPagination({
+          page: nextPage,
+          pageSize: nextPageSize,
+          total: 0,
+          totalPages: 1,
+        });
+        setSelectedSerialIds([]);
       }
     } catch (e) {
       console.error(e);
@@ -66,7 +241,6 @@ export default function SerialsPage() {
       if (res.ok) {
         const data = await res.json();
         setProducts(data);
-        if (data.length > 0) setSelectedProduct(data[0].id);
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'Failed to load products for serial generation.');
@@ -77,18 +251,86 @@ export default function SerialsPage() {
   };
 
   useEffect(() => {
-    fetchSerials();
+    fetchSerials(defaultFilters, 1, 25, 'generated', 'desc');
     fetchProducts();
   }, [fetchSerials]);
 
+  const selectedSerialIdSet = useMemo(() => new Set(selectedSerialIds), [selectedSerialIds]);
+
+  const selectedSerials = useMemo(
+    () => serials.filter((serial) => selectedSerialIdSet.has(serial.id)),
+    [serials, selectedSerialIdSet],
+  );
+
+  const qrExportCount = qrExportScope === 'SELECTED_SERIALS'
+    ? selectedSerials.length
+    : qrExportScope === 'CURRENT_PAGE_SERIALS'
+      ? serials.length
+      : pagination.total;
+
+  const allVisibleSelected = serials.length > 0 && serials.every((serial) => selectedSerialIdSet.has(serial.id));
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchSerials(search, statusFilter);
+    fetchSerials({ search, statusFilter, productId, dateFrom, dateTo, minScans, maxScans }, 1, pageSize, sortBy, sortDirection);
   };
 
   const handleStatusFilter = (nextStatus: string) => {
     setStatusFilter(nextStatus);
-    fetchSerials(search, nextStatus);
+    fetchSerials({ search, statusFilter: nextStatus, productId, dateFrom, dateTo, minScans, maxScans }, 1, pageSize, sortBy, sortDirection);
+  };
+
+  const toggleSerialSelection = (id: string) => {
+    setSelectedSerialIds((current) => (
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id]
+    ));
+  };
+
+  const toggleAllVisibleSerials = () => {
+    setSelectedSerialIds((current) => {
+      if (allVisibleSelected) {
+        const visibleIds = new Set(serials.map((serial) => serial.id));
+        return current.filter((id) => !visibleIds.has(id));
+      }
+
+      return Array.from(new Set([...current, ...serials.map((serial) => serial.id)]));
+    });
+  };
+
+  const resetFilters = () => {
+    setSearch('');
+    setStatusFilter('ALL');
+    setProductId('ALL');
+    setDateFrom('');
+    setDateTo('');
+    setMinScans('');
+    setMaxScans('');
+    setSelectedSerialIds([]);
+    fetchSerials(defaultFilters, 1, pageSize, sortBy, sortDirection);
+  };
+
+  const buildSerialsUrl = (
+    filters: SerialFilters,
+    nextPage: number,
+    nextPageSize: number,
+    nextSortBy: SortField,
+    nextSortDirection: SortDirection,
+  ) => {
+    const url = new URL('/api/admin/serials', window.location.origin);
+    url.searchParams.set('page', String(nextPage));
+    url.searchParams.set('pageSize', String(nextPageSize));
+    url.searchParams.set('sortBy', nextSortBy);
+    url.searchParams.set('sortDirection', nextSortDirection);
+    if (filters.search.trim()) url.searchParams.set('search', filters.search.trim());
+    if (filters.statusFilter !== 'ALL') url.searchParams.set('status', filters.statusFilter);
+    if (filters.productId !== 'ALL') url.searchParams.set('productId', filters.productId);
+    if (filters.dateFrom) url.searchParams.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) url.searchParams.set('dateTo', filters.dateTo);
+    if (filters.minScans) url.searchParams.set('minScans', filters.minScans);
+    if (filters.maxScans) url.searchParams.set('maxScans', filters.maxScans);
+    return url;
   };
 
   const exportCsv = () => {
@@ -110,49 +352,80 @@ export default function SerialsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadBulkQR = async () => {
-    if (serials.length === 0) {
-      alert('No serials available to download. Adjust filters or generate serials first.');
+  const fetchAllMatchingSerials = async () => {
+    const allSerials: Serial[] = [];
+    const fetchPageSize = 100;
+    let nextPage = 1;
+    let totalPages = 1;
+
+    while (nextPage <= totalPages) {
+      const url = buildSerialsUrl(getCurrentFilters(), nextPage, fetchPageSize, sortBy, sortDirection);
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to load all serials for QR export.');
+      }
+
+      const data: SerialListResponse = await res.json();
+      allSerials.push(...data.data);
+      totalPages = data.pagination.totalPages;
+      nextPage += 1;
+    }
+
+    return allSerials;
+  };
+
+  const getQrSerials = async (targetSerials?: Serial[] | React.MouseEvent<HTMLButtonElement>) => {
+    if (Array.isArray(targetSerials)) return targetSerials;
+    if (qrExportScope === 'CURRENT_PAGE_SERIALS') return serials;
+    if (qrExportScope === ALL_FILTERED_SERIALS) return fetchAllMatchingSerials();
+    return selectedSerials;
+  };
+
+  const getQrLayout = () => ({
+    columns: Math.max(1, Math.min(40, Math.floor(qrLayoutColumns) || 1)),
+    rows: Math.max(1, Math.min(60, Math.floor(qrLayoutRows) || 1)),
+  });
+
+  const downloadBulkQR = async (targetSerials: Serial[] | React.MouseEvent<HTMLButtonElement> = selectedSerials) => {
+    setIsExportingQr(true);
+    const qrSerials = await getQrSerials(targetSerials);
+
+    if (qrSerials.length === 0) {
+      alert('Select one or more serials to download as QR labels.');
+      setIsExportingQr(false);
       return;
     }
 
     try {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 12;
-      const columns = 2;
-      const labelWidth = (pageWidth - margin * 2) / columns;
-      const labelHeight = 82;
-      const qrSize = 38;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 2;
+      const qrGap = 1;
+      const { columns, rows } = getQrLayout();
+      const cellWidth = (pageWidth - margin * 2 - qrGap * (columns - 1)) / columns;
+      const cellHeight = (pageHeight - margin * 2 - qrGap * (rows - 1)) / rows;
+      const qrSize = Math.min(cellWidth, cellHeight);
+      const qrPerPage = columns * rows;
 
-      for (let index = 0; index < serials.length; index++) {
-        if (index > 0 && index % 6 === 0) {
+      for (let index = 0; index < qrSerials.length; index++) {
+        if (index > 0 && index % qrPerPage === 0) {
           pdf.addPage();
         }
 
-        const pageIndex = index % 6;
+        const pageIndex = index % qrPerPage;
         const col = pageIndex % columns;
         const row = Math.floor(pageIndex / columns);
-        const x = margin + col * labelWidth;
-        const y = margin + row * labelHeight;
-        const serial = serials[index];
-        const productName = getProductName(serial.products);
+        const cellX = margin + col * (cellWidth + qrGap);
+        const cellY = margin + row * (cellHeight + qrGap);
+        const x = cellX + (cellWidth - qrSize) / 2;
+        const y = cellY + (cellHeight - qrSize) / 2;
+        const serial = qrSerials[index];
         const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
-        const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 320, margin: 2 });
+        const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 512, margin: 0 });
 
-        pdf.setDrawColor(40, 40, 40);
-        pdf.rect(x + 2, y + 2, labelWidth - 4, labelHeight - 6);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(14);
-        pdf.text('DURHAIM', x + labelWidth / 2, y + 11, { align: 'center' });
-        pdf.addImage(dataUrl, 'PNG', x + (labelWidth - qrSize) / 2, y + 15, qrSize, qrSize);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(9);
-        pdf.text(serial.serial, x + labelWidth / 2, y + 60, { align: 'center' });
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(7);
-        pdf.text(productName.slice(0, 42), x + labelWidth / 2, y + 67, { align: 'center' });
-        pdf.text('Scan to Verify Authenticity', x + labelWidth / 2, y + 74, { align: 'center' });
+        pdf.addImage(dataUrl, 'PNG', x, y, qrSize, qrSize);
       }
 
       const date = new Date().toISOString().slice(0, 10);
@@ -160,6 +433,74 @@ export default function SerialsPage() {
     } catch (e) {
       console.error(e);
       alert('Error generating bulk QR PDF.');
+    } finally {
+      setIsExportingQr(false);
+    }
+  };
+
+  const downloadQrPng = async (targetSerials?: Serial[] | React.MouseEvent<HTMLButtonElement>) => {
+    setIsExportingQr(true);
+
+    try {
+      const qrSerials = await getQrSerials(targetSerials);
+      if (qrSerials.length === 0) {
+        alert('Select one or more serials to download as QR PNG sheets.');
+        return;
+      }
+
+      const { columns, rows } = getQrLayout();
+      const qrPerPage = columns * rows;
+      const sheetWidth = 2480;
+      const sheetHeight = 3508;
+      const margin = 24;
+      const qrGap = 8;
+      const cellWidth = (sheetWidth - margin * 2 - qrGap * (columns - 1)) / columns;
+      const cellHeight = (sheetHeight - margin * 2 - qrGap * (rows - 1)) / rows;
+      const qrSize = Math.floor(Math.min(cellWidth, cellHeight));
+      const date = new Date().toISOString().slice(0, 10);
+
+      for (let pageIndex = 0; pageIndex < Math.ceil(qrSerials.length / qrPerPage); pageIndex++) {
+        const pageSerials = qrSerials.slice(pageIndex * qrPerPage, (pageIndex + 1) * qrPerPage);
+        const canvas = document.createElement('canvas');
+        canvas.width = sheetWidth;
+        canvas.height = sheetHeight;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Could not create QR PNG canvas.');
+
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, sheetWidth, sheetHeight);
+
+        for (let index = 0; index < pageSerials.length; index++) {
+          const serial = pageSerials[index];
+          const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
+          const dataUrl = await QRCode.toDataURL(verifyUrl, { width: qrSize, margin: 0 });
+          const image = new Image();
+          await new Promise<void>((resolve, reject) => {
+            image.onload = () => resolve();
+            image.onerror = () => reject(new Error('Could not load generated QR image.'));
+            image.src = dataUrl;
+          });
+
+          const col = index % columns;
+          const row = Math.floor(index / columns);
+          const cellX = margin + col * (cellWidth + qrGap);
+          const cellY = margin + row * (cellHeight + qrGap);
+          const x = cellX + (cellWidth - qrSize) / 2;
+          const y = cellY + (cellHeight - qrSize) / 2;
+          context.drawImage(image, x, y, qrSize, qrSize);
+        }
+
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `durhaim-qr-sheet-${date}-${pageIndex + 1}.png`;
+        a.click();
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error generating QR PNG sheet.');
+    } finally {
+      setIsExportingQr(false);
     }
   };
 
@@ -176,7 +517,7 @@ export default function SerialsPage() {
       });
       if (res.ok) {
         setShowGenerateModal(false);
-        fetchSerials(search, statusFilter);
+        fetchSerials({ search, statusFilter, productId, dateFrom, dateTo, minScans, maxScans }, currentPage, pageSize, sortBy, sortDirection);
       } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error || "Failed to generate serials.");
@@ -198,7 +539,7 @@ export default function SerialsPage() {
         body: JSON.stringify({ serialId: id, status })
       });
       if (res.ok) {
-        fetchSerials(search, statusFilter);
+        fetchSerials({ search, statusFilter, productId, dateFrom, dateTo, minScans, maxScans }, currentPage, pageSize, sortBy, sortDirection);
       } else {
         const data = await res.json().catch(() => ({}));
         alert(data.error || 'Failed to update serial status.');
@@ -231,7 +572,7 @@ export default function SerialsPage() {
 
     try {
       const verifyUrl = `${window.location.origin}/verify/${serial}`;
-      const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 300, margin: 2 });
+      const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 1024, margin: 0 });
 
       printWindow.document.open();
       printWindow.document.write(`
@@ -239,12 +580,14 @@ export default function SerialsPage() {
           <head>
             <title>Print QR - ${serial}</title>
             <style>
-              body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: monospace; background: white; color: black; }
-              .label { text-align: center; border: 2px solid black; padding: 20px; max-width: 400px; }
-              .logo { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
-              img { width: 250px; height: 250px; }
-              .serial { font-size: 18px; margin-top: 10px; font-weight: bold; letter-spacing: 2px; }
-              @media print { body { height: auto; } .label { border: none; } }
+              html, body { width: 100%; height: 100%; margin: 0; background: white; }
+              body { display: flex; justify-content: center; align-items: center; }
+              .label { width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+              img { display: block; width: 100%; height: 100%; object-fit: contain; }
+              @media print {
+                @page { margin: 2mm; }
+                html, body, .label { width: 100%; height: 100%; }
+              }
             </style>
           </head>
           <body></body>
@@ -255,10 +598,6 @@ export default function SerialsPage() {
       const label = printWindow.document.createElement('div');
       label.className = 'label';
 
-      const logo = printWindow.document.createElement('div');
-      logo.className = 'logo';
-      logo.textContent = 'DURHAIM';
-
       const qrImage = printWindow.document.createElement('img');
       qrImage.alt = `QR code for ${serial}`;
       qrImage.onload = () => {
@@ -266,16 +605,7 @@ export default function SerialsPage() {
         setTimeout(() => printWindow.print(), 100);
       };
 
-      const serialText = printWindow.document.createElement('div');
-      serialText.className = 'serial';
-      serialText.textContent = serial;
-
-      const caption = printWindow.document.createElement('div');
-      caption.style.fontSize = '12px';
-      caption.style.marginTop = '5px';
-      caption.textContent = 'Scan to Verify Authenticity';
-
-      label.append(logo, qrImage, serialText, caption);
+      label.append(qrImage);
       printWindow.document.body.replaceChildren(label);
       qrImage.src = dataUrl;
     } catch (e) {
@@ -290,6 +620,55 @@ export default function SerialsPage() {
     if (prod && !Array.isArray(prod) && 'name' in prod) return prod.name;
     return 'Unknown';
   };
+
+  const getCurrentFilters = (): SerialFilters => ({
+    search,
+    statusFilter,
+    productId,
+    dateFrom,
+    dateTo,
+    minScans,
+    maxScans,
+  });
+
+  const goToPage = (page: number) => {
+    const targetPage = Math.min(Math.max(page, 1), pagination.totalPages);
+    if (targetPage === currentPage || loading) return;
+
+    fetchSerials(getCurrentFilters(), targetPage, pageSize, sortBy, sortDirection);
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setSelectedSerialIds([]);
+    fetchSerials(getCurrentFilters(), 1, nextPageSize, sortBy, sortDirection);
+  };
+
+  const handleSort = (field: SortField) => {
+    const nextDirection: SortDirection = field === sortBy && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSelectedSerialIds([]);
+    fetchSerials(getCurrentFilters(), 1, pageSize, field, nextDirection);
+  };
+
+  const handleExportAction = async (action: ExportAction) => {
+    setExportAction(action);
+
+    if (action === 'CSV') {
+      exportCsv();
+    }
+
+    if (action === 'QR_PDF') {
+      await downloadBulkQR();
+    }
+
+    if (action === 'QR_PNG') {
+      await downloadQrPng();
+    }
+
+    setExportAction('');
+  };
+
+  const pageStart = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.pageSize + 1;
+  const pageEnd = Math.min(pagination.page * pagination.pageSize, pagination.total);
 
   return (
     <div className="space-y-stack-lg animate-in fade-in duration-500 relative">
@@ -315,64 +694,166 @@ export default function SerialsPage() {
 
       <div className="bg-charcoal-field border border-surface-container-highest">
         {/* Toolbar */}
-        <div className="p-4 border-b border-surface-container-highest flex flex-col sm:flex-row gap-4 justify-between">
-          <form onSubmit={handleSearch} className="flex flex-1 max-w-md bg-tactical-black border border-surface-container-highest px-3 py-2">
-            <Search className="w-5 h-5 text-on-surface-variant mr-2" />
-            <input
-              type="text"
-              placeholder="Search serials..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent border-none text-stark-white font-data-mono w-full focus:outline-none"
-            />
-          </form>
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(event) => handleStatusFilter(event.target.value)}
-              className="border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors font-label-caps"
-            >
-              <option value="ALL">ALL STATUS</option>
-              <option value="INACTIVE">UNACTIVATED</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="REVOKED">REVOKED</option>
-            </select>
-            <button type="button" onClick={() => fetchSerials(search, statusFilter)} className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
+        <form onSubmit={handleSearch} className="p-4 border-b border-surface-container-highest space-y-3">
+          <div className="flex flex-col xl:flex-row gap-3 justify-between">
+            <div className="flex flex-1 min-w-0 bg-tactical-black border border-surface-container-highest px-3 py-2">
+              <Search className="w-5 h-5 text-on-surface-variant mr-2 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search serials..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent border-none text-stark-white font-data-mono w-full focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <select
+                value={statusFilter}
+                onChange={(event) => handleStatusFilter(event.target.value)}
+                className="border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors font-label-caps"
+              >
+                <option value="ALL">ALL STATUS</option>
+                <option value="INACTIVE">UNACTIVATED</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="REVOKED">REVOKED</option>
+              </select>
+              <select
+                value={productId}
+                onChange={(event) => setProductId(event.target.value)}
+                className="border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors font-label-caps"
+              >
+                <option value="ALL">ALL PRODUCTS</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>{product.name}</option>
+                ))}
+              </select>
+              <div className="flex items-center border border-surface-container-highest bg-tactical-black text-on-surface-variant transition-colors focus-within:border-signal-orange hover:text-signal-orange">
+                <Download className="ml-3 h-4 w-4 shrink-0" />
+                <select
+                  value={exportAction}
+                  onChange={(event) => handleExportAction(event.target.value as ExportAction)}
+                  disabled={isExportingQr}
+                  className="min-w-[9.5rem] bg-transparent px-3 py-2 font-label-caps text-current focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Export serial data or QR sheets"
+                >
+                  <option value="">EXPORT</option>
+                  <option value="CSV">CSV</option>
+                  <option value="QR_PDF" disabled={qrExportCount === 0}>QR PDF ({qrExportCount})</option>
+                  <option value="QR_PNG" disabled={qrExportCount === 0}>QR PNG ({qrExportCount})</option>
+                </select>
+              </div>
+              <select
+                value={qrExportScope}
+                onChange={(event) => setQrExportScope(event.target.value as QrExportScope)}
+                className="border border-surface-container-highest bg-tactical-black px-3 py-2 text-on-surface-variant hover:text-signal-orange transition-colors font-label-caps"
+                aria-label="QR export scope"
+              >
+                <option value="SELECTED_SERIALS">SELECTED</option>
+                <option value="CURRENT_PAGE_SERIALS">CURRENT PAGE</option>
+                <option value={ALL_FILTERED_SERIALS}>ALL MATCHING</option>
+              </select>
+              <label className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-3 py-2 text-on-surface-variant font-label-caps">
+                <span>COLS</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="40"
+                  value={qrLayoutColumns}
+                  onChange={(event) => setQrLayoutColumns(Number(event.target.value))}
+                  className="w-14 bg-transparent text-stark-white font-data-mono focus:outline-none"
+                  aria-label="QR layout columns"
+                />
+              </label>
+              <label className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-3 py-2 text-on-surface-variant font-label-caps">
+                <span>ROWS</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={qrLayoutRows}
+                  onChange={(event) => setQrLayoutRows(Number(event.target.value))}
+                  className="w-14 bg-transparent text-stark-white font-data-mono focus:outline-none"
+                  aria-label="QR layout rows"
+                />
+              </label>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto_auto] xl:items-end">
+            <DateFilterInput id="generated-from" label="Generated From" value={dateFrom} onChange={setDateFrom} />
+            <DateFilterInput id="generated-to" label="Generated To" value={dateTo} onChange={setDateTo} />
+            <label className="space-y-1">
+              <span className="block font-label-caps text-on-surface-variant">Minimum Scans</span>
+              <input type="number" min="0" value={minScans} onChange={(event) => setMinScans(event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black px-3 py-2 text-stark-white font-data-mono" />
+            </label>
+            <label className="space-y-1">
+              <span className="block font-label-caps text-on-surface-variant">Maximum Scans</span>
+              <input type="number" min="0" value={maxScans} onChange={(event) => setMaxScans(event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black px-3 py-2 text-stark-white font-data-mono" />
+            </label>
+            <button type="submit" className="flex h-[44px] items-center justify-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
               <Filter className="w-4 h-4" />
               <span className="font-label-caps">FILTER</span>
             </button>
-            <button type="button" onClick={exportCsv} className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
-              <Download className="w-4 h-4" />
-              <span className="font-label-caps">EXPORT</span>
-            </button>
-            <button type="button" onClick={downloadBulkQR} className="flex items-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
-              <Download className="w-4 h-4" />
-              <span className="font-label-caps">QR PDF</span>
+            <button type="button" onClick={resetFilters} className="flex h-[44px] items-center justify-center gap-2 border border-surface-container-highest bg-tactical-black px-4 py-2 text-on-surface-variant hover:text-signal-orange transition-colors">
+              <RotateCcw className="w-4 h-4" />
+              <span className="font-label-caps whitespace-nowrap">RESET ALL FILTERS</span>
             </button>
           </div>
-        </div>
+        </form>
 
         {/* Data Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-surface-container-highest bg-surface-container-lowest">
-                <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase">Serial Code</th>
-                <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase">Product</th>
-                <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase">Status</th>
-                <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase">Scans</th>
-                <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase">Generated</th>
+                <th className="py-3 px-4">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleAllVisibleSerials}
+                    aria-label="Select all visible serials"
+                    className="h-4 w-4 accent-signal-orange"
+                  />
+                </th>
+                <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase">No.</th>
+                <th className="py-3 px-4">
+                  <SortableHeader label="Serial Code" field="serial" activeSortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="py-3 px-4">
+                  <SortableHeader label="Product" field="product" activeSortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="py-3 px-4">
+                  <SortableHeader label="Status" field="status" activeSortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="py-3 px-4">
+                  <SortableHeader label="Scans" field="scans" activeSortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                </th>
+                <th className="py-3 px-4">
+                  <SortableHeader label="Generated" field="generated" activeSortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                </th>
                 <th className="font-label-caps text-on-surface-variant py-3 px-4 uppercase text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="font-data-mono text-sm text-stark-white">
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-on-surface-variant">Loading serials...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-on-surface-variant">Loading serials...</td></tr>
               ) : serials.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-on-surface-variant">No serials found.</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-on-surface-variant">No serials found.</td></tr>
               ) : (
-                serials.map(s => (
+                serials.map((s, index) => {
+                  const rowNumber = pageStart + index;
+
+                  return (
                   <tr key={s.id} className="border-b border-surface-container-highest/50 hover:bg-surface-container-highest/30">
+                    <td className="py-3 px-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedSerialIdSet.has(s.id)}
+                        onChange={() => toggleSerialSelection(s.id)}
+                        aria-label={`Select serial ${s.serial}`}
+                        className="h-4 w-4 accent-signal-orange"
+                      />
+                    </td>
+                    <td className="py-3 px-4 text-on-surface-variant">{rowNumber}</td>
                     <td className="py-3 px-4 text-signal-orange">{s.serial}</td>
                     <td className="py-3 px-4">{getProductName(s.products)}</td>
                     <td className="py-3 px-4">
@@ -401,10 +882,55 @@ export default function SerialsPage() {
                       )}
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-surface-container-highest bg-surface-container-lowest px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="font-data-mono text-sm text-on-surface-variant">
+            Showing <span className="text-stark-white">{pageStart}</span>-<span className="text-stark-white">{pageEnd}</span> of <span className="text-stark-white">{pagination.total}</span> serials
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="flex items-center gap-2 font-label-caps text-on-surface-variant">
+              Rows
+              <select
+                value={pageSize}
+                onChange={(event) => handlePageSizeChange(Number(event.target.value))}
+                disabled={loading}
+                className="border border-surface-container-highest bg-tactical-black px-3 py-2 text-stark-white font-data-mono disabled:opacity-50"
+                aria-label="Rows per page"
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={loading || currentPage <= 1}
+                className="flex h-10 w-10 items-center justify-center border border-surface-container-highest bg-tactical-black text-on-surface-variant transition-colors hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="min-w-[8rem] text-center font-data-mono text-sm text-on-surface-variant">
+                Page <span className="text-stark-white">{pagination.page}</span> / <span className="text-stark-white">{pagination.totalPages}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={loading || currentPage >= pagination.totalPages}
+                className="flex h-10 w-10 items-center justify-center border border-surface-container-highest bg-tactical-black text-on-surface-variant transition-colors hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -428,7 +954,7 @@ export default function SerialsPage() {
                   onChange={(e) => setSelectedProduct(e.target.value)}
                   required
                 >
-                  <option value="" disabled>Select a product...</option>
+                  <option value={ALL_DURHAIM_PRODUCTS}>All Durhaim Products</option>
                   {products.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}

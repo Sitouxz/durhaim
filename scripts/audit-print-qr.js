@@ -34,4 +34,19 @@ if (!body.includes('qrImage.onload')) {
   process.exit(1);
 }
 
+if (body.includes("logo.textContent = 'DURHAIM'") || body.includes("caption.textContent = 'Scan to Verify Authenticity'")) {
+  console.error('printQR must not include DURHAIM or Scan to Verify Authenticity text.');
+  process.exit(1);
+}
+
+if (!body.includes('width: 100%; height: 100%;') || !body.includes('@page { margin: 2mm; }')) {
+  console.error('printQR must render only a full-page QR with minimal print margin.');
+  process.exit(1);
+}
+
+if (body.includes('serialText') || body.includes('font-size: clamp(') || body.includes('white-space: nowrap')) {
+  console.error('printQR must not render serial text.');
+  process.exit(1);
+}
+
 console.log('QR print popup opens synchronously.');

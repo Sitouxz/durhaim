@@ -1,7 +1,7 @@
 'use client';
 
-import { Archive, Boxes, CheckCircle2, Edit, Plus, Search } from 'lucide-react';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Archive, Boxes, CheckCircle2, Edit, ImageUp, Plus, QrCode, Search, Trash2 } from 'lucide-react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 type CategoryRelation = { name: string; slug: string } | { name: string; slug: string }[] | null;
@@ -14,7 +14,15 @@ type Product = {
   price?: number;
   images?: string[];
   is_published?: boolean;
+  serial_count?: number;
   categories: CategoryRelation;
+};
+
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string | null;
 };
 
 type ProductForm = {
@@ -38,12 +46,8 @@ const emptyForm: ProductForm = {
   is_published: true,
 };
 
-const categories = [
-  { name: 'Vest & Chestrig', slug: 'vest' },
-  { name: 'Pack & Pouches', slug: 'pack' },
-  { name: 'Belt', slug: 'belt' },
-  { name: 'Accessories', slug: 'accessories' },
-];
+const MAX_PRODUCT_IMAGE_SIZE = 3 * 1024 * 1024;
+const ALLOWED_PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 function getCategory(category: CategoryRelation) {
   if (Array.isArray(category)) return category[0] ?? null;
@@ -81,8 +85,10 @@ function productToForm(product: Product): ProductForm {
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -108,8 +114,30 @@ export default function AdminProductsPage() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/admin/categories');
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to load categories.');
+        return;
+      }
+
+      setCategories(data);
+      setForm((current) => {
+        if (current.id || data.some((category: Category) => category.slug === current.categorySlug)) return current;
+        return { ...current, categorySlug: data[0]?.slug ?? '' };
+      });
+    } catch (fetchError) {
+      console.error('Failed to load categories:', fetchError);
+      setError('Failed to connect to categories API.');
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -125,7 +153,7 @@ export default function AdminProductsPage() {
   }, [products, query]);
 
   const openNewProductForm = () => {
-    setForm(emptyForm);
+    setForm({ ...emptyForm, categorySlug: categories[0]?.slug ?? '' });
     setMessage('');
     setShowProductForm(true);
   };
@@ -158,6 +186,57 @@ export default function AdminProductsPage() {
     images: nextForm.imageUrls.split(/\r?\n|,/).map((image) => image.trim()).filter(Boolean),
     is_published: nextForm.is_published,
   });
+
+  const appendImageUrl = (url: string) => {
+    setForm((current) => ({
+      ...current,
+      imageUrls: [current.imageUrls.trim(), url].filter(Boolean).join('\n'),
+    }));
+  };
+
+  const handleProductImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setError('');
+    setMessage('');
+
+    if (!ALLOWED_PRODUCT_IMAGE_TYPES.includes(file.type)) {
+      setError('Only JPG, PNG, WEBP, or GIF images are allowed.');
+      return;
+    }
+
+    if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+      setError('Image must be 3 MB or smaller.');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const uploadBody = new FormData();
+      uploadBody.append('image', file);
+
+      const res = await fetch('/api/admin/product-images', {
+        method: 'POST',
+        body: uploadBody,
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to upload image.');
+        return;
+      }
+
+      appendImageUrl(data.url);
+      setMessage('Image uploaded and added to product.');
+    } catch (uploadError) {
+      console.error('Failed to upload product image:', uploadError);
+      setError('Failed to connect to product image upload API.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSaveProduct = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -213,6 +292,35 @@ export default function AdminProductsPage() {
       await fetchProducts();
     } catch (saveError) {
       console.error('Failed to update product:', saveError);
+      setError('Failed to connect to products API.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async (product: Product) => {
+    if ((product.serial_count ?? 0) > 0) return;
+    if (!confirm(`Delete ${product.name}? This cannot be undone.`)) return;
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const res = await fetch(`/api/admin/products?id=${encodeURIComponent(product.id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to delete product.');
+        return;
+      }
+
+      setMessage('Product deleted.');
+      await fetchProducts();
+    } catch (deleteError) {
+      console.error('Failed to delete product:', deleteError);
       setError('Failed to connect to products API.');
     } finally {
       setSaving(false);
@@ -290,7 +398,8 @@ export default function AdminProductsPage() {
             <div>
               <label className="block font-label-caps text-on-surface-variant mb-2">Category</label>
               <select value={form.categorySlug} onChange={(event) => setField('categorySlug', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white">
-                {categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}
+                <option value="">Unassigned</option>
+                {categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
               </select>
             </div>
             <div>
@@ -304,6 +413,25 @@ export default function AdminProductsPage() {
             <div className="lg:col-span-2">
               <label className="block font-label-caps text-on-surface-variant mb-2">Image URLs</label>
               <textarea value={form.imageUrls} onChange={(event) => setField('imageUrls', event.target.value)} className="min-h-24 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="One URL per line" />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="block font-label-caps text-on-surface-variant mb-2">Upload Product Image</label>
+              <div className="flex flex-col gap-2 border border-surface-container-highest bg-tactical-black p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="font-body-md text-on-surface-variant">
+                  JPG, PNG, WEBP, or GIF. Max 3 MB.
+                </div>
+                <label className="inline-flex cursor-pointer items-center justify-center gap-2 border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">
+                  <ImageUp className="h-4 w-4" />
+                  {uploadingImage ? 'Uploading...' : 'Choose Image'}
+                  <input
+                    type="file"
+                    accept={ALLOWED_PRODUCT_IMAGE_TYPES.join(',')}
+                    onChange={handleProductImageUpload}
+                    disabled={uploadingImage || saving}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
             </div>
             <label className="flex items-center gap-3 font-label-caps text-stark-white">
               <input type="checkbox" checked={form.is_published} onChange={(event) => setField('is_published', event.target.checked)} />
@@ -353,12 +481,28 @@ export default function AdminProductsPage() {
                           <Archive className="h-3 w-3" />
                           {product.is_published === false ? 'DRAFT' : 'SERIAL READY'}
                         </span>
+                        {(product.serial_count ?? 0) > 0 && (
+                          <span className="inline-flex items-center gap-1 bg-signal-orange/15 px-2 py-1 text-xs text-signal-orange" title="This product is tied to QR serials and cannot be deleted.">
+                            <QrCode className="h-3 w-3" />
+                            Tied to QR ({product.serial_count})
+                          </span>
+                        )}
                         <button type="button" onClick={() => openEditProductForm(product)} className="inline-flex items-center gap-1 text-on-surface-variant underline hover:text-signal-orange">
                           <Edit className="h-3 w-3" />
                           Edit
                         </button>
                         <button type="button" onClick={() => togglePublished(product)} className="text-on-surface-variant underline hover:text-signal-orange">
                           {product.is_published === false ? 'Publish' : 'Unpublish'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(product)}
+                          disabled={(product.serial_count ?? 0) > 0 || saving}
+                          title={(product.serial_count ?? 0) > 0 ? 'This product is tied to QR serials and cannot be deleted.' : 'Delete product'}
+                          className="inline-flex items-center gap-1 text-error underline hover:text-error/80 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
                         </button>
                       </div>
                     </td>

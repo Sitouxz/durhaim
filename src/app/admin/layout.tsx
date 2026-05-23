@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Box, QrCode, Settings } from "lucide-react";
+import { LayoutDashboard, Box, FolderTree, QrCode, Settings } from "lucide-react";
 import AdminSignOutButton from "@/components/AdminSignOutButton";
 
 export default function AdminLayout({
@@ -30,6 +30,12 @@ export default function AdminLayout({
               <Link href="/admin/products" className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-surface-container-highest text-on-surface-variant hover:text-signal-orange transition-colors">
                 <Box className="w-5 h-5" />
                 <span className="font-label-caps uppercase">Products</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/categories" className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-surface-container-highest text-on-surface-variant hover:text-signal-orange transition-colors">
+                <FolderTree className="w-5 h-5" />
+                <span className="font-label-caps uppercase">Categories</span>
               </Link>
             </li>
             <li>

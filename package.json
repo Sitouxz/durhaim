@@ -15,9 +15,10 @@
     "audit:admin-auth": "node scripts/audit-admin-auth.js",
     "audit:print-qr": "node scripts/audit-print-qr.js",
     "audit:bulk-qr": "node scripts/audit-bulk-qr.js",
+    "audit:advanced-serials": "node scripts/audit-advanced-serials.js",
     "supabase:apply": "node scripts/apply-supabase-schema.js",
     "supabase:verify": "node scripts/verify-supabase.js",
-    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run build"
+    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:advanced-serials && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",
