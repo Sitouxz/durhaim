@@ -13,7 +13,7 @@ export default function HomePage() {
       <section
         className="py-section-gap px-margin-edge border-b border-surface-container-highest relative overflow-hidden flex justify-center items-center"
         style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuDATYlhm7_xdR5DTi_QPf4WH0ziToNojqIiQ120kACiyZDOCbV2aZzkwL8Ou6JYG9Y5l2LtfFYOKv39opyEPB-WwiPkRObeGaKt9jL1ERKq1kDwrcqoUoGbQ2xdwJpHIrFZsU2_RiHISG7zqrru11fwcYMzNj3jOV0N5o5oVlZhG6KBgcXQn53eD11OlBGvqSnuxX91I-vqizc2_2BYISl4-yjOaJf3q0He9cuTMWgtK7DEC10cQe5rhHBVPRXKuHFHGVtGhwFRG7rz')`,
+          backgroundImage: `url('/images/11_Anaconda-MCB-1.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center top',
         }}
@@ -29,7 +29,7 @@ export default function HomePage() {
       <section
         className="relative py-section-gap border-b border-surface-container-highest"
         style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAo8UV6p6WbusSQuqiuJrtYyjNGoltth0fQxxdKENfMFrtcyCPkJ4VFtvT5s8hS9z4ZVIeW7aJP2pCXDE6pJnLWKjqUCU2G9Ag4WNZbdYBl5mZahr0N9ZSstj4RqOcCVKyRF69b7O5k5zDxYRfP5b-u_85xtPaUlpyliv2PWLCkiyXuKqpz1ZoV1nQpf-9NRTvUMscco92Le2t65VjpcJM8PnwdeYusliw4pA17T4S4QYCHu9QaooZDQxC3BQ4Ac8Q3OqaUF6d-0Pa1')`,
+          backgroundImage: `url('/images/11_Anaconda-MCB-1.png')`,
           backgroundAttachment: 'fixed',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -44,7 +44,7 @@ export default function HomePage() {
               <img
                 alt="Vest and Chestrig Product Shot"
                 className="w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] mix-blend-lighten max-h-[600px]"
-                src="https://lh3.googleusercontent.com/aida/ADBb0ugO_lgPbmDYFkWLDVbDjKD0FE4xFx-UMRR1DcXuNALDK5IOa0gJ0CZ5rnjNQqUVwWoSFytuUv4q5LxRS2E7C7U9vXjCmTgDnwUSSIbI-fNPcJPIeHnmfj-KTDOG22VaJ1FWFhhvCaXLnHrFel4gs0CHkMBFjlO-R_kmcX0jO4ND8l0iQG8wIEptRaka-MwIGA2WYEkOl8PpQBUfA91lRauSYdL0KZ3LLOfjZXC7p_PIVO_LEkbiwhFru_uh"
+                src="/images/29_VC-1.png"
               />
             </div>
             <div className="order-1 md:order-2 space-y-stack-md text-right drop-shadow-lg">
@@ -81,7 +81,7 @@ export default function HomePage() {
               <img
                 alt="Pack and Pouches Product Shot"
                 className="w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] relative z-10 max-h-[600px]"
-                src="https://lh3.googleusercontent.com/aida/ADBb0ugE6WZVs_YvkVW5bR-i_stntQxKcku4MbwM1_epG5YBYvYC2EfxsG9rmBZYqRQy22otSqFi7WXQ2Uz9XQA2BMNNAhy-l5tcJ0f61myUNKFKsFZr9saxYaLC0bKkJ6_t4qAkg-f1qCJeISmMHfjGU7IZakb17ufs8UZ2jZLetfAxfiCARe6skC_W3KudJXaA8DJqwy7GhSVflH8_w8-y43zTSDvks0Mez80FEoHvkflzmcJ0XJK2bS0rwQ0j"
+                src="/images/31_PP-1.png"
               />
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function HomePage() {
               <img
                 alt="Tactical Belt Product Shot"
                 className="w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] max-h-[600px]"
-                src="https://lh3.googleusercontent.com/aida/ADBb0ugH0DqOp7gdX5Ih2Hoygn2QiMCA8pGsRac7ETXF9PXaU1fM-m6tno0kQru3tqkKJdtAwJAIyuBAbs0t1-5PXu5clMxi3ccerRs4b3oOTcqHAS4rTu30a-gpl-OAOC0dEEV7JO6DyEO6JOzjs-enrQkBLy8RCEaL2atRIpSTTUPsPeZBjDWtKJPfsQVC2rSkWrE9EIAmQstr5LOyqanZ1iGsC2TfPxD-YBjth3IsIdzR1a5DTUqUiD753b2N"
+                src="/images/33_B-1.png"
               />
             </div>
             <div className="order-1 md:order-2 space-y-stack-md text-right drop-shadow-lg">
@@ -124,7 +124,7 @@ export default function HomePage() {
                 <img
                   alt="Vest category display"
                   className="w-full h-full object-contain opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out filter grayscale group-hover:grayscale-0"
-                  src="https://lh3.googleusercontent.com/aida/ADBb0ugO_lgPbmDYFkWLDVbDjKD0FE4xFx-UMRR1DcXuNALDK5IOa0gJ0CZ5rnjNQqUVwWoSFytuUv4q5LxRS2E7C7U9vXjCmTgDnwUSSIbI-fNPcJPIeHnmfj-KTDOG22VaJ1FWFhhvCaXLnHrFel4gs0CHkMBFjlO-R_kmcX0jO4ND8l0iQG8wIEptRaka-MwIGA2WYEkOl8PpQBUfA91lRauSYdL0KZ3LLOfjZXC7p_PIVO_LEkbiwhFru_uh"
+                  src="/images/29_VC-1.png"
                 />
               </div>
               <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">VEST CHESTRIG</h4>
@@ -137,7 +137,7 @@ export default function HomePage() {
                 <img
                   alt="Pack category display"
                   className="w-full h-full object-contain opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out filter grayscale group-hover:grayscale-0"
-                  src="https://lh3.googleusercontent.com/aida/ADBb0ugE6WZVs_YvkVW5bR-i_stntQxKcku4MbwM1_epG5YBYvYC2EfxsG9rmBZYqRQy22otSqFi7WXQ2Uz9XQA2BMNNAhy-l5tcJ0f61myUNKFKsFZr9saxYaLC0bKkJ6_t4qAkg-f1qCJeISmMHfjGU7IZakb17ufs8UZ2jZLetfAxfiCARe6skC_W3KudJXaA8DJqwy7GhSVflH8_w8-y43zTSDvks0Mez80FEoHvkflzmcJ0XJK2bS0rwQ0j"
+                  src="/images/31_PP-1.png"
                 />
               </div>
               <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">PACK POUCH</h4>
@@ -150,7 +150,7 @@ export default function HomePage() {
                 <img
                   alt="Belt category display"
                   className="w-full h-full object-contain opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out filter grayscale group-hover:grayscale-0"
-                  src="https://lh3.googleusercontent.com/aida/ADBb0ugH0DqOp7gdX5Ih2Hoygn2QiMCA8pGsRac7ETXF9PXaU1fM-m6tno0kQru3tqkKJdtAwJAIyuBAbs0t1-5PXu5clMxi3ccerRs4b3oOTcqHAS4rTu30a-gpl-OAOC0dEEV7JO6DyEO6JOzjs-enrQkBLy8RCEaL2atRIpSTTUPsPeZBjDWtKJPfsQVC2rSkWrE9EIAmQstr5LOyqanZ1iGsC2TfPxD-YBjth3IsIdzR1a5DTUqUiD753b2N"
+                  src="/images/33_B-1.png"
                 />
               </div>
               <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">BELT</h4>
@@ -163,7 +163,7 @@ export default function HomePage() {
       <section
         className="relative min-h-[60vh] flex items-center bg-tactical-black overflow-hidden border-b border-surface-container-highest"
         style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuA9WRPaRf92KnmMSn2PydhFmfWCJ8fPHdTcDRRdCyu-S0YcvZbJmoDtOrBWfdavpgscmTjjLNdHO0RppcTMLcKkrcu_zgTJCv0_9zih9zxts8LXgHnLUSxncK5YLhxCtHsyNV4CkOBqOHVVgYlqYlE_OfphyUWHXjT3bbVNyhSF6q9aPjhOlse-7pr5Hz9EvCIka-gfGUW6A4oMfPn7cfXl7Hs-cR3y0AWf_gQCRk4YSFVkXRt-dvaUjP9G8wAXrFGVE0eLG8MGuLre')`,
+          backgroundImage: `url('/images/11_Anaconda-MCB-1.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
