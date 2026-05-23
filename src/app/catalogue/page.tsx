@@ -62,6 +62,7 @@ export default function CataloguePage() {
 
         const res = await fetch(`/api/products?${params.toString()}`, {
           signal: controller.signal,
+          cache: 'no-store',
         });
         const data = await res.json();
 
@@ -202,7 +203,7 @@ export default function CataloguePage() {
                     <img
                       alt={product.name}
                       className="object-contain w-full h-full max-h-[300px] group-hover:scale-105 transition-transform duration-500 z-0"
-                      src={product.images[0] || ''}
+                      src={product.images[0] ? `${product.images[0]}?v=2` : ''}
                     />
                   </div>
                   <div className="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
