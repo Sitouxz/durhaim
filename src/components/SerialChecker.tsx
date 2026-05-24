@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCommerce } from '@/components/CommerceProvider';
 
 type VerifyResult = {
   found: boolean;
@@ -14,6 +15,7 @@ type VerifyResult = {
 };
 
 export default function SerialChecker() {
+  const { language, t } = useCommerce();
   const [serial, setSerial] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
@@ -34,19 +36,36 @@ export default function SerialChecker() {
       const data = await res.json();
       setResult(data);
     } catch {
-      setResult({ found: false, message: 'Connection error. Please try again.' });
+      setResult({ found: false, message: t.serialChecker.connectionError });
     } finally {
       setLoading(false);
     }
   }
 
+  const localizedResultMessage = (() => {
+    if (!result?.message) return t.serialChecker.notRegistered;
+    if (language !== 'id') return result.message;
+
+    return {
+      'Invalid serial number': 'Nomor serial tidak valid.',
+      'Invalid serial number format': 'Format nomor serial tidak valid.',
+      'Too many verification attempts. Please try again later.': 'Terlalu banyak percobaan verifikasi. Silakan coba lagi nanti.',
+      'Database schema is not installed. Apply supabase/schema.sql.': 'Skema database belum terpasang. Hubungi admin Durhaim.',
+      'Serial number not found in our system.': 'Nomor serial tidak ditemukan di sistem kami.',
+      'This serial number has been revoked.': 'Nomor serial ini telah dicabut.',
+      'This serial number is registered but not active yet.': 'Nomor serial ini terdaftar, tetapi belum aktif.',
+      'Unable to record verification attempt.': 'Percobaan verifikasi belum dapat dicatat.',
+      'Server error. Please try again.': 'Server bermasalah. Silakan coba lagi.',
+    }[result.message] ?? result.message;
+  })();
+
   return (
     <div className="flex flex-col items-center gap-stack-md">
       {loading && (
-        <span className="font-data-mono text-data-mono text-signal-orange">...loading...</span>
+        <span className="font-data-mono text-data-mono text-signal-orange">{t.serialChecker.loading}</span>
       )}
       {!loading && !result && (
-        <span className="font-data-mono text-data-mono text-signal-orange">Enter serial number below</span>
+        <span className="font-data-mono text-data-mono text-signal-orange">{t.serialChecker.prompt}</span>
       )}
       {result && (
         <div className={`w-full max-w-md p-4 border ${
@@ -56,27 +75,27 @@ export default function SerialChecker() {
         }`}>
           {result.found ? (
             <div className="text-center">
-              <div className="font-label-caps text-label-caps text-signal-orange mb-2">✅ AUTHENTIC</div>
+              <div className="font-label-caps text-label-caps text-signal-orange mb-2">{t.serialChecker.authentic}</div>
               <p className="font-data-mono text-data-mono text-stark-white">{result.product?.name}</p>
               <Link
                 href={`/verify/${result.serial}`}
                 className="inline-block mt-3 border border-signal-orange text-signal-orange font-label-caps text-label-caps py-2 px-4 hover:bg-signal-orange hover:text-tactical-black transition-colors"
               >
-                VIEW CERTIFICATE
+                {t.serialChecker.viewCertificate}
               </Link>
             </div>
           ) : (
             <div className="text-center">
-              <div className="font-label-caps text-label-caps text-error mb-2">⚠️ SERIAL NOT FOUND</div>
+              <div className="font-label-caps text-label-caps text-error mb-2">{t.serialChecker.notFound}</div>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                {result.message || 'This serial number is not registered in our system.'}
+                {localizedResultMessage}
               </p>
             </div>
           )}
         </div>
       )}
       <p className="font-body-md text-body-md text-on-surface-variant max-w-lg mx-auto opacity-90 drop-shadow">
-        Pastikan pengisian serial number benar dan sesuai, cantumkan juga - (strip) yang ada pada serial number misalkan XXXX-XXXX-XXXX , periksa kembali serial number yang di input dan pastikan sudah sesuai, jika mengalami kendala pada saat penginputan atau terjadi error silahkan menghubungi customer service durhaim. Terima kasih.
+        {t.serialChecker.instructions}
       </p>
       <form onSubmit={handleVerify} className="w-full max-w-md mt-4">
         <input
@@ -92,14 +111,14 @@ export default function SerialChecker() {
           className="w-full mt-3 bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 hover:bg-stark-white transition-colors duration-200 uppercase"
           disabled={loading}
         >
-          {loading ? 'VERIFYING...' : 'VERIFY SERIAL'}
+          {loading ? t.serialChecker.verifying : t.serialChecker.verify}
         </button>
       </form>
       <Link
         className="inline-block mt-2 border border-surface-container-highest text-stark-white font-label-caps text-label-caps py-2 px-6 hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 backdrop-blur-sm bg-tactical-black/50"
         href="/qr-guide"
       >
-        Guidelines if you have a QR code
+        {t.serialChecker.qrGuide}
       </Link>
     </div>
   );

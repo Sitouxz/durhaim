@@ -86,13 +86,13 @@ export default function TopNavBar() {
               value={region}
               onChange={(event) => setRegion(event.target.value as RegionCode)}
               className="hidden max-w-[92px] border border-surface-container-highest bg-tactical-black p-1 font-data-mono text-data-mono text-stark-white focus:border-signal-orange md:block"
-              aria-label="Price region"
+              aria-label={t.common.priceRegion}
             >
               {supportedRegions.map((option) => (
                 <option key={option} value={option}>{regionConfigs[option].currency}</option>
               ))}
             </select>
-            <Link href="/cart" className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95" aria-label="Open cart">
+            <Link href="/cart" className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95" aria-label={t.common.openCart}>
               <span className="material-symbols-outlined">shopping_cart</span>
             </Link>
             {/* Mobile Menu Toggle */}
@@ -140,7 +140,7 @@ export default function TopNavBar() {
                 value={region}
                 onChange={(event) => setRegion(event.target.value as RegionCode)}
                 className="border border-surface-container-highest bg-tactical-black p-3 font-data-mono text-stark-white"
-                aria-label="Price region"
+                aria-label={t.common.priceRegion}
               >
                 {supportedRegions.map((option) => (
                   <option key={option} value={option}>

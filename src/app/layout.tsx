@@ -1,11 +1,13 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import TopNavBar from '@/components/TopNavBar';
 import Footer from '@/components/Footer';
 import WhatsAppFAB from '@/components/WhatsAppFAB';
 import { CommerceProvider } from '@/components/CommerceProvider';
 import JsonLd from '@/components/JsonLd';
+import { detectLanguageFromHeaders, detectRegionFromHeaders } from '@/lib/commerce';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
 
@@ -51,11 +53,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const initialRegion = detectRegionFromHeaders(headersList);
+  const initialLanguage = initialRegion === 'ID' ? 'id' : detectLanguageFromHeaders(headersList);
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -99,7 +104,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="dark">
+    <html lang={initialLanguage} className="dark">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link
@@ -113,7 +118,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
         <JsonLd data={organizationSchema} />
-        <CommerceProvider>
+        <CommerceProvider initialLanguage={initialLanguage} initialRegion={initialRegion}>
           <TopNavBar />
           {children}
           <Footer />

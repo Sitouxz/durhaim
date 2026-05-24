@@ -5,24 +5,9 @@ import { FormEvent, useState } from 'react';
 import { useCommerce } from '@/components/CommerceProvider';
 
 export default function Footer() {
-  const { language } = useCommerce();
+  const { t } = useCommerce();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const copy = language === 'id'
-    ? {
-        contacts: 'Kontak',
-        navigation: 'Navigasi',
-        subscribe: 'Berlangganan',
-        newsletter: 'Ikuti newsletter kami untuk mendapatkan kabar terbaru.',
-        email: 'MASUKKAN EMAIL',
-      }
-    : {
-        contacts: 'Contacts',
-        navigation: 'Navigation',
-        subscribe: 'Subscribe',
-        newsletter: 'Follow our newsletter to stay updated about agency.',
-        email: 'ENTER EMAIL',
-      };
 
   const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,8 +18,8 @@ export default function Footer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    const data = await res.json().catch(() => ({}));
-    setMessage(data.message || (res.ok ? 'Subscribed.' : 'Subscription failed.'));
+    await res.json().catch(() => ({}));
+    setMessage(res.ok ? t.footer.subscribed : t.footer.failed);
     if (res.ok) setEmail('');
   };
 
@@ -47,7 +32,7 @@ export default function Footer() {
             DURHAIM
           </Link>
           <p className="font-label-caps text-label-caps text-signal-orange mb-stack-lg uppercase">
-            &quot;Always Forward&quot;
+            &quot;{t.footer.alwaysForward}&quot;
           </p>
           <div className="flex space-x-stack-sm">
             <a
@@ -87,7 +72,7 @@ export default function Footer() {
 
         {/* Contacts Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{copy.contacts}</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{t.footer.contacts}</h4>
           <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant">
             <li className="flex items-start gap-2">
               <span className="material-symbols-outlined text-sm mt-1">location_on</span>
@@ -106,32 +91,32 @@ export default function Footer() {
 
         {/* Links Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{copy.navigation}</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{t.footer.navigation}</h4>
           <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant flex flex-col">
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=vest">Vest &amp; Chestrig</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=pack">Pack &amp; Pouches</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=belt">Belt</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/contact">Contact</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/latest-projects">Latest Projects</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=vest">{t.catalogue.categoryLabels.vest}</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=pack">{t.catalogue.categoryLabels.pack}</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=belt">{t.catalogue.categoryLabels.belt}</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/contact">{t.footer.contact}</Link>
+            <Link className="hover:text-signal-orange hover:underline w-fit" href="/latest-projects">{t.footer.latestProjects}</Link>
           </ul>
         </div>
 
         {/* Subscribe Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{copy.subscribe}</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{t.footer.subscribe}</h4>
           <p className="font-body-md text-body-md text-on-tertiary-fixed-variant mb-stack-md">
-            {copy.newsletter}
+            {t.footer.newsletter}
           </p>
           <form onSubmit={submitNewsletter} className="flex">
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="bg-charcoal-field border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 w-full focus:outline-none focus:border-signal-orange rounded-none placeholder-on-tertiary-fixed-variant"
-              placeholder={copy.email}
+              placeholder={t.footer.email}
               type="email"
               required
             />
-            <button type="submit" className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200" aria-label="Subscribe to newsletter">
+            <button type="submit" className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200" aria-label={t.footer.subscribeAria}>
               <span className="material-symbols-outlined">arrow_upward</span>
             </button>
           </form>
@@ -142,7 +127,7 @@ export default function Footer() {
       {/* Copyright Bottom Bar */}
       <div className="w-full border-t border-surface-container-highest py-stack-md text-center">
         <span className="font-data-mono text-data-mono text-on-tertiary-fixed-variant uppercase">
-          2024 DURHAIM TACTICAL. ALWAYS FORWARD.
+          2024 DURHAIM TACTICAL. {t.footer.alwaysForward}.
         </span>
       </div>
     </footer>

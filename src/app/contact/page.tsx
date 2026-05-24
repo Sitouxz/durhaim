@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import JsonLd from '@/components/JsonLd';
+import LocalizedText from '@/components/LocalizedText';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
 
@@ -40,9 +41,14 @@ export default function ContactPage() {
     <main className="bg-texture flex-grow px-margin-edge py-section-gap">
       <JsonLd data={contactSchema} />
       <div className="mx-auto max-w-[1000px]">
-        <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">Contact Durhaim</h1>
+        <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
+          <LocalizedText en="Contact Durhaim" id="Kontak Durhaim" />
+        </h1>
         <p className="mt-stack-md max-w-2xl border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">
-          Reach the Durhaim team for product enquiries, authenticity support, and reseller coordination.
+          <LocalizedText
+            en="Reach the Durhaim team for product enquiries, authenticity support, and reseller coordination."
+            id="Hubungi tim Durhaim untuk pertanyaan produk, bantuan keaslian, dan koordinasi reseller."
+          />
         </p>
 
         <div className="mt-section-gap grid gap-gutter md:grid-cols-3">
@@ -55,7 +61,9 @@ export default function ContactPage() {
             <div className="mt-2 font-headline-md text-stark-white">durhaimgear@gmail.com</div>
           </a>
           <section className="border border-surface-container-highest bg-charcoal-field p-stack-lg">
-            <div className="font-data-mono text-signal-orange">LOCATION</div>
+            <div className="font-data-mono text-signal-orange">
+              <LocalizedText en="LOCATION" id="LOKASI" />
+            </div>
             <div className="mt-2 font-body-md text-stark-white">Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung</div>
           </section>
         </div>

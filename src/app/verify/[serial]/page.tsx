@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_noStore as noStore } from 'next/cache';
+import LocalizedText from '@/components/LocalizedText';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,22 +68,39 @@ export default async function VerifyPage({ params }: PageProps) {
     ? {
         panel: 'border-[#9FE870]/50 bg-[#9FE870]/10 text-[#9FE870]',
         icon: 'verified',
-        headline: 'Verified Authentic',
-        body: 'This product serial is registered in the official DURHAIM verification system.',
+        label: { en: 'AUTHENTIC', id: 'ASLI' },
+        headline: { en: 'Verified Authentic', id: 'Keaslian Terverifikasi' },
+        body: {
+          en: 'This product serial is registered in the official DURHAIM verification system.',
+          id: 'Nomor serial produk ini terdaftar di sistem verifikasi resmi DURHAIM.',
+        },
       }
     : status === 'REVOKED'
       ? {
           panel: 'border-error/60 bg-error-container/25 text-error',
           icon: 'gpp_bad',
-          headline: 'Certificate Revoked',
-          body: 'This serial number exists but has been revoked by DURHAIM. Please contact support before using this product certificate.',
+          label: { en: 'REVOKED', id: 'DICABUT' },
+          headline: { en: 'Certificate Revoked', id: 'Sertifikat Dicabut' },
+          body: {
+            en: 'This serial number exists but has been revoked by DURHAIM. Please contact support before using this product certificate.',
+            id: 'Nomor serial ini ada, tetapi telah dicabut oleh DURHAIM. Hubungi bantuan sebelum menggunakan sertifikat produk ini.',
+          },
         }
       : {
           panel: 'border-signal-orange/60 bg-signal-orange/10 text-signal-orange',
           icon: 'report',
-          headline: 'Serial Not Registered',
-          body: 'This serial number is not registered in the DURHAIM system. If you believe this is an error, please contact support.',
+          label: { en: 'UNVERIFIED', id: 'BELUM TERVERIFIKASI' },
+          headline: { en: 'Serial Not Registered', id: 'Serial Tidak Terdaftar' },
+          body: {
+            en: 'This serial number is not registered in the DURHAIM system. If you believe this is an error, please contact support.',
+            id: 'Nomor serial ini tidak terdaftar di sistem DURHAIM. Jika Anda yakin ini kesalahan, silakan hubungi bantuan.',
+          },
         };
+  const certificateFacts = [
+    { label: { en: 'Certificate ID', id: 'ID Sertifikat' }, value: certificateId },
+    { label: { en: 'Registered', id: 'Terdaftar' }, value: registeredDate },
+    { label: { en: 'Verification Count', id: 'Jumlah Verifikasi' }, value: verificationCount !== undefined ? `${verificationCount}` : 'N/A' },
+  ];
 
   return (
     <main className="flex-grow bg-texture min-h-screen">
@@ -97,11 +115,13 @@ export default async function VerifyPage({ params }: PageProps) {
               <div className="mb-stack-lg flex flex-col gap-stack-md border-b border-surface-container-highest pb-stack-lg md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="font-display-xl text-headline-lg text-stark-white tracking-tighter uppercase">DURHAIM</div>
-                  <div className="mt-1 font-label-caps text-label-caps text-signal-orange uppercase">Authenticity Certificate</div>
+                  <div className="mt-1 font-label-caps text-label-caps text-signal-orange uppercase">
+                    <LocalizedText en="Authenticity Certificate" id="Sertifikat Keaslian" />
+                  </div>
                 </div>
                 <div className={`inline-flex items-center gap-2 self-start border px-4 py-3 font-label-caps text-label-caps uppercase ${statusStyles.panel}`}>
                   <span className="material-symbols-outlined text-[20px]">{statusStyles.icon}</span>
-                  {status}
+                  <LocalizedText en={statusStyles.label.en} id={statusStyles.label.id} />
                 </div>
               </div>
 
@@ -110,7 +130,7 @@ export default async function VerifyPage({ params }: PageProps) {
                   <div className="flex aspect-square items-center justify-center bg-surface-container-lowest">
                     {productImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={productImage} alt={product?.name ?? 'Durhaim product'} className="h-full w-full object-contain p-4" />
+                    <img src={productImage} alt={product?.name ?? 'Produk Durhaim'} className="h-full w-full object-contain p-4" />
                     ) : (
                       <div className="flex h-32 w-32 items-center justify-center border border-signal-orange/40 text-signal-orange">
                         <span className="material-symbols-outlined text-[56px]">military_tech</span>
@@ -118,26 +138,32 @@ export default async function VerifyPage({ params }: PageProps) {
                     )}
                   </div>
                   <div className="mt-stack-md border-t border-surface-container-highest pt-stack-sm text-center font-data-mono text-data-mono uppercase text-on-surface-variant">
-                    Official Registry
+                    <LocalizedText en="Official Registry" id="Registri Resmi" />
                   </div>
                 </div>
 
                 <div>
-                  <div className="mb-stack-md font-data-mono text-data-mono uppercase text-on-surface-variant">Certified product</div>
+                  <div className="mb-stack-md font-data-mono text-data-mono uppercase text-on-surface-variant">
+                    <LocalizedText en="Certified product" id="Produk tersertifikasi" />
+                  </div>
                   <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
-                    {product?.name ?? 'Product Not Found'}
+                    {product?.name ?? <LocalizedText en="Product Not Found" id="Produk Tidak Ditemukan" />}
                   </h1>
 
                   <div className={`mt-stack-lg border p-stack-md ${statusStyles.panel}`}>
                     <div className="mb-2 flex items-center gap-2 font-headline-md text-headline-md uppercase">
                       <span className="material-symbols-outlined">{statusStyles.icon}</span>
-                      {statusStyles.headline}
+                      <LocalizedText en={statusStyles.headline.en} id={statusStyles.headline.id} />
                     </div>
-                    <p className="font-body-md text-body-md text-stark-white/85">{statusStyles.body}</p>
+                    <p className="font-body-md text-body-md text-stark-white/85">
+                      <LocalizedText en={statusStyles.body.en} id={statusStyles.body.id} />
+                    </p>
                   </div>
 
                   <div className="mt-stack-lg border border-surface-container-highest bg-tactical-black p-stack-md">
-                    <div className="mb-2 font-data-mono text-data-mono uppercase text-on-surface-variant">Serial Number</div>
+                    <div className="mb-2 font-data-mono text-data-mono uppercase text-on-surface-variant">
+                      <LocalizedText en="Serial Number" id="Nomor Serial" />
+                    </div>
                     <div className="break-all font-data-mono text-[28px] font-bold uppercase tracking-widest text-stark-white md:text-[34px]">
                       {serial}
                     </div>
@@ -146,14 +172,12 @@ export default async function VerifyPage({ params }: PageProps) {
               </div>
 
               <div className="mt-stack-lg grid gap-stack-sm md:grid-cols-3">
-                {[
-                  ['Certificate ID', certificateId],
-                  ['Registered', registeredDate],
-                  ['Verification Count', verificationCount !== undefined ? `${verificationCount}` : 'N/A'],
-                ].map(([label, value]) => (
-                  <div key={label} className="border border-surface-container-highest bg-surface-container/50 p-stack-md">
-                    <div className="mb-1 font-data-mono text-data-mono uppercase text-on-surface-variant">{label}</div>
-                    <div className="font-data-mono text-data-mono uppercase text-stark-white">{value}</div>
+                {certificateFacts.map((fact) => (
+                  <div key={fact.label.en} className="border border-surface-container-highest bg-surface-container/50 p-stack-md">
+                    <div className="mb-1 font-data-mono text-data-mono uppercase text-on-surface-variant">
+                      <LocalizedText en={fact.label.en} id={fact.label.id} />
+                    </div>
+                    <div className="font-data-mono text-data-mono uppercase text-stark-white">{fact.value}</div>
                   </div>
                 ))}
               </div>
@@ -163,24 +187,33 @@ export default async function VerifyPage({ params }: PageProps) {
               <div className="mx-auto flex h-36 w-36 items-center justify-center border-2 border-signal-orange text-center">
                 <div>
                   <div className="font-display-xl text-headline-md uppercase tracking-tighter text-stark-white">DRH</div>
-                  <div className="mt-1 font-data-mono text-[10px] uppercase text-signal-orange">Verified</div>
+                  <div className="mt-1 font-data-mono text-[10px] uppercase text-signal-orange">
+                    <LocalizedText en="Verified" id="Terverifikasi" />
+                  </div>
                 </div>
               </div>
 
               <div className="mt-stack-lg space-y-stack-md">
                 <div className="border border-surface-container-highest p-stack-md">
-                  <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">Issued</div>
+                  <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">
+                    <LocalizedText en="Issued" id="Diterbitkan" />
+                  </div>
                   <div className="mt-1 font-data-mono text-data-mono uppercase text-stark-white">{issuedDate}</div>
                 </div>
                 <div className="border border-surface-container-highest p-stack-md">
-                  <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">Authority</div>
+                  <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">
+                    <LocalizedText en="Authority" id="Otoritas" />
+                  </div>
                   <div className="mt-1 font-data-mono text-data-mono uppercase text-stark-white">DURHAIM Tactical</div>
                 </div>
               </div>
 
               <div className="mt-stack-lg border-t border-surface-container-highest pt-stack-md">
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Match this serial with the label on your product. If anything looks different, contact Durhaim support before use.
+                  <LocalizedText
+                    en="Match this serial with the label on your product. If anything looks different, contact Durhaim support before use."
+                    id="Cocokkan serial ini dengan label pada produk Anda. Jika ada perbedaan, hubungi bantuan Durhaim sebelum digunakan."
+                  />
                 </p>
               </div>
 
@@ -192,14 +225,14 @@ export default async function VerifyPage({ params }: PageProps) {
                   className="inline-flex items-center justify-center gap-2 border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps text-stark-white transition-colors hover:border-signal-orange hover:text-signal-orange"
                 >
                   <span className="material-symbols-outlined text-[18px]">chat</span>
-                  Contact Support
+                  <LocalizedText en="Contact Support" id="Hubungi Bantuan" />
                 </a>
                 <Link
                   href="/"
                   className="inline-flex items-center justify-center gap-2 bg-signal-orange px-6 py-3 font-label-caps text-label-caps text-tactical-black transition-colors hover:bg-stark-white"
                 >
                   <span className="material-symbols-outlined text-[18px]">home</span>
-                  Back to Home
+                  <LocalizedText en="Back to Home" id="Kembali ke Beranda" />
                 </Link>
               </div>
             </aside>
@@ -211,7 +244,7 @@ export default async function VerifyPage({ params }: PageProps) {
             href="/verify"
             className="font-data-mono text-data-mono uppercase text-on-surface-variant transition-colors hover:text-signal-orange"
           >
-            Verify another serial number
+            <LocalizedText en="Verify another serial number" id="Verifikasi nomor serial lain" />
           </Link>
         </div>
       </div>

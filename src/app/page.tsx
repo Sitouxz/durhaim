@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import SerialChecker from '@/components/SerialChecker';
 import JsonLd from '@/components/JsonLd';
+import LocalizedText from '@/components/LocalizedText';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
 
@@ -19,16 +20,34 @@ export const metadata = {
 
 const homeFaqs = [
   {
-    question: 'What is DURHAIM?',
-    answer: 'DURHAIM is an Indonesian tactical gear brand focused on durability, hard impact resistance, and modular carry systems for vests, chestrigs, packs, pouches, and belts.',
+    question: {
+      en: 'What is DURHAIM?',
+      id: 'Apa itu DURHAIM?',
+    },
+    answer: {
+      en: 'DURHAIM is an Indonesian tactical gear brand focused on durability, hard impact resistance, and modular carry systems for vests, chestrigs, packs, pouches, and belts.',
+      id: 'DURHAIM adalah brand tactical gear Indonesia yang berfokus pada daya tahan, ketahanan benturan berat, dan sistem bawa modular untuk vest, chestrig, pack, pouch, dan belt.',
+    },
   },
   {
-    question: 'Does DURHAIM support Indonesia and global pricing?',
-    answer: 'Yes. DURHAIM shows Indonesia regional pricing in IDR and global pricing in USD, with regional detection used to display the most relevant currency.',
+    question: {
+      en: 'Does DURHAIM support Indonesia and global pricing?',
+      id: 'Apakah DURHAIM mendukung harga Indonesia dan global?',
+    },
+    answer: {
+      en: 'Yes. DURHAIM shows Indonesia regional pricing in IDR and global pricing in USD, with regional detection used to display the most relevant currency.',
+      id: 'Ya. DURHAIM menampilkan harga regional Indonesia dalam IDR dan harga global dalam USD, dengan deteksi wilayah untuk menampilkan mata uang yang paling relevan.',
+    },
   },
   {
-    question: 'How can buyers verify authentic DURHAIM products?',
-    answer: 'Buyers can enter a DURHAIM serial code in the authenticity checker to confirm whether a product serial is registered and active.',
+    question: {
+      en: 'How can buyers verify authentic DURHAIM products?',
+      id: 'Bagaimana pembeli memverifikasi produk DURHAIM asli?',
+    },
+    answer: {
+      en: 'Buyers can enter a DURHAIM serial code in the authenticity checker to confirm whether a product serial is registered and active.',
+      id: 'Pembeli dapat memasukkan kode serial DURHAIM di pemeriksa keaslian untuk memastikan serial produk terdaftar dan aktif.',
+    },
   },
 ];
 
@@ -57,10 +76,10 @@ export default function HomePage() {
         '@type': 'FAQPage',
         mainEntity: homeFaqs.map((faq) => ({
           '@type': 'Question',
-          name: faq.question,
+          name: faq.question.en,
           acceptedAnswer: {
             '@type': 'Answer',
-            text: faq.answer,
+            text: faq.answer.en,
           },
         })),
       },
@@ -81,7 +100,9 @@ export default function HomePage() {
       >
         <div className="absolute inset-0 bg-gradient-to-b from-tactical-black/80 via-tactical-black/60 to-background/95 z-0"></div>
         <div className="relative z-10 bg-charcoal-field/80 backdrop-blur-md border border-surface-container-highest p-8 max-w-2xl w-full text-center space-y-stack-lg shadow-2xl">
-          <h2 className="font-headline-md text-headline-md text-stark-white drop-shadow-md">Input No Code Here</h2>
+          <h2 className="font-headline-md text-headline-md text-stark-white drop-shadow-md">
+            <LocalizedText en="Input Serial Code Here" id="Masukkan Kode Serial di Sini" />
+          </h2>
           <SerialChecker />
         </div>
       </section>
@@ -90,17 +111,24 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1440px]">
           <div className="max-w-3xl">
             <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
-              DURHAIM Tactical Gear
+              <LocalizedText en="DURHAIM Tactical Gear" id="Perlengkapan Taktis DURHAIM" />
             </h1>
             <p className="mt-stack-md border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">
-              DURHAIM builds modular tactical gear for Indonesia and global users, including vests, chestrigs, packs, pouches, belts, and serialized authenticity support.
+              <LocalizedText
+                en="DURHAIM builds modular tactical gear for Indonesia and global users, including vests, chestrigs, packs, pouches, belts, and serialized authenticity support."
+                id="DURHAIM membuat tactical gear modular untuk pengguna Indonesia dan global, termasuk vest, chestrig, pack, pouch, belt, serta dukungan keaslian berbasis serial."
+              />
             </p>
           </div>
           <div className="mt-stack-lg grid gap-gutter md:grid-cols-3">
             {homeFaqs.map((faq) => (
-              <article key={faq.question} className="border border-surface-container-highest bg-tactical-black p-stack-md">
-                <h2 className="font-label-caps text-label-caps uppercase text-signal-orange">{faq.question}</h2>
-                <p className="mt-2 font-body-md text-on-surface-variant">{faq.answer}</p>
+              <article key={faq.question.en} className="border border-surface-container-highest bg-tactical-black p-stack-md">
+                <h2 className="font-label-caps text-label-caps uppercase text-signal-orange">
+                  <LocalizedText en={faq.question.en} id={faq.question.id} />
+                </h2>
+                <p className="mt-2 font-body-md text-on-surface-variant">
+                  <LocalizedText en={faq.answer.en} id={faq.answer.id} />
+                </p>
               </article>
             ))}
           </div>
@@ -130,14 +158,18 @@ export default function HomePage() {
               />
             </div>
             <div className="order-1 md:order-2 space-y-stack-md text-right drop-shadow-lg">
-              <h3 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter">VEST &amp; CHESTRIG</h3>
-              <p className="font-headline-md text-headline-md text-signal-orange uppercase">DURABILITY HARD IMPACT &amp; MODULAR</p>
+              <h3 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter">
+                <LocalizedText en="Vest & Chestrig" id="Vest & Chestrig" />
+              </h3>
+              <p className="font-headline-md text-headline-md text-signal-orange uppercase">
+                <LocalizedText en="Durability Hard Impact & Modular" id="Tahan Benturan Berat & Modular" />
+              </p>
               <div className="pt-stack-md">
                 <Link
                   className="inline-block bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 px-8 hover:bg-stark-white transition-colors duration-200 shadow-lg"
                   href="/catalogue?category=vest"
                 >
-                  EXPLORE NOW
+                  <LocalizedText en="Explore Now" id="Jelajahi" />
                 </Link>
               </div>
             </div>
@@ -146,14 +178,18 @@ export default function HomePage() {
           {/* PACK & POUCHES */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter items-center">
             <div className="space-y-stack-md text-left drop-shadow-lg">
-              <h3 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter">PACK &amp; POUCHES</h3>
-              <p className="font-headline-md text-headline-md text-signal-orange uppercase">PERFECT FOR CARRYING YOUR EQUIPMENT</p>
+              <h3 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter">
+                <LocalizedText en="Pack & Pouches" id="Pack & Pouch" />
+              </h3>
+              <p className="font-headline-md text-headline-md text-signal-orange uppercase">
+                <LocalizedText en="Perfect For Carrying Your Equipment" id="Siap Membawa Perlengkapan Anda" />
+              </p>
               <div className="pt-stack-md">
                 <Link
                   className="inline-block bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 px-8 hover:bg-stark-white transition-colors duration-200 shadow-lg"
                   href="/catalogue?category=pack"
                 >
-                  EXPLORE NOW
+                  <LocalizedText en="Explore Now" id="Jelajahi" />
                 </Link>
               </div>
             </div>
@@ -179,14 +215,18 @@ export default function HomePage() {
               />
             </div>
             <div className="order-1 md:order-2 space-y-stack-md text-right drop-shadow-lg">
-              <h3 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter">BELT</h3>
-              <p className="font-headline-md text-headline-md text-signal-orange uppercase">IT&apos;S ALL ABOUT THE WAIST</p>
+              <h3 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter">
+                <LocalizedText en="Belt" id="Belt" />
+              </h3>
+              <p className="font-headline-md text-headline-md text-signal-orange uppercase">
+                <LocalizedText en="It's All About The Waist" id="Fokus pada Pinggang dan Mobilitas" />
+              </p>
               <div className="pt-stack-md">
                 <Link
                   className="inline-block bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 px-8 hover:bg-stark-white transition-colors duration-200 shadow-lg"
                   href="/catalogue?category=belt"
                 >
-                  EXPLORE NOW
+                  <LocalizedText en="Explore Now" id="Jelajahi" />
                 </Link>
               </div>
             </div>
@@ -209,7 +249,9 @@ export default function HomePage() {
                   src="/images/29_VC-1.png"
                 />
               </div>
-              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">VEST CHESTRIG</h4>
+              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
+                <LocalizedText en="Vest Chestrig" id="Vest Chestrig" />
+              </h4>
             </div>
             {/* Item 2 */}
             <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field">
@@ -222,7 +264,9 @@ export default function HomePage() {
                   src="/images/31_PP-1.png"
                 />
               </div>
-              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">PACK POUCH</h4>
+              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
+                <LocalizedText en="Pack Pouch" id="Pack Pouch" />
+              </h4>
             </div>
             {/* Item 3 */}
             <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field">
@@ -235,7 +279,9 @@ export default function HomePage() {
                   src="/images/33_B-1.png"
                 />
               </div>
-              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">BELT</h4>
+              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
+                <LocalizedText en="Belt" id="Belt" />
+              </h4>
             </div>
           </div>
         </div>
@@ -255,14 +301,16 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDEwaDQwdjJIMHptMCAyMGg0MHYySDB6IiBmaWxsPSJyZ2JhKDAsMCwwLDAuNCkiLz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
         <div className="relative z-10 px-margin-edge max-w-[1440px] mx-auto w-full">
           <div className="max-w-2xl space-y-stack-lg">
-            <h2 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter drop-shadow-lg">BATTLE PROVEN</h2>
+            <h2 className="font-display-xl text-headline-lg-mobile md:text-display-xl text-stark-white uppercase tracking-tighter drop-shadow-lg">
+              <LocalizedText en="Battle Proven" id="Teruji Lapangan" />
+            </h2>
             <p className="font-body-lg text-body-lg text-stark-white/90 border-l-2 border-signal-orange pl-4 shadow-sm">&quot;Rasakan Kekuatan Inovasi yang Terbukti dalam Pertempuran&quot;</p>
             <div>
               <Link
                 className="inline-block border-2 border-stark-white text-stark-white font-label-caps text-label-caps py-3 px-8 hover:bg-stark-white hover:text-tactical-black transition-colors duration-200 bg-tactical-black/50 backdrop-blur-sm"
                 href="/battle-proven"
               >
-                EXPLORE NOW
+                <LocalizedText en="Explore Now" id="Jelajahi" />
               </Link>
             </div>
           </div>

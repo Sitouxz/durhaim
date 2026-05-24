@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import JsonLd from "@/components/JsonLd";
+import { useCommerce } from "@/components/CommerceProvider";
 
 export default function VerificationPage() {
+  const { t } = useCommerce();
   const [serial, setSerial] = useState("");
   const router = useRouter();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://durhaim.com";
@@ -26,15 +28,15 @@ export default function VerificationPage() {
           mainEntity: [
             {
               "@type": "Question",
-              name: "How do I verify a DURHAIM product?",
+              name: t.verify.faqQuestion,
               acceptedAnswer: {
                 "@type": "Answer",
-                text: "Enter the product serial number in the DURHAIM authenticity checker. The system confirms whether the serial is registered, active, or revoked.",
+                text: t.verify.faqAnswer,
               },
             },
             {
               "@type": "Question",
-              name: "Where is the DURHAIM authenticity checker?",
+              name: t.verify.faqLocationQuestion,
               acceptedAnswer: {
                 "@type": "Answer",
                 text: `The DURHAIM authenticity checker is available at ${siteUrl}/verify.`,
@@ -59,10 +61,10 @@ export default function VerificationPage() {
         <div className="relative z-10 w-full max-w-2xl bg-charcoal-field/90 backdrop-blur-md border border-surface-container-highest p-8 md:p-12 shadow-2xl">
           <div className="text-center flex flex-col gap-md mb-stack-lg">
             <h1 className="font-display-xl text-headline-lg md:text-display-xl text-stark-white uppercase tracking-tighter drop-shadow-md">
-              AUTHENTICITY CHECKER
+              {t.verify.title}
             </h1>
             <p className="font-body-md text-on-surface-variant max-w-lg mx-auto">
-              Enter your product&apos;s unique serial number below to verify its authenticity and view the digital certificate. Include any hyphens (e.g., DRH-XXXX-XXXX).
+              {t.verify.intro}
             </p>
           </div>
 
@@ -87,13 +89,13 @@ export default function VerificationPage() {
               type="submit"
               className="btn btn-primary w-full font-label-caps"
             >
-              VERIFY PRODUCT
+              {t.verify.button}
             </button>
           </form>
           
           <div className="mt-stack-lg pt-stack-md border-t border-surface-container-highest text-center">
             <p className="font-data-mono text-data-mono text-signal-orange/80">
-              SECURE SYSTEM // DO NOT SHARE YOUR SERIAL CODE EXTERNALLY
+              {t.verify.secureNotice}
             </p>
           </div>
         </div>

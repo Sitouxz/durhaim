@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import type { CatalogueProduct } from '@/lib/catalogue-data';
 import { useCommerce } from '@/components/CommerceProvider';
+import { localizeCategoryName, localizeProductDescription, localizeProductTag } from '@/lib/product-localization';
 
 const categoryOptions = [
-  { label: 'ALL GEAR', value: 'all' },
-  { label: 'VESTS & CHESTRIG', value: 'vest' },
-  { label: 'PACKS & POUCHES', value: 'pack' },
-  { label: 'BELTS', value: 'belt' },
-  { label: 'ACCESSORIES', value: 'accessories' },
-];
+  { value: 'all' },
+  { value: 'vest' },
+  { value: 'pack' },
+  { value: 'belt' },
+  { value: 'accessories' },
+] as const;
 
 export default function CataloguePage() {
-  const { region, t, formatPrice } = useCommerce();
+  const { language, region, t, formatPrice } = useCommerce();
   const [category, setCategory] = useState('all');
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
@@ -62,7 +63,7 @@ export default function CataloguePage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || 'Unable to load catalogue.');
+          throw new Error(data.error || t.catalogue.unableToLoad);
         }
 
         setProducts(data.products ?? []);
@@ -71,7 +72,7 @@ export default function CataloguePage() {
         setWarning(data.warning ?? '');
       } catch (fetchError) {
         if (fetchError instanceof DOMException && fetchError.name === 'AbortError') return;
-        setError(fetchError instanceof Error ? fetchError.message : 'Unable to load catalogue.');
+        setError(fetchError instanceof Error ? fetchError.message : t.catalogue.unableToLoad);
       } finally {
         setLoading(false);
       }
@@ -80,7 +81,7 @@ export default function CataloguePage() {
     fetchProducts();
 
     return () => controller.abort();
-  }, [category, query, region, sort, page]);
+  }, [category, query, region, sort, page, t.catalogue.unableToLoad]);
 
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -96,6 +97,14 @@ export default function CataloguePage() {
     setCategory(value);
     setPage(1);
   };
+
+  const localizedWarning = (() => {
+    if (!warning || language !== 'id') return warning;
+    return {
+      'Database schema is not installed. Showing fallback catalogue data.': 'Skema database belum terpasang. Menampilkan data katalog cadangan.',
+      'Products database is unavailable. Showing fallback catalogue data.': 'Database produk belum tersedia. Menampilkan data katalog cadangan.',
+    }[warning] ?? warning;
+  })();
 
   return (
     <div className="bg-texture selection:bg-signal-orange selection:text-stark-white relative">
@@ -116,13 +125,7 @@ export default function CataloguePage() {
                       type="radio"
                     />
                     <span className={`${category === option.value ? 'text-signal-orange' : 'text-stark-white opacity-80'} group-hover:text-signal-orange transition-colors`}>
-                      {{
-                        all: t.catalogue.allGear,
-                        vest: t.catalogue.vests,
-                        pack: t.catalogue.packs,
-                        belt: t.catalogue.belts,
-                        accessories: t.catalogue.accessories,
-                      }[option.value]}
+                      {t.catalogue.categoryLabels[option.value]}
                     </span>
                   </label>
                 </li>
@@ -140,7 +143,7 @@ export default function CataloguePage() {
                 placeholder={t.catalogue.keyword.toUpperCase()}
                 type="search"
               />
-              <button type="submit" className="absolute right-0 top-0 h-full px-3 text-signal-orange hover:bg-signal-orange hover:text-tactical-black transition-colors" aria-label="Search catalogue">
+              <button type="submit" className="absolute right-0 top-0 h-full px-3 text-signal-orange hover:bg-signal-orange hover:text-tactical-black transition-colors" aria-label={t.common.searchCatalogue}>
                 <span className="material-symbols-outlined text-[20px] translate-y-[2px]">search</span>
               </button>
             </form>
@@ -175,7 +178,7 @@ export default function CataloguePage() {
 
           {warning && (
             <div className="mb-stack-md border border-signal-orange/50 bg-signal-orange/10 p-3 font-data-mono text-data-mono text-signal-orange">
-              {warning}
+              {localizedWarning}
             </div>
           )}
 
@@ -200,7 +203,7 @@ export default function CataloguePage() {
                   <div className="relative aspect-[4/5] bg-surface-container-lowest/50 p-stack-md flex items-center justify-center overflow-hidden">
                     {product.tags[0] && (
                       <div className="absolute top-4 left-4 bg-signal-orange text-tactical-black font-data-mono text-data-mono px-2 py-1 uppercase z-10">
-                        {product.tags[0]}
+                        {localizeProductTag(product.tags[0], language)}
                       </div>
                     )}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -211,9 +214,9 @@ export default function CataloguePage() {
                     />
                   </div>
                   <div className="p-stack-md flex flex-col flex-grow border-t border-surface-container-highest">
-                    <div className="font-data-mono text-data-mono text-signal-orange mb-2 uppercase">{product.category.name}</div>
+                    <div className="font-data-mono text-data-mono text-signal-orange mb-2 uppercase">{localizeCategoryName(product.category.slug, product.category.name, language)}</div>
                     <h3 className="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">{product.name}</h3>
-                    <p className="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">{product.description}</p>
+                    <p className="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">{localizeProductDescription(product.description, language)}</p>
                     <div className="font-data-mono text-data-mono text-stark-white mb-4">{formatPrice(product.price, product.regional_prices)}</div>
                     <Link
                       href={`/catalogue/${product.slug}`}

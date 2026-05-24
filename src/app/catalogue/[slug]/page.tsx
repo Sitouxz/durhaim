@@ -5,6 +5,7 @@ import { fallbackProducts, isMissingSchemaError, normalizeProduct, type Catalogu
 import ProductDetailClient from '@/components/ProductDetailClient';
 import JsonLd from '@/components/JsonLd';
 import { formatRegionalPrice, getRegionalPrice } from '@/lib/commerce';
+import LocalizedText from '@/components/LocalizedText';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
 
@@ -151,18 +152,30 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
         <ProductDetailClient product={product} />
         <section className="lg:col-span-12 border border-surface-container-highest bg-charcoal-field/80 p-stack-lg">
-          <h2 className="font-headline-md text-headline-md uppercase text-stark-white">Product Answers</h2>
+          <h2 className="font-headline-md text-headline-md uppercase text-stark-white">
+            <LocalizedText en="Product Answers" id="Jawaban Produk" />
+          </h2>
           <div className="mt-stack-md grid gap-stack-md md:grid-cols-2">
             <article>
-              <h3 className="font-label-caps text-label-caps uppercase text-signal-orange">What is this product used for?</h3>
+              <h3 className="font-label-caps text-label-caps uppercase text-signal-orange">
+                <LocalizedText en="What is this product used for?" id="Untuk apa produk ini digunakan?" />
+              </h3>
               <p className="mt-2 font-body-md text-on-surface-variant">
-                {product.name} is a DURHAIM {product.category.name.toLowerCase()} item for modular tactical carry setups, equipment organization, and field-ready loadout planning.
+                <LocalizedText
+                  en={`${product.name} is a DURHAIM ${product.category.name.toLowerCase()} item for modular tactical carry setups, equipment organization, and field-ready loadout planning.`}
+                  id={`${product.name} adalah produk DURHAIM untuk setup tactical carry modular, organisasi perlengkapan, dan perencanaan loadout siap lapangan.`}
+                />
               </p>
             </article>
             <article>
-              <h3 className="font-label-caps text-label-caps uppercase text-signal-orange">Which regions are priced?</h3>
+              <h3 className="font-label-caps text-label-caps uppercase text-signal-orange">
+                <LocalizedText en="Which regions are priced?" id="Wilayah harga apa saja yang tersedia?" />
+              </h3>
               <p className="mt-2 font-body-md text-on-surface-variant">
-                DURHAIM displays Indonesia pricing in IDR and global pricing in USD, with regional detection used to show the most relevant currency first.
+                <LocalizedText
+                  en="DURHAIM displays Indonesia pricing in IDR and global pricing in USD, with regional detection used to show the most relevant currency first."
+                  id="DURHAIM menampilkan harga Indonesia dalam IDR dan harga global dalam USD, dengan deteksi wilayah untuk menampilkan mata uang paling relevan terlebih dahulu."
+                />
               </p>
             </article>
           </div>
