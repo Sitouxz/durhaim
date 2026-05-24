@@ -49,6 +49,10 @@ for (const required of ['Content-Security-Policy', 'Strict-Transport-Security', 
   expectIncludes('next.config.mjs', required, `next.config.mjs must set ${required}.`);
 }
 
+for (const required of ['https://vercel.live', 'wss://ws-us3.pusher.com']) {
+  expectIncludes('next.config.mjs', required, `CSP must allow ${required} for the Vercel Live feedback widget.`);
+}
+
 const schema = read('supabase/schema.sql');
 for (const table of ['categories', 'products', 'serial_numbers', 'verification_logs', 'newsletter_subscribers', 'site_settings', 'admin_users', 'admin_activity_logs']) {
   if (!schema.includes(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`)) {
