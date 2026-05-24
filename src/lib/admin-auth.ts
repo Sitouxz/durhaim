@@ -54,7 +54,7 @@ function decodeSessionEmail(value: string) {
 }
 
 async function signSessionEmail(email: string) {
-  return sha256Hex(`${SESSION_VERSION}:${email}:${getAdminPassword()}:${getSessionSecret()}`);
+  return sha256Hex(`${SESSION_VERSION}:${email}:${getSessionSecret()}`);
 }
 
 export async function createAdminSessionToken(email: string) {

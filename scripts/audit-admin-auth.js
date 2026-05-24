@@ -67,6 +67,11 @@ if (!/getActiveAdminSessionUser/.test(adminAuth) || !/admin_users/.test(adminAut
   failures.push('Admin auth helper must validate sessions against an active admin_users record.');
 }
 
+const signSessionEmailMatch = adminAuth.match(/async function signSessionEmail[\s\S]*?\n}/);
+if (!signSessionEmailMatch || /getAdminPassword\(\)/.test(signSessionEmailMatch[0])) {
+  failures.push('Admin session signing must not depend on the login password.');
+}
+
 if (!/getActiveAdminSessionUser/.test(fs.existsSync(path.join(root, 'src/middleware.ts'))
   ? fs.readFileSync(path.join(root, 'src/middleware.ts'), 'utf8')
   : '')) {
