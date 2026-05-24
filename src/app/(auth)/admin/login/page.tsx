@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -44,6 +45,14 @@ export default function AdminLoginPage() {
           Enter the admin password to access the Durhaim command center.
         </p>
         <div className="mt-stack-lg space-y-stack-md">
+          <input
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            className="w-full bg-tactical-black border border-surface-container-highest p-3 font-data-mono text-stark-white focus:border-signal-orange focus:outline-none"
+            placeholder="USER EMAIL"
+            required
+          />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}

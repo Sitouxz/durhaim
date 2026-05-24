@@ -1,13 +1,44 @@
 import type { Metadata } from 'next';
+import JsonLd from '@/components/JsonLd';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
 
 export const metadata: Metadata = {
-  title: 'Contact - DURHAIM',
-  description: 'Contact Durhaim support and product enquiries.',
+  title: 'Contact DURHAIM - Tactical Gear Support Indonesia',
+  description: 'Contact DURHAIM in Bandung, Indonesia for tactical gear enquiries, authenticity support, reseller coordination, WhatsApp, and email support.',
+  alternates: {
+    canonical: '/contact',
+    languages: {
+      en: '/contact',
+      id: '/contact?lang=id',
+      'x-default': '/contact',
+    },
+  },
 };
 
 export default function ContactPage() {
+  const contactSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${siteUrl}/contact#localbusiness`,
+    name: 'DURHAIM',
+    url: siteUrl,
+    image: `${siteUrl}/images/durhaim_image_1.png`,
+    telephone: '+62-821-2010-1473',
+    email: 'durhaimgear@gmail.com',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8',
+      addressLocality: 'Bandung',
+      addressCountry: 'ID',
+    },
+    areaServed: ['Indonesia', 'Global'],
+    availableLanguage: ['English', 'Indonesian'],
+  };
+
   return (
     <main className="bg-texture flex-grow px-margin-edge py-section-gap">
+      <JsonLd data={contactSchema} />
       <div className="mx-auto max-w-[1000px]">
         <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">Contact Durhaim</h1>
         <p className="mt-stack-md max-w-2xl border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">

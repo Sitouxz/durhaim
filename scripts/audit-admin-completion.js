@@ -43,16 +43,14 @@ requireText(
   "status: 'INACTIVE'",
   'generated serials must start as unactivated/inactive',
 );
-requireText(
-  'src/app/api/verify/route.ts',
-  "update({ status: 'ACTIVE'",
-  'customer verification must activate serial status',
-);
-requireText(
-  'src/app/verify/[serial]/page.tsx',
-  "status: 'ACTIVE'",
-  'direct QR certificate view must activate serial status',
-);
+
+if (read('src/app/api/verify/route.ts').includes("update({ status: 'ACTIVE'")) {
+  failures.push('src/app/api/verify/route.ts: customer verification must not activate serial status');
+}
+
+if (read('src/app/verify/[serial]/page.tsx').includes("status: 'ACTIVE'")) {
+  failures.push('src/app/verify/[serial]/page.tsx: direct QR certificate view must not activate serial status');
+}
 
 const productsApi = read('src/app/api/admin/products/route.ts');
 for (const handler of ['export async function POST', 'export async function PATCH', 'export async function DELETE']) {

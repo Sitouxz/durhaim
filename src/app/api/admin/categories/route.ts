@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
+import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,9 @@ function handleCategoryError(error: unknown) {
 export async function GET() {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN', 'STAFF']);
+    if (authorization.error) return authorization.error;
+
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, slug, icon')
@@ -59,6 +63,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const body = await req.json().catch(() => ({}));
     const parsed = parseCategoryBody(body);
 
@@ -88,6 +95,9 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const body = await req.json().catch(() => ({}));
     const categoryId = typeof body.id === 'string' ? body.id : '';
 
@@ -123,6 +133,9 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get('id');
 

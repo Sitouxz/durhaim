@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import type { CatalogueProduct } from '@/lib/catalogue-data';
+import { useCommerce } from '@/components/CommerceProvider';
 
 const categoryOptions = [
   { label: 'ALL GEAR', value: 'all' },
@@ -12,15 +13,8 @@ const categoryOptions = [
   { label: 'ACCESSORIES', value: 'accessories' },
 ];
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(price);
-}
-
 export default function CataloguePage() {
+  const { region, t, formatPrice } = useCommerce();
   const [category, setCategory] = useState('all');
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
@@ -56,6 +50,7 @@ export default function CataloguePage() {
         const params = new URLSearchParams();
         if (category !== 'all') params.set('category', category);
         if (query.trim()) params.set('search', query.trim());
+        params.set('region', region);
         params.set('sort', sort);
         params.set('page', String(page));
         params.set('limit', '6');
@@ -85,7 +80,7 @@ export default function CataloguePage() {
     fetchProducts();
 
     return () => controller.abort();
-  }, [category, query, sort, page]);
+  }, [category, query, region, sort, page]);
 
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -108,7 +103,7 @@ export default function CataloguePage() {
         <aside className="lg:col-span-3 space-y-stack-lg">
           <div className="bg-surface-container/50 backdrop-blur p-stack-md border border-surface-container-highest">
             <h2 className="font-headline-md text-headline-md text-stark-white uppercase tracking-wider mb-stack-md border-b border-surface-container-highest pb-unit">
-              Equipment Categories
+              {t.catalogue.categories}
             </h2>
             <ul className="space-y-stack-sm font-label-caps text-label-caps">
               {categoryOptions.map((option) => (
@@ -121,7 +116,13 @@ export default function CataloguePage() {
                       type="radio"
                     />
                     <span className={`${category === option.value ? 'text-signal-orange' : 'text-stark-white opacity-80'} group-hover:text-signal-orange transition-colors`}>
-                      {option.label}
+                      {{
+                        all: t.catalogue.allGear,
+                        vest: t.catalogue.vests,
+                        pack: t.catalogue.packs,
+                        belt: t.catalogue.belts,
+                        accessories: t.catalogue.accessories,
+                      }[option.value]}
                     </span>
                   </label>
                 </li>
@@ -130,13 +131,13 @@ export default function CataloguePage() {
           </div>
 
           <div className="bg-surface-container/50 backdrop-blur p-stack-md border border-surface-container-highest">
-            <h3 className="font-headline-md text-stark-white uppercase mb-stack-sm">Search Catalog</h3>
+            <h3 className="font-headline-md text-stark-white uppercase mb-stack-sm">{t.catalogue.searchCatalog}</h3>
             <form onSubmit={handleSearch} className="relative">
               <input
                 value={queryInput}
                 onChange={(event) => setQueryInput(event.target.value)}
                 className="w-full bg-surface-container-lowest border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 focus:border-signal-orange focus:ring-0 rounded-none placeholder-on-tertiary-fixed-variant"
-                placeholder="ENTER KEYWORD"
+                placeholder={t.catalogue.keyword.toUpperCase()}
                 type="search"
               />
               <button type="submit" className="absolute right-0 top-0 h-full px-3 text-signal-orange hover:bg-signal-orange hover:text-tactical-black transition-colors" aria-label="Search catalogue">
@@ -149,11 +150,11 @@ export default function CataloguePage() {
         <section className="lg:col-span-9">
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end mb-stack-lg border-b border-surface-container-highest pb-stack-md">
             <div>
-              <h1 className="font-display-xl text-headline-lg lg:text-display-xl text-stark-white uppercase tracking-tighter">Tactical Arsenal</h1>
-              <p className="font-data-mono text-data-mono text-signal-orange mt-2">{total} ITEMS // DURABILITY HARD IMPACT &amp; MODULAR</p>
+              <h1 className="font-display-xl text-headline-lg lg:text-display-xl text-stark-white uppercase tracking-tighter">{t.catalogue.title}</h1>
+              <p className="font-data-mono text-data-mono text-signal-orange mt-2">{t.catalogue.summary(total)}</p>
             </div>
             <div className="flex items-center space-x-2 font-data-mono text-data-mono text-stark-white opacity-80">
-              <span>SORT BY:</span>
+              <span>{t.catalogue.sortBy}</span>
               <select
                 value={sort}
                 onChange={(event) => {
@@ -162,9 +163,12 @@ export default function CataloguePage() {
                 }}
                 className="bg-transparent border border-surface-container-highest text-signal-orange focus:ring-0 uppercase cursor-pointer p-2"
               >
-                <option className="bg-surface-container" value="newest">NEWEST DEPLOYMENT</option>
-                <option className="bg-surface-container" value="price-high">PRICE: HIGH TO LOW</option>
-                <option className="bg-surface-container" value="price-low">PRICE: LOW TO HIGH</option>
+                <option className="bg-surface-container" value="newest">{t.catalogue.newest.toUpperCase()}</option>
+                <option className="bg-surface-container" value="oldest">{t.catalogue.oldest.toUpperCase()}</option>
+                <option className="bg-surface-container" value="price-high">{t.catalogue.priceHigh.toUpperCase()}</option>
+                <option className="bg-surface-container" value="price-low">{t.catalogue.priceLow.toUpperCase()}</option>
+                <option className="bg-surface-container" value="name-az">{t.catalogue.nameAz.toUpperCase()}</option>
+                <option className="bg-surface-container" value="name-za">{t.catalogue.nameZa.toUpperCase()}</option>
               </select>
             </div>
           </div>
@@ -183,11 +187,11 @@ export default function CataloguePage() {
 
           {loading ? (
             <div className="border border-surface-container-highest bg-surface-container/50 p-stack-lg text-center font-data-mono text-signal-orange">
-              LOADING CATALOGUE...
+              {t.catalogue.loading.toUpperCase()}
             </div>
           ) : products.length === 0 ? (
             <div className="border border-surface-container-highest bg-surface-container/50 p-stack-lg text-center font-data-mono text-on-surface-variant">
-              NO PRODUCTS MATCH THIS FILTER.
+              {t.catalogue.empty.toUpperCase()}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
@@ -210,12 +214,12 @@ export default function CataloguePage() {
                     <div className="font-data-mono text-data-mono text-signal-orange mb-2 uppercase">{product.category.name}</div>
                     <h3 className="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">{product.name}</h3>
                     <p className="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">{product.description}</p>
-                    <div className="font-data-mono text-data-mono text-stark-white mb-4">{formatPrice(product.price)}</div>
+                    <div className="font-data-mono text-data-mono text-stark-white mb-4">{formatPrice(product.price, product.regional_prices)}</div>
                     <Link
                       href={`/catalogue/${product.slug}`}
                       className="w-full bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 uppercase hover:bg-stark-white transition-colors duration-200 mt-auto flex items-center justify-center space-x-2"
                     >
-                      <span>VIEW DETAILS</span>
+                      <span>{t.catalogue.viewDetails.toUpperCase()}</span>
                       <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                     </Link>
                   </div>

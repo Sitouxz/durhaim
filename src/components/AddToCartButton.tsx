@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useCommerce } from '@/components/CommerceProvider';
+import type { RegionalPrices } from '@/lib/commerce';
 
 type CartProduct = {
   slug: string;
   name: string;
   price?: number;
+  regional_prices?: RegionalPrices;
 };
 
 function readCart(): CartProduct[] {
@@ -20,6 +23,7 @@ function readCart(): CartProduct[] {
 }
 
 export default function AddToCartButton({ product }: { product: CartProduct }) {
+  const { t } = useCommerce();
   const [added, setAdded] = useState(false);
 
   const addToCart = () => {
@@ -38,7 +42,7 @@ export default function AddToCartButton({ product }: { product: CartProduct }) {
       onClick={addToCart}
       className="inline-flex justify-center border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps uppercase text-stark-white hover:border-signal-orange hover:text-signal-orange"
     >
-      {added ? 'Added to Enquiry Cart' : 'Add to Enquiry Cart'}
+      {added ? t.cart.added : t.cart.add}
     </button>
   );
 }

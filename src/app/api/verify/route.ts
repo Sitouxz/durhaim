@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+
+const VERIFY_WINDOW_MS = 10 * 60 * 1000;
+const VERIFY_MAX_ATTEMPTS = 20;
+
+function verifyRateLimit(req: NextRequest, serial: string) {
+  return checkRateLimit({
+    key: `verify:${getClientIp(req)}:${serial}`,
+    limit: VERIFY_MAX_ATTEMPTS,
+    windowMs: VERIFY_WINDOW_MS,
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,10 +24,21 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedSerial = serial.trim().toUpperCase();
+    if (!/^[A-Z0-9-]{6,40}$/.test(normalizedSerial)) {
+      return NextResponse.json({ found: false, message: 'Invalid serial number format' }, { status: 400 });
+    }
+
+    const rateLimit = verifyRateLimit(req, normalizedSerial);
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { found: false, message: 'Too many verification attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
+      );
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
     // Look up serial number
@@ -46,19 +69,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Increment verification count
-    await supabase
-      .from('serial_numbers')
-      .update({ status: 'ACTIVE', verification_count: (data.verification_count ?? 0) + 1 })
-      .eq('id', data.id);
+    if (data.status !== 'ACTIVE') {
+      return NextResponse.json({
+        found: false,
+        message: 'This serial number is registered but not active yet.',
+      });
+    }
 
-    // Log verification attempt
     const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
-    await supabase.from('verification_logs').insert({
-      serial_id: data.id,
-      ip_address: ip,
-      user_agent: req.headers.get('user-agent') ?? '',
+    const { error: verificationError } = await supabase.rpc('record_serial_verification', {
+      p_serial: normalizedSerial,
+      p_ip_address: ip,
+      p_user_agent: req.headers.get('user-agent') ?? '',
     });
+
+    if (verificationError) {
+      console.error('Verify API log error:', verificationError);
+      return NextResponse.json({ found: false, message: 'Unable to record verification attempt.' }, { status: 500 });
+    }
 
     // Supabase may return joined data as array or object depending on schema
     const products = data.products as unknown;
@@ -74,7 +102,7 @@ export async function POST(req: NextRequest) {
       serial: data.serial,
       product: {
         name: productName,
-        status: 'ACTIVE',
+        status: data.status,
       },
     });
   } catch (err) {

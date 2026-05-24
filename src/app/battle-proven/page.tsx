@@ -17,7 +17,7 @@ export default function BattleProvenPage() {
           <img
             className="w-full h-full object-cover object-center opacity-60"
             alt="Tactical operators in combat gear"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoGDo8VtaYCZZEFVyBHWjZPjikCVuvj945yL1GNZpDpwdPxSOhNr-o76lNV8vTqzFZ9N76uChrxDaI1ltyT1abEy-DQnjljEtyB0wWVGytFyHQ8HuHxoT9eKjia1ZyogetGHIyGg1OMHn-28CmA4TmZgEg5zApp1yz8XMz9u8Ajso-kNJyDVtTc7NwLKxYH6PDXmSbmdgVCenBHDn_QucsCHMRyvzF11NnoGLUMWiWtmnh8rciBLA-QHZ0IyA2LEJLv_rLDLgU2Y-J"
+            src="/images/durhaim_image_3.png"
           />
           {/* Tactical Mesh Overlay */}
           <div className="absolute inset-0 mesh-overlay"></div>
@@ -90,7 +90,7 @@ export default function BattleProvenPage() {
               <img
                 alt="Blue training pistols in a rigid black tactical holster"
                 className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 ease-in-out scale-105 group-hover:scale-100"
-                src="https://lh3.googleusercontent.com/aida/ADBb0ugrAelWM6pjlCEXK29kjLnl08EANiuoMVnhqa1g5v0-PWJE9uZp8EAuooeG85bABWMkm8sVUdvsLjQmqfqTVc_-Svuoig1iTY1MnHFoO4g0Qq6ncXemt4YNrFidJLcM0zqWo3snwTJtY_46swWdw5zDJ7rZrR-IJ0HuXQc9GDfclhdU8-Q5rkbF_tIIhKLbodZdibDDVpWWn3F4mYxJzSMIy3OzJdGKVCS-L6C_uL42_sh4_cUBD4oDyRTI"
+                src="/images/15_Holster-1.png"
               />
               {/* Overlay badge */}
               <div className="absolute top-4 right-4 bg-tactical-black/80 border border-signal-orange px-3 py-1 backdrop-blur-sm">
@@ -137,7 +137,7 @@ export default function BattleProvenPage() {
                 <img
                   className="w-full h-full object-cover opacity-30 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700"
                   alt="Heavy duty ballistic nylon fabric"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNh_HqBy2thPMIm8736Jz96oeGAPdcwqLpwUEGhdL-i-L6zu4rQriemDislVSQ_8YkOkY7eUZJeVP3e6i9OIn_GHO6drN61AuzLosmeqoVL6FC7fxtTtMlv_kuw-QgK4QJoXJW5hTTI6A-d5wInU2D5sjrH--ItmntHj_IJX-unFxgS5YZjKees7kWEzEgA-_rT8EiRSGTBRAjywHaKdgaMAjEQANWidELHWgJaAZ3Rn8uLXGHk47m4VFYtlD3OEiTuKm0lAGL7sl9"
+                  src="/images/durhaim_image_4.png"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-tactical-black to-transparent"></div>
               </div>

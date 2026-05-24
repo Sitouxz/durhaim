@@ -2,16 +2,55 @@ import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
+import { defaultRegionalPrices, supportedRegions, type RegionalPrices } from '@/lib/commerce';
+import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
+
+const PRODUCT_SELECT = 'id, name, slug, description, price, regional_prices, images, is_published, category_id, categories(name, slug)';
+const PRODUCT_SELECT_LEGACY = 'id, name, slug, description, price, images, is_published, category_id, categories(name, slug)';
+
+function isMissingRegionalPricesColumn(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === 'object'
+      && 'code' in error
+      && error.code === '42703'
+      && 'message' in error
+      && typeof error.message === 'string'
+      && error.message.includes('regional_prices'),
+  );
+}
+
+function withDefaultRegionalPrices<T extends { price?: number | string; regional_prices?: RegionalPrices }>(product: T) {
+  return {
+    ...product,
+    regional_prices: product.regional_prices ?? defaultRegionalPrices(Number(product.price ?? 0)),
+  };
+}
 
 export async function GET() {
   try {
     const supabase = createAdminClient();
-    const { data, error } = await supabase
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN', 'STAFF']);
+    if (authorization.error) return authorization.error;
+
+    let { data, error } = await supabase
       .from('products')
-      .select('id, name, slug, description, price, images, is_published, category_id, categories(name, slug)')
+      .select(PRODUCT_SELECT)
       .order('name');
+
+    if (error) {
+      if (isMissingRegionalPricesColumn(error)) {
+        const legacyResult = await supabase
+          .from('products')
+          .select(PRODUCT_SELECT_LEGACY)
+          .order('name');
+
+        data = legacyResult.data?.map((product) => withDefaultRegionalPrices(product)) ?? null;
+        error = legacyResult.error;
+      }
+    }
 
     if (error) {
       if (isMissingSchemaError(error)) {
@@ -78,6 +117,13 @@ function parseProductBody(body: Record<string, unknown>) {
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const categorySlug = typeof body.categorySlug === 'string' ? body.categorySlug.trim() : '';
   const price = Number(body.price ?? 0);
+  const regionalPrices = typeof body.regional_prices === 'object' && body.regional_prices
+    ? supportedRegions.reduce<RegionalPrices>((prices, region) => {
+        const value = Number((body.regional_prices as Record<string, unknown>)[region]);
+        if (Number.isFinite(value) && value >= 0) prices[region] = value;
+        return prices;
+      }, {})
+    : defaultRegionalPrices(price);
   const images = Array.isArray(body.images)
     ? body.images.map(String).map((image) => image.trim()).filter(Boolean)
     : [];
@@ -87,12 +133,15 @@ function parseProductBody(body: Record<string, unknown>) {
     return { error: 'Name, slug, and valid price are required.' };
   }
 
-  return { name, slug, description, categorySlug, price, images, isPublished };
+  return { name, slug, description, categorySlug, price, regionalPrices, images, isPublished };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const body = await req.json().catch(() => ({}));
     const parsed = parseProductBody(body);
 
@@ -108,14 +157,21 @@ export async function POST(req: NextRequest) {
         slug: parsed.slug,
         description: parsed.description,
         price: parsed.price,
+        regional_prices: parsed.regionalPrices,
         category_id: categoryId,
         images: parsed.images,
         is_published: parsed.isPublished,
       })
-      .select('id, name, slug, description, price, images, is_published, category_id, categories(name, slug)')
+      .select(PRODUCT_SELECT)
       .single();
 
     if (error) {
+      if (isMissingRegionalPricesColumn(error)) {
+        return NextResponse.json(
+          { error: 'Database migration required. Add products.regional_prices before saving regional prices.' },
+          { status: 503 },
+        );
+      }
       if (error.code === '23505') {
         return NextResponse.json({ error: 'Product slug already exists.' }, { status: 409 });
       }
@@ -132,6 +188,9 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const body = await req.json().catch(() => ({}));
     const productId = typeof body.id === 'string' ? body.id : '';
 
@@ -152,16 +211,23 @@ export async function PATCH(req: NextRequest) {
         slug: parsed.slug,
         description: parsed.description,
         price: parsed.price,
+        regional_prices: parsed.regionalPrices,
         category_id: categoryId,
         images: parsed.images,
         is_published: parsed.isPublished,
         updated_at: new Date().toISOString(),
       })
       .eq('id', productId)
-      .select('id, name, slug, description, price, images, is_published, category_id, categories(name, slug)')
+      .select(PRODUCT_SELECT)
       .single();
 
     if (error) {
+      if (isMissingRegionalPricesColumn(error)) {
+        return NextResponse.json(
+          { error: 'Database migration required. Add products.regional_prices before saving regional prices.' },
+          { status: 503 },
+        );
+      }
       if (error.code === '23505') {
         return NextResponse.json({ error: 'Product slug already exists.' }, { status: 409 });
       }
@@ -178,6 +244,9 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get('id');
 

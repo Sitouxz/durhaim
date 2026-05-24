@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { LayoutDashboard, Box, FolderTree, QrCode, Settings } from "lucide-react";
+import { cookies } from "next/headers";
+import { LayoutDashboard, Box, FolderTree, QrCode, Settings, Users } from "lucide-react";
 import AdminSignOutButton from "@/components/AdminSignOutButton";
+import { ADMIN_SESSION_COOKIE, getAdminSessionUser } from "@/lib/admin-auth";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const sessionUser = await getAdminSessionUser((await cookies()).get(ADMIN_SESSION_COOKIE)?.value);
+
   return (
     <div className="flex h-screen bg-surface-container-lowest text-stark-white font-body-md overflow-hidden">
       {/* Sidebar */}
@@ -45,6 +49,12 @@ export default function AdminLayout({
               </Link>
             </li>
             <li>
+              <Link href="/admin/users" className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-surface-container-highest text-on-surface-variant hover:text-signal-orange transition-colors">
+                <Users className="w-5 h-5" />
+                <span className="font-label-caps uppercase">Users</span>
+              </Link>
+            </li>
+            <li>
               <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-surface-container-highest text-on-surface-variant hover:text-signal-orange transition-colors">
                 <Settings className="w-5 h-5" />
                 <span className="font-label-caps uppercase">Settings</span>
@@ -70,7 +80,7 @@ export default function AdminLayout({
             <div className="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-stark-white/20">
               <span className="font-label-caps text-xs">AD</span>
             </div>
-            <span className="font-data-mono text-sm text-stark-white hidden md:block">admin@durhaim.com</span>
+            <span className="font-data-mono text-sm text-stark-white hidden md:block">{sessionUser?.email ?? 'admin@durhaim.com'}</span>
           </div>
         </header>
 

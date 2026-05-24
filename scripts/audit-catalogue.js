@@ -14,6 +14,16 @@ if (!apiText.includes(".eq('categories.slug', category)")) {
   process.exit(1);
 }
 
+if (apiText.includes('name.ilike.%${search}%') || apiText.includes('description.ilike.%${search}%')) {
+  console.error('Products API must sanitize search before interpolating it into PostgREST filters.');
+  process.exit(1);
+}
+
+if (!apiText.includes('.range(from, to)')) {
+  console.error('Products API must paginate at the database query instead of fetching every product first.');
+  process.exit(1);
+}
+
 const pageFile = path.join(process.cwd(), 'src', 'app', 'catalogue', 'page.tsx');
 const pageText = fs.readFileSync(pageFile, 'utf8');
 

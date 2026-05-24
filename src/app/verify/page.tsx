@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import JsonLd from "@/components/JsonLd";
 
 export default function VerificationPage() {
   const [serial, setSerial] = useState("");
   const router = useRouter();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://durhaim.com";
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,12 +19,35 @@ export default function VerificationPage() {
 
   return (
     <main className="flex-grow flex flex-col min-h-[80vh] bg-tactical-black">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "How do I verify a DURHAIM product?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Enter the product serial number in the DURHAIM authenticity checker. The system confirms whether the serial is registered, active, or revoked.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Where is the DURHAIM authenticity checker?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: `The DURHAIM authenticity checker is available at ${siteUrl}/verify.`,
+              },
+            },
+          ],
+        }}
+      />
       {/* Header/Hero Section */}
       <section
         className="relative py-section-gap px-margin-edge border-b border-surface-container-highest flex-grow flex flex-col justify-center items-center"
         style={{
-          backgroundImage:
-            "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDATYlhm7_xdR5DTi_QPf4WH0ziToNojqIiQ120kACiyZDOCbV2aZzkwL8Ou6JYG9Y5l2LtfFYOKv39opyEPB-WwiPkRObeGaKt9jL1ERKq1kDwrcqoUoGbQ2xdwJpHIrFZsU2_RiHISG7zqrru11fwcYMzNj3jOV0N5o5oVlZhG6KBgcXQn53eD11OlBGvqSnuxX91I-vqizc2_2BYISl4-yjOaJf3q0He9cuTMWgtK7DEC10cQe5rhHBVPRXKuHFHGVtGhwFRG7rz')",
+          backgroundImage: "url('/images/durhaim_image_2.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

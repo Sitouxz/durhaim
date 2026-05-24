@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '@/lib/admin-auth';
+import { ADMIN_SESSION_COOKIE, getActiveAdminSessionUser } from '@/lib/admin-auth';
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -10,8 +10,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const isAuthenticated = await verifyAdminSessionToken(req.cookies.get(ADMIN_SESSION_COOKIE)?.value);
-  if (isAuthenticated) {
+  const sessionUser = await getActiveAdminSessionUser(req.cookies.get(ADMIN_SESSION_COOKIE)?.value);
+  if (sessionUser) {
     return NextResponse.next();
   }
 

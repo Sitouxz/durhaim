@@ -2,10 +2,27 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { useCommerce } from '@/components/CommerceProvider';
 
 export default function Footer() {
+  const { language } = useCommerce();
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const copy = language === 'id'
+    ? {
+        contacts: 'Kontak',
+        navigation: 'Navigasi',
+        subscribe: 'Berlangganan',
+        newsletter: 'Ikuti newsletter kami untuk mendapatkan kabar terbaru.',
+        email: 'MASUKKAN EMAIL',
+      }
+    : {
+        contacts: 'Contacts',
+        navigation: 'Navigation',
+        subscribe: 'Subscribe',
+        newsletter: 'Follow our newsletter to stay updated about agency.',
+        email: 'ENTER EMAIL',
+      };
 
   const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,7 +87,7 @@ export default function Footer() {
 
         {/* Contacts Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">Contacts</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{copy.contacts}</h4>
           <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant">
             <li className="flex items-start gap-2">
               <span className="material-symbols-outlined text-sm mt-1">location_on</span>
@@ -89,7 +106,7 @@ export default function Footer() {
 
         {/* Links Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">Navigation</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{copy.navigation}</h4>
           <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant flex flex-col">
             <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=vest">Vest &amp; Chestrig</Link>
             <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=pack">Pack &amp; Pouches</Link>
@@ -101,16 +118,16 @@ export default function Footer() {
 
         {/* Subscribe Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">Subscribe</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{copy.subscribe}</h4>
           <p className="font-body-md text-body-md text-on-tertiary-fixed-variant mb-stack-md">
-            Follow our newsletter to stay updated about agency.
+            {copy.newsletter}
           </p>
           <form onSubmit={submitNewsletter} className="flex">
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="bg-charcoal-field border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 w-full focus:outline-none focus:border-signal-orange rounded-none placeholder-on-tertiary-fixed-variant"
-              placeholder="ENTER EMAIL"
+              placeholder={copy.email}
               type="email"
               required
             />

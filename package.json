@@ -16,17 +16,21 @@
     "audit:print-qr": "node scripts/audit-print-qr.js",
     "audit:bulk-qr": "node scripts/audit-bulk-qr.js",
     "audit:advanced-serials": "node scripts/audit-advanced-serials.js",
+    "audit:user-management": "node scripts/audit-user-management.js",
+    "audit:seo-ai": "node scripts/audit-seo-ai.js",
+    "audit:security-hardening": "node scripts/audit-security-hardening.js",
     "supabase:apply": "node scripts/apply-supabase-schema.js",
     "supabase:verify": "node scripts/verify-supabase.js",
-    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:advanced-serials && npm run build"
+    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.106.0",
+    "@supabase/supabase-js": "^2.106.1",
     "@types/qrcode": "^1.5.6",
+    "dotenv": "^17.4.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.16.0",
-    "next": "14.2.35",
+    "next": "^15.5.18",
     "qrcode": "^1.5.4",
     "react": "^18",
     "react-dom": "^18"
@@ -36,10 +40,13 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
-    "eslint-config-next": "14.2.35",
+    "eslint-config-next": "^15.5.18",
     "pg": "^8.21.0",
-    "postcss": "^8",
+    "postcss": "8.5.15",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.15"
   }
 }

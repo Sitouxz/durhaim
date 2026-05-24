@@ -3,6 +3,7 @@
 import { Archive, Boxes, CheckCircle2, Edit, ImageUp, Plus, QrCode, Search, Trash2 } from 'lucide-react';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { defaultRegionalPrices, regionConfigs, supportedRegions, type RegionCode, type RegionalPrices } from '@/lib/commerce';
 
 type CategoryRelation = { name: string; slug: string } | { name: string; slug: string }[] | null;
 
@@ -12,6 +13,7 @@ type Product = {
   slug: string;
   description?: string;
   price?: number;
+  regional_prices?: RegionalPrices;
   images?: string[];
   is_published?: boolean;
   serial_count?: number;
@@ -31,6 +33,7 @@ type ProductForm = {
   slug: string;
   description: string;
   price: string;
+  regionalPrices: Record<RegionCode, string>;
   categorySlug: string;
   imageUrls: string;
   is_published: boolean;
@@ -41,13 +44,17 @@ const emptyForm: ProductForm = {
   slug: '',
   description: '',
   price: '0',
+  regionalPrices: {
+    ID: '0',
+    GLOBAL: '0',
+  },
   categorySlug: 'vest',
   imageUrls: '',
   is_published: true,
 };
 
 const MAX_PRODUCT_IMAGE_SIZE = 3 * 1024 * 1024;
-const ALLOWED_PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 function getCategory(category: CategoryRelation) {
   if (Array.isArray(category)) return category[0] ?? null;
@@ -71,12 +78,18 @@ function slugify(value: string) {
 }
 
 function productToForm(product: Product): ProductForm {
+  const regionalPrices = product.regional_prices ?? defaultRegionalPrices(Number(product.price ?? 0));
+
   return {
     id: product.id,
     name: product.name,
     slug: product.slug,
     description: product.description ?? '',
     price: String(product.price ?? 0),
+    regionalPrices: supportedRegions.reduce<Record<RegionCode, string>>((prices, region) => {
+      prices[region] = String(regionalPrices[region] ?? 0);
+      return prices;
+    }, { ...emptyForm.regionalPrices }),
     categorySlug: getCategorySlug(product.categories),
     imageUrls: (product.images ?? []).join('\n'),
     is_published: product.is_published !== false,
@@ -176,12 +189,38 @@ export default function AdminProductsPage() {
     }));
   };
 
+  const setRegionalPrice = (region: RegionCode, value: string) => {
+    setForm((current) => ({
+      ...current,
+      regionalPrices: {
+        ...current.regionalPrices,
+        [region]: value,
+      },
+    }));
+  };
+
+  const handleBasePriceChange = (value: string) => {
+    const generatedPrices = defaultRegionalPrices(Number(value || 0));
+    setForm((current) => ({
+      ...current,
+      price: value,
+      regionalPrices: supportedRegions.reduce<Record<RegionCode, string>>((prices, region) => {
+        prices[region] = String(generatedPrices[region] ?? 0);
+        return prices;
+      }, { ...current.regionalPrices }),
+    }));
+  };
+
   const saveProductPayload = (nextForm: ProductForm) => ({
     id: nextForm.id,
     name: nextForm.name,
     slug: nextForm.slug,
     description: nextForm.description,
     price: Number(nextForm.price),
+    regional_prices: supportedRegions.reduce<RegionalPrices>((prices, region) => {
+      prices[region] = Number(nextForm.regionalPrices[region] || 0);
+      return prices;
+    }, {}),
     categorySlug: nextForm.categorySlug,
     images: nextForm.imageUrls.split(/\r?\n|,/).map((image) => image.trim()).filter(Boolean),
     is_published: nextForm.is_published,
@@ -203,7 +242,7 @@ export default function AdminProductsPage() {
     setMessage('');
 
     if (!ALLOWED_PRODUCT_IMAGE_TYPES.includes(file.type)) {
-      setError('Only JPG, PNG, WEBP, or GIF images are allowed.');
+      setError('Only JPG, PNG, or WEBP images are allowed.');
       return;
     }
 
@@ -403,8 +442,27 @@ export default function AdminProductsPage() {
               </select>
             </div>
             <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Price</label>
-              <input type="number" min="0" value={form.price} onChange={(event) => setField('price', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+              <label className="block font-label-caps text-on-surface-variant mb-2">Base Price (IDR)</label>
+              <input type="number" min="0" value={form.price} onChange={(event) => handleBasePriceChange(event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="block font-label-caps text-on-surface-variant mb-2">Regional Prices</label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {supportedRegions.map((region) => (
+                  <label key={region} className="block border border-surface-container-highest bg-tactical-black p-3">
+                    <span className="mb-2 block font-data-mono text-data-mono text-on-surface-variant">
+                      {regionConfigs[region].label} ({regionConfigs[region].currency})
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={form.regionalPrices[region]}
+                      onChange={(event) => setRegionalPrice(region, event.target.value)}
+                      className="w-full border border-surface-container-highest bg-charcoal-field p-2 text-stark-white"
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="lg:col-span-2">
               <label className="block font-label-caps text-on-surface-variant mb-2">Description</label>
@@ -418,7 +476,7 @@ export default function AdminProductsPage() {
               <label className="block font-label-caps text-on-surface-variant mb-2">Upload Product Image</label>
               <div className="flex flex-col gap-2 border border-surface-container-highest bg-tactical-black p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="font-body-md text-on-surface-variant">
-                  JPG, PNG, WEBP, or GIF. Max 3 MB.
+                  JPG, PNG, or WEBP. Max 3 MB.
                 </div>
                 <label className="inline-flex cursor-pointer items-center justify-center gap-2 border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">
                   <ImageUp className="h-4 w-4" />
@@ -447,14 +505,21 @@ export default function AdminProductsPage() {
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full table-fixed border-collapse text-left">
+            <colgroup>
+              <col className="w-[18%]" />
+              <col className="w-[14%]" />
+              <col className="w-[13%]" />
+              <col className="w-[20%]" />
+              <col className="w-[35%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-surface-container-highest bg-surface-container-lowest">
-                <th className="px-4 py-3 font-label-caps uppercase text-on-surface-variant">Product</th>
-                <th className="px-4 py-3 font-label-caps uppercase text-on-surface-variant">Category</th>
-                <th className="px-4 py-3 font-label-caps uppercase text-on-surface-variant">Price</th>
-                <th className="px-4 py-3 font-label-caps uppercase text-on-surface-variant">Slug</th>
-                <th className="px-4 py-3 text-right font-label-caps uppercase text-on-surface-variant">Readiness</th>
+                <th className="px-3 py-3 font-label-caps uppercase text-on-surface-variant">Product</th>
+                <th className="px-3 py-3 font-label-caps uppercase text-on-surface-variant">Category</th>
+                <th className="px-3 py-3 font-label-caps uppercase text-on-surface-variant">Price</th>
+                <th className="px-3 py-3 font-label-caps uppercase text-on-surface-variant">Slug</th>
+                <th className="px-3 py-3 text-right font-label-caps uppercase text-on-surface-variant">Readiness</th>
               </tr>
             </thead>
             <tbody className="font-data-mono text-sm text-stark-white">
@@ -469,41 +534,50 @@ export default function AdminProductsPage() {
               ) : (
                 filteredProducts.map((product) => (
                   <tr key={product.id} className="border-b border-surface-container-highest/50 hover:bg-surface-container-highest/30">
-                    <td className="px-4 py-3 text-signal-orange">
+                    <td className="break-words px-3 py-4 align-top text-signal-orange">
                       <Link href={`/catalogue/${product.slug}`} className="hover:underline">{product.name}</Link>
                     </td>
-                    <td className="px-4 py-3">{getCategoryName(product.categories)}</td>
-                    <td className="px-4 py-3 text-on-surface-variant">{product.price ? `IDR ${Number(product.price).toLocaleString('id-ID')}` : '-'}</td>
-                    <td className="px-4 py-3 text-on-surface-variant">{product.slug}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <span className={`inline-flex items-center gap-2 px-2 py-1 text-xs ${product.is_published === false ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-operator-green/15 text-operator-green'}`}>
-                          <Archive className="h-3 w-3" />
-                          {product.is_published === false ? 'DRAFT' : 'SERIAL READY'}
-                        </span>
-                        {(product.serial_count ?? 0) > 0 && (
-                          <span className="inline-flex items-center gap-1 bg-signal-orange/15 px-2 py-1 text-xs text-signal-orange" title="This product is tied to QR serials and cannot be deleted.">
-                            <QrCode className="h-3 w-3" />
-                            Tied to QR ({product.serial_count})
+                    <td className="break-words px-3 py-4 align-top">{getCategoryName(product.categories)}</td>
+                    <td className="whitespace-nowrap px-3 py-4 align-top text-on-surface-variant">
+                      {product.price ? `IDR ${Number(product.price).toLocaleString('id-ID')}` : '-'}
+                      <div className="mt-1 text-xs text-on-surface-variant/80">
+                        Global {Number(product.regional_prices?.GLOBAL ?? defaultRegionalPrices(Number(product.price ?? 0)).GLOBAL).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                      </div>
+                    </td>
+                    <td className="break-words px-3 py-4 align-top text-on-surface-variant">{product.slug}</td>
+                    <td className="px-3 py-4 align-top text-right">
+                      <div className="ml-auto grid max-w-[340px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2">
+                        <span className={`inline-flex min-w-0 items-center gap-2 justify-self-end whitespace-nowrap px-2 py-1 text-xs ${product.is_published === false ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-operator-green/15 text-operator-green'}`}>
+                            <Archive className="h-3 w-3" />
+                            {product.is_published === false ? 'DRAFT' : 'SERIAL READY'}
                           </span>
-                        )}
-                        <button type="button" onClick={() => openEditProductForm(product)} className="inline-flex items-center gap-1 text-on-surface-variant underline hover:text-signal-orange">
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </button>
-                        <button type="button" onClick={() => togglePublished(product)} className="text-on-surface-variant underline hover:text-signal-orange">
-                          {product.is_published === false ? 'Publish' : 'Unpublish'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProduct(product)}
-                          disabled={(product.serial_count ?? 0) > 0 || saving}
-                          title={(product.serial_count ?? 0) > 0 ? 'This product is tied to QR serials and cannot be deleted.' : 'Delete product'}
-                          className="inline-flex items-center gap-1 text-error underline hover:text-error/80 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
-                        </button>
+                          {(product.serial_count ?? 0) > 0 ? (
+                            <span className="inline-flex items-center gap-1 justify-self-end whitespace-nowrap bg-signal-orange/15 px-2 py-1 text-xs text-signal-orange" title="This product is tied to QR serials and cannot be deleted.">
+                              <QrCode className="h-3 w-3" />
+                              Tied to QR ({product.serial_count})
+                            </span>
+                          ) : (
+                            <span aria-hidden="true" />
+                          )}
+                        <div className="col-span-2 flex justify-end gap-x-3 gap-y-1">
+                          <button type="button" onClick={() => openEditProductForm(product)} className="inline-flex items-center gap-1 whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange">
+                            <Edit className="h-3 w-3" />
+                            Edit
+                          </button>
+                          <button type="button" onClick={() => togglePublished(product)} className="whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange">
+                            {product.is_published === false ? 'Publish' : 'Unpublish'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(product)}
+                            disabled={(product.serial_count ?? 0) > 0 || saving}
+                            title={(product.serial_count ?? 0) > 0 ? 'This product is tied to QR serials and cannot be deleted.' : 'Delete product'}
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-error underline hover:text-error/80 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>

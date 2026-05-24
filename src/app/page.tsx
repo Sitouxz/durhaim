@@ -1,14 +1,75 @@
 import Link from 'next/link';
 import SerialChecker from '@/components/SerialChecker';
+import JsonLd from '@/components/JsonLd';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
 
 export const metadata = {
-  title: 'DURHAIM - Tactical Gear',
-  description: 'Battle-proven tactical gear. Vest & Chestrig, Pack & Pouches, Belt. Authenticity verification system.',
+  title: 'DURHAIM Tactical Gear - Modular Vests, Packs, Pouches, and Belts',
+  description: 'DURHAIM builds battle-proven tactical gear for Indonesia and global users: modular vests, chestrigs, packs, pouches, belts, and authenticity verification.',
+  alternates: {
+    canonical: '/',
+    languages: {
+      en: '/',
+      id: '/?lang=id',
+      'x-default': '/',
+    },
+  },
 };
 
+const homeFaqs = [
+  {
+    question: 'What is DURHAIM?',
+    answer: 'DURHAIM is an Indonesian tactical gear brand focused on durability, hard impact resistance, and modular carry systems for vests, chestrigs, packs, pouches, and belts.',
+  },
+  {
+    question: 'Does DURHAIM support Indonesia and global pricing?',
+    answer: 'Yes. DURHAIM shows Indonesia regional pricing in IDR and global pricing in USD, with regional detection used to display the most relevant currency.',
+  },
+  {
+    question: 'How can buyers verify authentic DURHAIM products?',
+    answer: 'Buyers can enter a DURHAIM serial code in the authenticity checker to confirm whether a product serial is registered and active.',
+  },
+];
+
 export default function HomePage() {
+  const homeSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${siteUrl}/#webpage`,
+        url: siteUrl,
+        name: 'DURHAIM Tactical Gear',
+        description: metadata.description,
+        inLanguage: ['en', 'id'],
+        isPartOf: { '@id': `${siteUrl}/#website` },
+        about: [
+          'tactical gear',
+          'modular vest',
+          'chestrig',
+          'tactical pouch',
+          'tactical belt',
+          'authenticity verification',
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: homeFaqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer,
+          },
+        })),
+      },
+    ],
+  };
+
   return (
     <main className="flex-grow">
+      <JsonLd data={homeSchema} />
       {/* Verification Section */}
       <section
         className="py-section-gap px-margin-edge border-b border-surface-container-highest relative overflow-hidden flex justify-center items-center"
@@ -22,6 +83,27 @@ export default function HomePage() {
         <div className="relative z-10 bg-charcoal-field/80 backdrop-blur-md border border-surface-container-highest p-8 max-w-2xl w-full text-center space-y-stack-lg shadow-2xl">
           <h2 className="font-headline-md text-headline-md text-stark-white drop-shadow-md">Input No Code Here</h2>
           <SerialChecker />
+        </div>
+      </section>
+
+      <section className="border-b border-surface-container-highest bg-charcoal-field px-margin-edge py-section-gap">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="max-w-3xl">
+            <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
+              DURHAIM Tactical Gear
+            </h1>
+            <p className="mt-stack-md border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">
+              DURHAIM builds modular tactical gear for Indonesia and global users, including vests, chestrigs, packs, pouches, belts, and serialized authenticity support.
+            </p>
+          </div>
+          <div className="mt-stack-lg grid gap-gutter md:grid-cols-3">
+            {homeFaqs.map((faq) => (
+              <article key={faq.question} className="border border-surface-container-highest bg-tactical-black p-stack-md">
+                <h2 className="font-label-caps text-label-caps uppercase text-signal-orange">{faq.question}</h2>
+                <p className="mt-2 font-body-md text-on-surface-variant">{faq.answer}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

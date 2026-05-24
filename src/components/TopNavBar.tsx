@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useCommerce } from '@/components/CommerceProvider';
+import { regionConfigs, supportedRegions, type Language, type RegionCode } from '@/lib/commerce';
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/catalogue', label: 'Catalogue' },
-  { href: '/battle-proven', label: 'Battle Proven' },
-  { href: '/social-engagement', label: 'Social Engagement' },
-  { href: '/our-story', label: 'Our Story' },
-];
+  { href: '/', labelKey: 'home' },
+  { href: '/catalogue', labelKey: 'catalogue' },
+  { href: '/battle-proven', labelKey: 'battleProven' },
+  { href: '/social-engagement', labelKey: 'socialEngagement' },
+  { href: '/our-story', labelKey: 'ourStory' },
+] as const;
 
 export default function TopNavBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { language, setLanguage, region, setRegion, t } = useCommerce();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -48,7 +51,7 @@ export default function TopNavBar() {
                       : 'text-stark-white opacity-80 hover:text-signal-orange'
                   }`}
                 >
-                  {link.label}
+                  {t.nav[link.labelKey]}
                 </Link>
               );
             })}
@@ -63,10 +66,32 @@ export default function TopNavBar() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-48 placeholder-stark-white placeholder-opacity-40"
-                placeholder="Search..."
+                placeholder={t.nav.search}
                 type="search"
               />
             </form>
+            <div className="hidden items-center border border-surface-container-highest md:flex">
+              {(['en', 'id'] as Language[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setLanguage(option)}
+                  className={`px-2 py-1 font-data-mono text-data-mono uppercase ${language === option ? 'bg-signal-orange text-tactical-black' : 'text-stark-white hover:text-signal-orange'}`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <select
+              value={region}
+              onChange={(event) => setRegion(event.target.value as RegionCode)}
+              className="hidden max-w-[92px] border border-surface-container-highest bg-tactical-black p-1 font-data-mono text-data-mono text-stark-white focus:border-signal-orange md:block"
+              aria-label="Price region"
+            >
+              {supportedRegions.map((option) => (
+                <option key={option} value={option}>{regionConfigs[option].currency}</option>
+              ))}
+            </select>
             <Link href="/cart" className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95" aria-label="Open cart">
               <span className="material-symbols-outlined">shopping_cart</span>
             </Link>
@@ -95,10 +120,34 @@ export default function TopNavBar() {
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {link.label}
+                    {t.nav[link.labelKey]}
                   </Link>
                 );
               })}
+              <div className="grid grid-cols-2 gap-2">
+                {(['en', 'id'] as Language[]).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setLanguage(option)}
+                    className={`border border-surface-container-highest px-3 py-2 font-label-caps uppercase ${language === option ? 'bg-signal-orange text-tactical-black' : 'text-stark-white'}`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+              <select
+                value={region}
+                onChange={(event) => setRegion(event.target.value as RegionCode)}
+                className="border border-surface-container-highest bg-tactical-black p-3 font-data-mono text-stark-white"
+                aria-label="Price region"
+              >
+                {supportedRegions.map((option) => (
+                  <option key={option} value={option}>
+                    {regionConfigs[option].label} / {regionConfigs[option].currency}
+                  </option>
+                ))}
+              </select>
               {/* Mobile Search */}
               <form onSubmit={submitSearch} className="flex items-center bg-charcoal-field border border-surface-container-highest">
                 <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
@@ -106,7 +155,7 @@ export default function TopNavBar() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 flex-1 placeholder-stark-white placeholder-opacity-40"
-                  placeholder="Search..."
+                  placeholder={t.nav.search}
                   type="search"
                 />
               </form>

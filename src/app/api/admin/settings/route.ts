@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
+import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,9 @@ function settingsFromRows(rows: { key: string; value: string }[]) {
 export async function GET() {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN', 'STAFF']);
+    if (authorization.error) return authorization.error;
+
     const { data, error } = await supabase
       .from('site_settings')
       .select('key, value')
@@ -49,6 +53,9 @@ export async function PATCH(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const { error } = await supabase
       .from('site_settings')
       .upsert(updates, { onConflict: 'key' });

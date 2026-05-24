@@ -19,21 +19,21 @@ function assertNotIncludes(relativePath, needle, message) {
 }
 
 assertIncludes(
-  'src/app/catalogue/[slug]/page.tsx',
+  'src/components/ProductDetailClient.tsx',
   '<AddToCartButton product=',
   'product detail page must let users add products to the enquiry cart',
 );
 
-assertIncludes(
+assertNotIncludes(
   'src/app/verify/[serial]/page.tsx',
   'recordVerificationView',
-  'direct QR certificate pages must record verification views',
+  'direct QR certificate pages must not mutate verification state on GET',
 );
 
 assertIncludes(
-  'src/app/verify/[serial]/page.tsx',
-  'verification_logs',
-  'direct QR certificate pages must write verification logs',
+  'src/app/api/verify/route.ts',
+  "rpc('record_serial_verification'",
+  'rate-limited verification API must record verification through constrained RPC',
 );
 
 assertNotIncludes(

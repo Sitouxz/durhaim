@@ -18,7 +18,7 @@ export default function OurStoryPage() {
       <section
         className="relative min-h-[72vh] border-b border-surface-container-highest px-margin-edge py-section-gap"
         style={{
-          backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuA9WRPaRf92KnmMSn2PydhFmfWCJ8fPHdTcDRRdCyu-S0YcvZbJmoDtOrBWfdavpgscmTjjLNdHO0RppcTMLcKkrcu_zgTJCv0_9zih9zxts8LXgHnLUSxncK5YLhxCtHsyNV4CkOBqOHVVgYlqYlE_OfphyUWHXjT3bbVNyhSF6q9aPjhOlse-7pr5Hz9EvCIka-gfGUW6A4oMfPn7cfXl7Hs-cR3y0AWf_gQCRk4YSFVkXRt-dvaUjP9G8wAXrFGVE0eLG8MGuLre')",
+          backgroundImage: "url('/images/durhaim_image_1.png')",
           backgroundPosition: 'center',
           backgroundSize: 'cover',
         }}

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
+import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_PRODUCT_IMAGE_SIZE = 3 * 1024 * 1024;
-const ALLOWED_PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PRODUCT_IMAGE_BUCKET = 'product-images';
 
 function getExtension(file: File) {
@@ -14,8 +15,38 @@ function getExtension(file: File) {
   if (file.type === 'image/jpeg') return 'jpg';
   if (file.type === 'image/png') return 'png';
   if (file.type === 'image/webp') return 'webp';
-  if (file.type === 'image/gif') return 'gif';
   return 'bin';
+}
+
+async function validateImageSignature(file: File) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (file.type === 'image/jpeg') {
+    return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+
+  if (file.type === 'image/png') {
+    return bytes[0] === 0x89
+      && bytes[1] === 0x50
+      && bytes[2] === 0x4e
+      && bytes[3] === 0x47
+      && bytes[4] === 0x0d
+      && bytes[5] === 0x0a
+      && bytes[6] === 0x1a
+      && bytes[7] === 0x0a;
+  }
+
+  if (file.type === 'image/webp') {
+    return bytes[0] === 0x52
+      && bytes[1] === 0x49
+      && bytes[2] === 0x46
+      && bytes[3] === 0x46
+      && bytes[8] === 0x57
+      && bytes[9] === 0x45
+      && bytes[10] === 0x42
+      && bytes[11] === 0x50;
+  }
+
+  return false;
 }
 
 async function ensureProductImageBucket(supabase: ReturnType<typeof createAdminClient>) {
@@ -36,6 +67,9 @@ async function ensureProductImageBucket(supabase: ReturnType<typeof createAdminC
 export async function POST(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const formData = await req.formData();
     const file = formData.get('image');
 
@@ -44,11 +78,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (!ALLOWED_PRODUCT_IMAGE_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Only JPG, PNG, WEBP, or GIF images are allowed.' }, { status: 415 });
+      return NextResponse.json({ error: 'Only JPG, PNG, or WEBP images are allowed.' }, { status: 415 });
     }
 
     if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
       return NextResponse.json({ error: 'Image must be 3 MB or smaller.' }, { status: 413 });
+    }
+
+    if (!(await validateImageSignature(file))) {
+      return NextResponse.json({ error: 'Image file signature does not match its content type.' }, { status: 415 });
     }
 
     await ensureProductImageBucket(supabase);

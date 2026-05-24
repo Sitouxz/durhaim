@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
+import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,9 @@ function generateSerialRows(productsToGenerate: ProductForSerialGeneration[], co
 export async function GET(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN', 'STAFF']);
+    if (authorization.error) return authorization.error;
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search');
     const status = searchParams.get('status');
@@ -170,6 +174,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const body = await req.json();
     const { productId, count } = body;
 
@@ -262,6 +269,9 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
+    if (authorization.error) return authorization.error;
+
     const body = await req.json();
     const { serialId, status } = body;
 
