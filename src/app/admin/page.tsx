@@ -12,9 +12,17 @@ type Serial = {
   products?: { name?: string } | { name?: string }[] | null;
 };
 
-type Product = {
-  id: string;
-  name: string;
+type SerialListResponse = {
+  data?: Serial[];
+};
+
+type OverviewData = {
+  totalProducts: number;
+  totalSerials: number;
+  unactivatedSerials: number;
+  revokedSerials: number;
+  verificationTotal: number;
+  recentSerials: Serial[];
 };
 
 function getProductName(product: Serial['products']) {
@@ -22,28 +30,43 @@ function getProductName(product: Serial['products']) {
   return product?.name ?? 'Unknown';
 }
 
+function normalizeSerialsResponse(serialsData: Serial[] | SerialListResponse | unknown): Serial[] {
+  if (Array.isArray(serialsData)) return serialsData;
+  if (serialsData && typeof serialsData === 'object' && Array.isArray((serialsData as SerialListResponse).data)) {
+    return (serialsData as SerialListResponse).data ?? [];
+  }
+
+  return [];
+}
+
 export default function AdminDashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [serials, setSerials] = useState<Serial[]>([]);
+  const [overview, setOverview] = useState<OverviewData>({
+    totalProducts: 0,
+    totalSerials: 0,
+    unactivatedSerials: 0,
+    revokedSerials: 0,
+    verificationTotal: 0,
+    recentSerials: [],
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        const [productsRes, serialsRes] = await Promise.all([
-          fetch('/api/admin/products'),
-          fetch('/api/admin/serials'),
-        ]);
+        const overviewRes = await fetch('/api/admin/overview', { cache: 'no-store' });
+        const overviewData = await overviewRes.json().catch(() => ({}));
 
-        const productsData = await productsRes.json().catch(() => []);
-        const serialsData = await serialsRes.json().catch(() => []);
+        if (!overviewRes.ok) throw new Error(overviewData.error || 'Failed to load overview.');
 
-        if (!productsRes.ok) throw new Error(productsData.error || 'Failed to load products.');
-        if (!serialsRes.ok) throw new Error(serialsData.error || 'Failed to load serials.');
-
-        setProducts(productsData);
-        setSerials(serialsData);
+        setOverview({
+          totalProducts: Number(overviewData.totalProducts) || 0,
+          totalSerials: Number(overviewData.totalSerials) || 0,
+          unactivatedSerials: Number(overviewData.unactivatedSerials) || 0,
+          revokedSerials: Number(overviewData.revokedSerials) || 0,
+          verificationTotal: Number(overviewData.verificationTotal) || 0,
+          recentSerials: normalizeSerialsResponse(overviewData.recentSerials),
+        });
       } catch (fetchError) {
         setError(fetchError instanceof Error ? fetchError.message : 'Failed to load dashboard data.');
       } finally {
@@ -54,15 +77,7 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
-  const metrics = useMemo(() => {
-    return {
-      activeSerials: serials.filter((serial) => serial.status === 'ACTIVE').length,
-      revokedSerials: serials.filter((serial) => serial.status === 'REVOKED').length,
-      verificationTotal: serials.reduce((sum, serial) => sum + (serial.verification_count || 0), 0),
-    };
-  }, [serials]);
-
-  const recentSerials = serials.slice(0, 5);
+  const recentSerials = useMemo(() => overview.recentSerials.slice(0, 5), [overview.recentSerials]);
 
   return (
     <div className="space-y-stack-lg animate-in fade-in duration-500">
@@ -79,10 +94,10 @@ export default function AdminDashboard() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-gutter">
-        <MetricCard label="Total Products" value={loading ? '...' : products.length.toString()} icon={<Box className="text-signal-orange w-5 h-5" />} />
-        <MetricCard label="Active Serials" value={loading ? '...' : metrics.activeSerials.toString()} icon={<QrCode className="text-signal-orange w-5 h-5" />} />
-        <MetricCard label="Verifications" value={loading ? '...' : metrics.verificationTotal.toString()} icon={<Activity className="text-signal-orange w-5 h-5" />} />
-        <MetricCard label="Revoked" value={loading ? '...' : metrics.revokedSerials.toString()} icon={<div className="w-2 h-2 rounded-full bg-error" />} />
+        <MetricCard label="Total Products" value={loading ? '...' : overview.totalProducts.toString()} icon={<Box className="text-signal-orange w-5 h-5" />} />
+        <MetricCard label="Total Serials" value={loading ? '...' : overview.totalSerials.toString()} icon={<QrCode className="text-signal-orange w-5 h-5" />} />
+        <MetricCard label="Unactivated" value={loading ? '...' : overview.unactivatedSerials.toString()} icon={<div className="w-2 h-2 rounded-full bg-signal-orange" />} />
+        <MetricCard label="Verifications" value={loading ? '...' : overview.verificationTotal.toString()} icon={<Activity className="text-signal-orange w-5 h-5" />} />
       </div>
 
       <div className="bg-charcoal-field border border-surface-container-highest p-stack-lg">

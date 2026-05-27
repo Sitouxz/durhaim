@@ -49,6 +49,10 @@ if (!/createAdminSessionToken\([^)]*email/.test(loginApi)) {
   failures.push('Admin login API must create a session token tied to the user email.');
 }
 
+if (!/getAdminCookieOptions\(req\)/.test(loginApi)) {
+  failures.push('Admin login API must choose session cookie security from the current request.');
+}
+
 const adminAuth = fs.existsSync(path.join(root, 'src/lib/admin-auth.ts'))
   ? fs.readFileSync(path.join(root, 'src/lib/admin-auth.ts'), 'utf8')
   : '';
@@ -65,6 +69,10 @@ for (const unsafeDefault of ['durhaim-admin-2026', 'durhaim-local-session-secret
 
 if (!/getActiveAdminSessionUser/.test(adminAuth) || !/admin_users/.test(adminAuth) || !/ACTIVE/.test(adminAuth)) {
   failures.push('Admin auth helper must validate sessions against an active admin_users record.');
+}
+
+if (!/shouldUseSecureAdminCookie/.test(adminAuth) || !/x-forwarded-proto/.test(adminAuth) || !/localhost/.test(adminAuth)) {
+  failures.push('Admin auth helper must avoid secure cookies on local HTTP while keeping HTTPS cookies secure.');
 }
 
 const signSessionEmailMatch = adminAuth.match(/async function signSessionEmail[\s\S]*?\n}/);

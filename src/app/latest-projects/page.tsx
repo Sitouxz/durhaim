@@ -48,7 +48,7 @@ export default function LatestProjectsPage() {
           ))}
         </div>
         <Link href="/social-engagement" className="btn btn-primary mt-stack-lg inline-flex">
-          <LocalizedText en="Follow Social Updates" id="Ikuti Kabar Sosial" />
+          <LocalizedText en="Follow Social Updates" id="Ikuti Media Sosial" />
         </Link>
       </div>
     </main>

@@ -19,11 +19,6 @@ requireText(
 );
 requireText(
   'src/app/admin/serials/page.tsx',
-  "updateSerialStatus(s.id, 'ACTIVE')",
-  'serial admin must provide an explicit Restore/Activate action',
-);
-requireText(
-  'src/app/admin/serials/page.tsx',
   "value=\"INACTIVE\"",
   'serial admin must expose unactivated serial status',
 );
@@ -52,10 +47,39 @@ if (read('src/app/verify/[serial]/page.tsx').includes("status: 'ACTIVE'")) {
   failures.push('src/app/verify/[serial]/page.tsx: direct QR certificate view must not activate serial status');
 }
 
+const serialsPage = read('src/app/admin/serials/page.tsx');
+const serialsTable = serialsPage.slice(serialsPage.indexOf('{/* Data Table */}'), serialsPage.indexOf('{showFilterModal && ('));
+if (serialsTable.includes('Activate') || serialsTable.includes("updateSerialStatus(s.id, 'ACTIVE')")) {
+  failures.push('src/app/admin/serials/page.tsx: serial table actions must not expose Activate');
+}
+
 const productsApi = read('src/app/api/admin/products/route.ts');
 for (const handler of ['export async function POST', 'export async function PATCH', 'export async function DELETE']) {
   if (!productsApi.includes(handler)) {
     failures.push(`src/app/api/admin/products/route.ts: missing ${handler}`);
+  }
+}
+
+const adminOverview = read('src/app/admin/page.tsx');
+if (!adminOverview.includes('normalizeSerialsResponse') || !adminOverview.includes('Array.isArray(serialsData)')) {
+  failures.push('src/app/admin/page.tsx: overview must normalize serial API array and paginated response shapes');
+}
+
+if (!adminOverview.includes('fetchDashboardData') || !adminOverview.includes('cache: \'no-store\'')) {
+  failures.push('src/app/admin/page.tsx: overview dashboard data fetches must bypass stale cached admin API responses');
+}
+
+if (!adminOverview.includes("fetch('/api/admin/overview'") || !adminOverview.includes('Total Serials') || !adminOverview.includes('Unactivated')) {
+  failures.push('src/app/admin/page.tsx: overview must load aggregate serial inventory metrics instead of active-only counts');
+}
+
+const overviewApiPath = path.join(root, 'src', 'app', 'api', 'admin', 'overview', 'route.ts');
+if (!fs.existsSync(overviewApiPath)) {
+  failures.push('src/app/api/admin/overview/route.ts: admin overview aggregate API is missing');
+} else {
+  const overviewApi = fs.readFileSync(overviewApiPath, 'utf8');
+  for (const needle of ['export async function GET', 'totalSerials', 'unactivatedSerials', 'verificationTotal', 'recentSerials']) {
+    if (!overviewApi.includes(needle)) failures.push(`src/app/api/admin/overview/route.ts: missing overview metric ${needle}`);
   }
 }
 
@@ -68,6 +92,46 @@ for (const needle of ['setShowProductForm', 'handleSaveProduct', 'togglePublishe
   if (!productsPage.includes(needle)) {
     failures.push(`src/app/admin/products/page.tsx: missing product management UI/control ${needle}`);
   }
+}
+
+const categoriesPageForModal = read('src/app/admin/categories/page.tsx');
+const usersPageForModal = read('src/app/admin/users/page.tsx');
+
+for (const [file, content] of [
+  ['src/app/admin/products/page.tsx', productsPage],
+  ['src/app/admin/categories/page.tsx', categoriesPageForModal],
+  ['src/app/admin/users/page.tsx', usersPageForModal],
+]) {
+  if (content.includes('confirm(')) {
+    failures.push(`${file}: edit/delete flows must use in-app modals instead of browser confirm dialogs`);
+  }
+}
+
+for (const [file, content, formFlag] of [
+  ['src/app/admin/products/page.tsx', productsPage, 'showProductForm'],
+  ['src/app/admin/categories/page.tsx', categoriesPageForModal, 'showCategoryForm'],
+  ['src/app/admin/users/page.tsx', usersPageForModal, 'showForm'],
+]) {
+  if (!content.includes('fixed inset-0') || !content.includes(formFlag)) {
+    failures.push(`${file}: edit/create form must render inside a modal overlay`);
+  }
+}
+
+for (const [file, content, deleteFlag] of [
+  ['src/app/admin/products/page.tsx', productsPage, 'productPendingDelete'],
+  ['src/app/admin/categories/page.tsx', categoriesPageForModal, 'categoryPendingDelete'],
+]) {
+  if (!content.includes(deleteFlag) || !content.includes('Confirm Delete')) {
+    failures.push(`${file}: delete action must use a confirmation modal`);
+  }
+}
+
+if (productsPage.includes('Base Price') || productsPage.includes('handleBasePriceChange')) {
+  failures.push('src/app/admin/products/page.tsx: add/edit product form must use regional prices only, without a base price field');
+}
+
+if (productsPage.includes('price: Number(nextForm.price)')) {
+  failures.push('src/app/admin/products/page.tsx: product save payload must not send a manually edited base price');
 }
 
 if (!productsPage.includes('serial_count') || !productsPage.includes('Tied to QR')) {

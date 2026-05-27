@@ -116,21 +116,26 @@ function parseProductBody(body: Record<string, unknown>) {
   const slug = typeof body.slug === 'string' ? body.slug.trim().toLowerCase() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const categorySlug = typeof body.categorySlug === 'string' ? body.categorySlug.trim() : '';
-  const price = Number(body.price ?? 0);
   const regionalPrices = typeof body.regional_prices === 'object' && body.regional_prices
     ? supportedRegions.reduce<RegionalPrices>((prices, region) => {
         const value = Number((body.regional_prices as Record<string, unknown>)[region]);
         if (Number.isFinite(value) && value >= 0) prices[region] = value;
         return prices;
       }, {})
-    : defaultRegionalPrices(price);
+    : {};
+  const price = Number(regionalPrices.ID ?? 0);
   const images = Array.isArray(body.images)
     ? body.images.map(String).map((image) => image.trim()).filter(Boolean)
     : [];
   const isPublished = body.is_published !== false;
 
-  if (!name || !slug || !Number.isFinite(price) || price < 0) {
-    return { error: 'Name, slug, and valid price are required.' };
+  const hasValidRegionalPrices = supportedRegions.every((region) => {
+    const value = regionalPrices[region];
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  });
+
+  if (!name || !slug || !hasValidRegionalPrices) {
+    return { error: 'Name, slug, and valid regional prices are required.' };
   }
 
   return { name, slug, description, categorySlug, price, regionalPrices, images, isPublished };

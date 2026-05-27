@@ -44,7 +44,7 @@ export default function SocialEngagementPage() {
         <div className="mx-auto grid max-w-[1440px] gap-gutter lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-8">
             <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
-              <LocalizedText en="Social Engagement" id="Kegiatan Sosial" />
+              <LocalizedText en="Social Engagement" id="Media Sosial" />
             </h1>
             <p className="mt-stack-md max-w-3xl border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">
               <LocalizedText

@@ -48,6 +48,7 @@ export default function AdminCategoriesPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [categoryPendingDelete, setCategoryPendingDelete] = useState<Category | null>(null);
   const [form, setForm] = useState<CategoryForm>(emptyForm);
 
   const fetchCategories = async () => {
@@ -142,8 +143,6 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDeleteCategory = async (category: Category) => {
-    if (!confirm(`Delete ${category.name}? Products in this category will become unassigned.`)) return;
-
     setSaving(true);
     setError('');
     setMessage('');
@@ -160,6 +159,7 @@ export default function AdminCategoriesPage() {
       }
 
       setMessage('Category deleted.');
+      setCategoryPendingDelete(null);
       if (form.id === category.id) {
         setShowCategoryForm(false);
         setForm(emptyForm);
@@ -222,29 +222,6 @@ export default function AdminCategoriesPage() {
           </button>
         </div>
 
-        {showCategoryForm && (
-          <form onSubmit={handleSaveCategory} className="grid gap-4 border-b border-surface-container-highest p-4 lg:grid-cols-3">
-            <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Name</label>
-              <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
-            </div>
-            <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
-              <input value={form.slug} onChange={(event) => setField('slug', slugify(event.target.value))} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
-            </div>
-            <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Icon</label>
-              <input value={form.icon} onChange={(event) => setField('icon', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="Optional icon name" />
-            </div>
-            <div className="flex justify-end gap-3 lg:col-span-3">
-              <button type="button" onClick={() => setShowCategoryForm(false)} className="border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">Cancel</button>
-              <button type="submit" disabled={saving} className="bg-signal-orange px-4 py-2 font-label-caps text-tactical-black hover:bg-stark-white disabled:opacity-60">
-                {saving ? 'Saving...' : 'Save Category'}
-              </button>
-            </div>
-          </form>
-        )}
-
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
@@ -276,7 +253,7 @@ export default function AdminCategoriesPage() {
                           <Edit className="h-3 w-3" />
                           Edit
                         </button>
-                        <button type="button" onClick={() => handleDeleteCategory(category)} className="inline-flex items-center gap-1 text-error underline hover:text-error/80">
+                        <button type="button" onClick={() => setCategoryPendingDelete(category)} className="inline-flex items-center gap-1 text-error underline hover:text-error/80">
                           <Trash2 className="h-3 w-3" />
                           Delete
                         </button>
@@ -289,6 +266,51 @@ export default function AdminCategoriesPage() {
           </table>
         </div>
       </div>
+
+      {showCategoryForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-tactical-black/80 p-4 backdrop-blur-sm">
+          <form onSubmit={handleSaveCategory} className="grid max-h-[90vh] w-full max-w-3xl gap-4 overflow-y-auto border border-surface-container-highest bg-charcoal-field p-stack-lg shadow-2xl lg:grid-cols-3">
+            <div className="lg:col-span-3">
+              <h2 className="font-headline-md uppercase text-stark-white">{form.id ? 'Edit Category' : 'New Category'}</h2>
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Name</label>
+              <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
+              <input value={form.slug} onChange={(event) => setField('slug', slugify(event.target.value))} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Icon</label>
+              <input value={form.icon} onChange={(event) => setField('icon', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="Optional icon name" />
+            </div>
+            <div className="flex justify-end gap-3 lg:col-span-3">
+              <button type="button" onClick={() => setShowCategoryForm(false)} className="border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">Cancel</button>
+              <button type="submit" disabled={saving} className="bg-signal-orange px-4 py-2 font-label-caps text-tactical-black hover:bg-stark-white disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save Category'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {categoryPendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-tactical-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md border border-surface-container-highest bg-charcoal-field p-stack-lg shadow-2xl">
+            <h2 className="font-headline-md uppercase text-stark-white">Confirm Delete</h2>
+            <p className="mt-stack-sm font-body-md text-on-surface-variant">
+              Delete {categoryPendingDelete.name}? Products in this category will become unassigned.
+            </p>
+            <div className="mt-stack-lg flex justify-end gap-3">
+              <button type="button" onClick={() => setCategoryPendingDelete(null)} className="border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">Cancel</button>
+              <button type="button" onClick={() => handleDeleteCategory(categoryPendingDelete)} disabled={saving} className="bg-error px-4 py-2 font-label-caps text-stark-white hover:bg-error/80 disabled:opacity-60">
+                {saving ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

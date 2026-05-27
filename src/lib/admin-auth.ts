@@ -11,6 +11,16 @@ export type ActiveAdminSessionUser = {
   status: 'ACTIVE' | 'SUSPENDED';
 };
 
+type AdminCookieRequest = {
+  headers: {
+    get(name: string): string | null;
+  };
+  nextUrl?: {
+    protocol?: string;
+    hostname?: string;
+  };
+};
+
 function getAdminPassword() {
   const password = process.env.ADMIN_PASSWORD;
   if (!password) {
@@ -107,11 +117,30 @@ export async function getActiveAdminSessionUser(token?: string | null): Promise<
   return user?.status === 'ACTIVE' ? user : null;
 }
 
-export function getAdminCookieOptions() {
+function isLocalAdminHost(hostname?: string | null) {
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '0.0.0.0'
+    || hostname === '::1';
+}
+
+export function shouldUseSecureAdminCookie(req?: AdminCookieRequest) {
+  if (!req) return process.env.NODE_ENV === 'production';
+
+  const forwardedProto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase();
+  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim().toLowerCase();
+  const host = (forwardedHost || req.headers.get('host') || req.nextUrl?.hostname || '').split(':')[0];
+
+  if (isLocalAdminHost(host)) return false;
+  if (forwardedProto) return forwardedProto === 'https';
+  return req.nextUrl?.protocol === 'https:';
+}
+
+export function getAdminCookieOptions(req?: AdminCookieRequest) {
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    secure: shouldUseSecureAdminCookie(req),
     path: '/',
     maxAge: 60 * 60 * 8,
   };

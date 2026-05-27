@@ -6,6 +6,7 @@ import { requireAdminRole } from '@/lib/admin-permissions';
 export const dynamic = 'force-dynamic';
 
 const ALL_DURHAIM_PRODUCTS = 'ALL_DURHAIM_PRODUCTS';
+const CUSTOM_PRODUCT = 'CUSTOM_PRODUCT';
 
 const sortableSerialColumns = {
   serial: 'serial',
@@ -18,7 +19,7 @@ const sortableSerialColumns = {
 type SortableSerialColumn = keyof typeof sortableSerialColumns;
 
 type ProductForSerialGeneration = {
-  id: string;
+  id: string | null;
   categories: unknown;
 };
 
@@ -49,7 +50,7 @@ function generateSerialRows(productsToGenerate: ProductForSerialGeneration[], co
   };
 
   return productsToGenerate.flatMap((product) => {
-    const catPrefix = getCategoryPrefix(product.categories);
+    const catPrefix = product.id === null ? 'CUS' : getCategoryPrefix(product.categories);
     return Array.from({ length: count }, () => ({
       product_id: product.id,
       serial: `DRH-${catPrefix}-${yymmdd}-${generateRandom4Char()}`,
@@ -106,7 +107,9 @@ export async function GET(req: NextRequest) {
       query = query.eq('status', status);
     }
 
-    if (productId) {
+    if (productId === CUSTOM_PRODUCT) {
+      query = query.is('product_id', null);
+    } else if (productId) {
       query = query.eq('product_id', productId);
     }
 
@@ -186,7 +189,9 @@ export async function POST(req: NextRequest) {
 
     let productsToGenerate: ProductForSerialGeneration[] = [];
 
-    if (productId === ALL_DURHAIM_PRODUCTS) {
+    if (productId === CUSTOM_PRODUCT) {
+      productsToGenerate = [{ id: null, categories: null }];
+    } else if (productId === ALL_DURHAIM_PRODUCTS) {
       const { data: products, error: productsErr } = await supabase
         .from('products')
         .select('id, categories(slug)')

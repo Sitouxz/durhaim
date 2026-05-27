@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
-import { ADMIN_SESSION_COOKIE } from '@/lib/admin-auth';
+import { ADMIN_SESSION_COOKIE, getAdminCookieOptions } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST() {
+export async function POST(req: Request) {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(ADMIN_SESSION_COOKIE, '', {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
+    ...getAdminCookieOptions(req),
     maxAge: 0,
   });
   return res;

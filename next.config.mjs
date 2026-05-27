@@ -1,4 +1,12 @@
 /** @type {import('next').NextConfig} */
+const isDevelopment = process.env.NODE_ENV === 'development';
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(isDevelopment ? ["'unsafe-eval'"] : []),
+  'https://vercel.live',
+].join(' ');
+
 const nextConfig = {
   images: {
     remotePatterns: [],
@@ -16,10 +24,10 @@ const nextConfig = {
           "img-src 'self' data: blob: https:",
           "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com data:",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
-          "script-src 'self' 'unsafe-inline' https://vercel.live",
+          `script-src ${scriptSrc}`,
           "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://wa.me https://vercel.live wss://ws-us3.pusher.com",
           "frame-src https://vercel.live",
-          "upgrade-insecure-requests",
+          ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
         ].join('; '),
       },
       { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },

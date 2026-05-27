@@ -241,58 +241,6 @@ export default function AdminUsersPage() {
           </button>
         </div>
 
-        {showForm && (
-          <form onSubmit={saveUser} className="grid gap-4 border-b border-surface-container-highest p-4 lg:grid-cols-2">
-            <div>
-              <label className="mb-2 block font-label-caps text-on-surface-variant">Full Name</label>
-              <input value={form.full_name} onChange={(event) => setField('full_name', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white" required />
-            </div>
-            <div>
-              <label className="mb-2 block font-label-caps text-on-surface-variant">Email</label>
-              <input value={form.email} onChange={(event) => setField('email', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white" type="email" required />
-            </div>
-            <div>
-              <label className="mb-2 block font-label-caps text-on-surface-variant">Role</label>
-              <select value={form.role} onChange={(event) => setField('role', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white">
-                <option value="OWNER">OWNER</option>
-                <option value="ADMIN">ADMIN</option>
-                <option value="STAFF">STAFF</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block font-label-caps text-on-surface-variant">Status</label>
-              <select value={form.status} onChange={(event) => setField('status', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white">
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="SUSPENDED">SUSPENDED</option>
-              </select>
-            </div>
-            <div className="lg:col-span-2">
-              <label className="mb-2 block font-label-caps text-on-surface-variant">
-                {form.id ? 'New Password (optional)' : 'Password'}
-              </label>
-              <input
-                value={form.password}
-                onChange={(event) => setField('password', event.target.value)}
-                className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white"
-                minLength={12}
-                placeholder={form.id ? 'Leave blank to keep current password' : 'Minimum 12 characters'}
-                type="password"
-                required={!form.id}
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <label className="mb-2 block font-label-caps text-on-surface-variant">Notes</label>
-              <textarea value={form.notes} onChange={(event) => setField('notes', event.target.value)} className="min-h-24 w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white" />
-            </div>
-            <div className="flex justify-end gap-3 lg:col-span-2">
-              <button type="button" onClick={() => setShowForm(false)} className="border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">Cancel</button>
-              <button type="submit" disabled={saving} className="bg-signal-orange px-4 py-2 font-label-caps text-tactical-black hover:bg-stark-white disabled:opacity-60">
-                {saving ? 'Saving...' : 'Save User'}
-              </button>
-            </div>
-          </form>
-        )}
-
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
@@ -369,6 +317,63 @@ export default function AdminUsersPage() {
           )}
         </div>
       </section>
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-tactical-black/80 p-4 backdrop-blur-sm">
+          <form onSubmit={saveUser} className="grid max-h-[90vh] w-full max-w-3xl gap-4 overflow-y-auto border border-surface-container-highest bg-charcoal-field p-stack-lg shadow-2xl lg:grid-cols-2">
+            <div className="lg:col-span-2">
+              <h2 className="font-headline-md uppercase text-stark-white">{form.id ? 'Edit User' : 'New User'}</h2>
+            </div>
+            <div>
+              <label className="mb-2 block font-label-caps text-on-surface-variant">Full Name</label>
+              <input value={form.full_name} onChange={(event) => setField('full_name', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white" required />
+            </div>
+            <div>
+              <label className="mb-2 block font-label-caps text-on-surface-variant">Email</label>
+              <input value={form.email} onChange={(event) => setField('email', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white" type="email" required />
+            </div>
+            <div>
+              <label className="mb-2 block font-label-caps text-on-surface-variant">Role</label>
+              <select value={form.role} onChange={(event) => setField('role', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white">
+                <option value="OWNER">OWNER</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="STAFF">STAFF</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block font-label-caps text-on-surface-variant">Status</label>
+              <select value={form.status} onChange={(event) => setField('status', event.target.value)} className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white">
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="SUSPENDED">SUSPENDED</option>
+              </select>
+            </div>
+            <div className="lg:col-span-2">
+              <label className="mb-2 block font-label-caps text-on-surface-variant">
+                {form.id ? 'New Password (optional)' : 'Password'}
+              </label>
+              <input
+                value={form.password}
+                onChange={(event) => setField('password', event.target.value)}
+                className="w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white"
+                minLength={12}
+                placeholder={form.id ? 'Leave blank to keep current password' : 'Minimum 12 characters'}
+                type="password"
+                required={!form.id}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="mb-2 block font-label-caps text-on-surface-variant">Notes</label>
+              <textarea value={form.notes} onChange={(event) => setField('notes', event.target.value)} className="min-h-24 w-full border border-surface-container-highest bg-tactical-black p-3 text-stark-white" />
+            </div>
+            <div className="flex justify-end gap-3 lg:col-span-2">
+              <button type="button" onClick={() => setShowForm(false)} className="border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">Cancel</button>
+              <button type="submit" disabled={saving} className="bg-signal-orange px-4 py-2 font-label-caps text-tactical-black hover:bg-stark-white disabled:opacity-60">
+                {saving ? 'Saving...' : 'Save User'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

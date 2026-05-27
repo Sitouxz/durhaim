@@ -43,6 +43,11 @@ if (!page.includes('resetFilters')) {
   failures.push('Serials page does not provide an advanced filter reset.');
 }
 
+const toolbarSection = page.slice(page.indexOf('<div className="bg-charcoal-field border border-surface-container-highest">'), page.indexOf('{/* Data Table */}'));
+if (!toolbarSection.includes('Search serials') || !toolbarSection.includes('handleToolbarSearch')) {
+  failures.push('Serials toolbar must expose a visible search bar before the table.');
+}
+
 [
   'page',
   'pageSize',
@@ -95,16 +100,37 @@ if (!page.includes('rowNumber') || !page.includes('pageStart + index')) {
   failures.push('Serials page does not show a stable row number column.');
 }
 
-if (!page.includes('colSpan={8}')) {
-  failures.push('Serials table empty/loading rows do not span the numbered table columns.');
+if (!page.includes('colSpan={7}')) {
+  failures.push('Serials table empty/loading rows do not span the visible table columns.');
 }
 
-if (!page.includes('ALL_DURHAIM_PRODUCTS') || !page.includes('All Durhaim Products')) {
-  failures.push('Serial generation modal does not default to an All Durhaim Products option.');
+const tableSection = page.slice(page.indexOf('{/* Data Table */}'), page.indexOf('{showFilterModal && ('));
+if (tableSection.includes('label="Status"') || tableSection.includes('UNACTIVATED') || tableSection.includes('>ACTIVE<')) {
+  failures.push('Serials table must not show an activation/status column.');
+}
+
+if (tableSection.includes('Activate')) {
+  failures.push('Serials table actions must not show an Activate button.');
+}
+
+if (!page.includes('ALL_DURHAIM_PRODUCTS') || !page.includes('All Durhaim Product')) {
+  failures.push('Serial generation modal does not provide an All Durhaim Product option.');
 }
 
 if (!route.includes('ALL_DURHAIM_PRODUCTS') || !route.includes('productsToGenerate')) {
   failures.push('Serials API does not generate serials across all Durhaim products.');
+}
+
+if (!page.includes('CUSTOM_PRODUCT') || !page.includes('Custom Product / All Durhaim Product')) {
+  failures.push('Serials page does not expose a Custom Product / All Durhaim Product option.');
+}
+
+if (!route.includes('CUSTOM_PRODUCT') || !route.includes('id: null') || !route.includes('product_id: product.id')) {
+  failures.push('Serials API does not generate serials for custom outside-website products.');
+}
+
+if (!route.includes(".is('product_id', null)")) {
+  failures.push('Serials API does not filter custom outside-website product serials.');
 }
 
 if (failures.length > 0) {

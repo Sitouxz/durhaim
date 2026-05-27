@@ -25,8 +25,59 @@ if (!/qrExportScope/.test(text) || !/ALL_FILTERED_SERIALS/.test(text)) {
   failures.push('QR export does not allow exporting all matching serials.');
 }
 
+if (!/Filter Controls/.test(text) || !/Export Controls/.test(text)) {
+  failures.push('Serials page must separate filter controls from export controls.');
+}
+
+if (!/showFilterModal/.test(text) || !/showExportModal/.test(text)) {
+  failures.push('Serials filter and export controls must live in separate modals.');
+}
+
+if (!/exportDateFrom/.test(text) || !/exportDateTo/.test(text)) {
+  failures.push('Export controls must expose a generated-date range.');
+}
+
+if (!/getExportFilters/.test(text) || !/filterSerialsByExportDateRange/.test(text)) {
+  failures.push('Export date range must apply to all export scopes.');
+}
+
+if (!/aria-label="Open filter controls"/.test(text) || !/aria-label="Open export controls"/.test(text)) {
+  failures.push('Serials toolbar must expose only compact filter and export buttons.');
+}
+
+if (!/getExportSerials/.test(text)) {
+  failures.push('Export actions must share selected, current page, and all-filtered row selection.');
+}
+
+if (!/exportCsv = async/.test(text) || !/getExportSerials/.test(text)) {
+  failures.push('CSV export must use the export row scope instead of only the current page.');
+}
+
+if (!/buildSerialsUrl\(getExportFilters\(\), nextPage, fetchPageSize, sortBy, sortDirection\)/.test(text)) {
+  failures.push('All-filtered exports must preserve the active sort order.');
+}
+
 if (!/QRCode\.toDataURL/.test(text) || !/new jsPDF/.test(text)) {
   failures.push('Bulk QR export must generate QR images and a PDF.');
+}
+
+for (const constant of [
+  'QR_LABEL_MARGIN_MM',
+  'QR_LABEL_GAP_MM',
+  'QR_LABEL_PADDING_MM',
+  'QR_LABEL_BORDER_WIDTH_MM',
+]) {
+  if (!text.includes(constant)) {
+    failures.push(`QR exports must use shared ${constant} layout constant.`);
+  }
+}
+
+if (!/pdf\.rect\(cellX, cellY, cellWidth, cellHeight\)/.test(text)) {
+  failures.push('Bulk QR PDF must draw a border around each label cell.');
+}
+
+if (!/context\.strokeRect\(cellX, cellY, cellWidth, cellHeight\)/.test(text)) {
+  failures.push('Bulk QR PNG must draw a border around each label cell.');
 }
 
 if (!/handleExportAction/.test(text) || !/QR_PDF/.test(text) || !/QR_PNG/.test(text)) {
@@ -53,8 +104,8 @@ if (!bulkQrMatch) {
   const serialTextIndex = body.indexOf('pdf.text(serial.serial');
   const qrImageIndex = body.indexOf('pdf.addImage(dataUrl');
 
-  if (!/const qrGap = 1;/.test(body) || !/const margin = 2;/.test(body)) {
-    failures.push('Bulk QR PDF must use minimal margins and gaps.');
+  if (!/const qrGap = QR_LABEL_GAP_MM;/.test(body) || !/const margin = QR_LABEL_MARGIN_MM;/.test(body)) {
+    failures.push('Bulk QR PDF must use shared margins and gaps.');
   }
 
   if (body.includes("pdf.text('DURHAIM'") || body.includes("pdf.text('Scan to Verify Authenticity'") || body.includes('pdf.text(serial.serial')) {

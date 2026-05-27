@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     clearLoginAttempts(loginKey);
 
     const res = NextResponse.json({ ok: true, user: { email: user.email, role: user.role } });
-    res.cookies.set(ADMIN_SESSION_COOKIE, await createAdminSessionToken(email), getAdminCookieOptions());
+    res.cookies.set(ADMIN_SESSION_COOKIE, await createAdminSessionToken(email), getAdminCookieOptions(req));
     return res;
   } catch (error) {
     console.error('Admin login error:', error);

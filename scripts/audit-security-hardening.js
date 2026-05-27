@@ -49,6 +49,9 @@ for (const required of ['Content-Security-Policy', 'Strict-Transport-Security', 
   expectIncludes('next.config.mjs', required, `next.config.mjs must set ${required}.`);
 }
 
+expectIncludes('next.config.mjs', 'process.env.NODE_ENV === \'development\'', 'CSP must detect development mode explicitly.');
+expectIncludes('next.config.mjs', "'unsafe-eval'", 'Development CSP must allow Next.js dev runtime eval.');
+
 for (const required of ['https://vercel.live', 'wss://ws-us3.pusher.com']) {
   expectIncludes('next.config.mjs', required, `CSP must allow ${required} for the Vercel Live feedback widget.`);
 }

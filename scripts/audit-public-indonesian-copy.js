@@ -67,6 +67,11 @@ const sourceChecks = [
   ['src/components/Footer.tsx', 'Follow our newsletter to stay updated about agency.'],
   ['src/app/verify/page.tsx', 'AUTHENTICITY CHECKER'],
   ['src/app/page.tsx', 'Input No Code Here'],
+  ['src/components/CommerceProvider.tsx', 'Kegiatan Sosial'],
+  ['src/components/CommerceProvider.tsx', 'Kegiatan social'],
+  ['src/app/social-engagement/page.tsx', 'Kegiatan Sosial'],
+  ['src/app/social-engagement/page.tsx', 'Kegiatan social'],
+  ['src/app/latest-projects/page.tsx', 'Kabar Sosial'],
 ];
 
 for (const [file, forbidden] of sourceChecks) {
