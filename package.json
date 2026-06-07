@@ -21,9 +21,10 @@
     "audit:security-hardening": "node scripts/audit-security-hardening.js",
     "audit:public-id-copy": "node scripts/audit-public-indonesian-copy.js",
     "audit:public-pricing": "node scripts/audit-public-pricing.js",
+    "audit:qr-layout": "node scripts/audit-qr-export-layout.mjs",
     "supabase:apply": "node scripts/apply-supabase-schema.js",
     "supabase:verify": "node scripts/verify-supabase.js",
-    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run audit:public-id-copy && npm run audit:public-pricing && npm run build"
+    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:qr-layout && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run audit:public-id-copy && npm run audit:public-pricing && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
