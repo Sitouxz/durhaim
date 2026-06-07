@@ -25,17 +25,12 @@
 
 /* Background Texture — used on Catalogue page */
 .bg-texture {
-  background-image: url('/images/durhaim_image_5.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  background-color: #131313;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255, 95, 31, 0.08), transparent 32rem),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+  background-position: center top;
   position: relative;
-}
-
-.bg-texture::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: rgba(14, 14, 14, 0.85);
-  z-index: -1;
 }
