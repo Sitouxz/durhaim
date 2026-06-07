@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 import { fallbackProducts, isMissingSchemaError, normalizeProduct, type CatalogueProduct } from '@/lib/catalogue-data';
 import ProductDetailClient from '@/components/ProductDetailClient';
 import JsonLd from '@/components/JsonLd';
-import { formatRegionalPrice, getRegionalPrice } from '@/lib/commerce';
 import LocalizedText from '@/components/LocalizedText';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
@@ -48,8 +47,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: product ? `${product.name} Tactical Gear` : 'Tactical Gear Product',
     description: product
-      ? `${product.name} by DURHAIM: ${product.description}. View regional pricing, product category, and authenticity support.`
-      : 'Durhaim tactical gear product detail with regional pricing and authenticity support.',
+      ? `${product.name} by DURHAIM: ${product.description}. View product details, enquire through WhatsApp, and access authenticity support.`
+      : 'Durhaim tactical gear product detail with WhatsApp enquiries and authenticity support.',
     alternates: {
       canonical: `/catalogue/${slug}`,
       languages: {
@@ -98,24 +97,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
           name: 'DURHAIM',
         },
         category: product.category.name,
-        offers: [
-          {
-            '@type': 'Offer',
-            price: getRegionalPrice(product.price, product.regional_prices, 'ID'),
-            priceCurrency: 'IDR',
-            availability: 'https://schema.org/InStock',
-            url: `${siteUrl}/catalogue/${product.slug}?region=ID`,
-            areaServed: 'ID',
-          },
-          {
-            '@type': 'Offer',
-            price: getRegionalPrice(product.price, product.regional_prices, 'GLOBAL'),
-            priceCurrency: 'USD',
-            availability: 'https://schema.org/InStock',
-            url: `${siteUrl}/catalogue/${product.slug}?region=GLOBAL`,
-            areaServed: 'GLOBAL',
-          },
-        ],
       },
       {
         '@type': 'FAQPage',
@@ -130,10 +111,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
           },
           {
             '@type': 'Question',
-            name: `How much does ${product.name} cost?`,
+            name: `How can I enquire about ${product.name}?`,
             acceptedAnswer: {
               '@type': 'Answer',
-              text: `${product.name} is listed from ${formatRegionalPrice(product.price, product.regional_prices, 'ID')} in Indonesia and ${formatRegionalPrice(product.price, product.regional_prices, 'GLOBAL')} globally.`,
+              text: `Open the ${product.name} product detail page and contact DURHAIM through WhatsApp for availability and ordering.`,
             },
           },
         ],
@@ -169,12 +150,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
             </article>
             <article>
               <h3 className="font-label-caps text-label-caps uppercase text-signal-orange">
-                <LocalizedText en="Which regions are priced?" id="Wilayah harga apa saja yang tersedia?" />
+                <LocalizedText en="How do I enquire about this product?" id="Bagaimana cara bertanya tentang produk ini?" />
               </h3>
               <p className="mt-2 font-body-md text-on-surface-variant">
                 <LocalizedText
-                  en="DURHAIM displays Indonesia pricing in IDR and global pricing in USD, with regional detection used to show the most relevant currency first."
-                  id="DURHAIM menampilkan harga Indonesia dalam IDR dan harga global dalam USD, dengan deteksi wilayah untuk menampilkan mata uang paling relevan terlebih dahulu."
+                  en="Use the WhatsApp enquiry button above to contact DURHAIM directly about availability, product details, and ordering."
+                  id="Gunakan tombol pertanyaan WhatsApp di atas untuk menghubungi DURHAIM langsung mengenai ketersediaan, detail produk, dan pemesanan."
                 />
               </p>
             </article>

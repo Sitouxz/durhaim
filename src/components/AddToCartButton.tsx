@@ -2,13 +2,10 @@
 
 import { useState } from 'react';
 import { useCommerce } from '@/components/CommerceProvider';
-import type { RegionalPrices } from '@/lib/commerce';
 
 type CartProduct = {
   slug: string;
   name: string;
-  price?: number;
-  regional_prices?: RegionalPrices;
 };
 
 function readCart(): CartProduct[] {

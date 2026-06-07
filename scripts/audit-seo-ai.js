@@ -29,7 +29,7 @@ const checks = [
   },
   {
     file: 'src/app/catalogue/[slug]/page.tsx',
-    required: ['Product', 'BreadcrumbList', 'FAQPage', 'priceCurrency', 'IDR', 'USD'],
+    required: ['Product', 'BreadcrumbList', 'FAQPage', 'WhatsApp'],
   },
   {
     file: 'src/app/contact/page.tsx',

@@ -7,7 +7,7 @@ import AddToCartButton from '@/components/AddToCartButton';
 import { localizeCategoryName, localizeProductDescription } from '@/lib/product-localization';
 
 export default function ProductDetailClient({ product }: { product: CatalogueProduct }) {
-  const { language, t, formatPrice } = useCommerce();
+  const { language, t } = useCommerce();
   const waText = encodeURIComponent(t.product.enquiry(product.name, product.slug));
   const categoryName = localizeCategoryName(product.category.slug, product.category.name, language);
   const description = localizeProductDescription(product.description, language);
@@ -21,10 +21,6 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
       <p className="mt-stack-md border-l-2 border-signal-orange pl-4 font-body-lg text-stark-white/85">
         {description}
       </p>
-      <div className="mt-stack-lg font-data-mono text-headline-md text-signal-orange">
-        {formatPrice(product.price, product.regional_prices)}
-      </div>
-
       <div className="mt-stack-lg flex flex-col gap-stack-sm sm:flex-row">
         <a
           href={`https://wa.me/6282120101473?text=${waText}`}
@@ -34,7 +30,7 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
         >
           {t.product.enquire}
         </a>
-        <AddToCartButton product={{ slug: product.slug, name: product.name, price: product.price, regional_prices: product.regional_prices }} />
+        <AddToCartButton product={{ slug: product.slug, name: product.name }} />
         <Link href="/catalogue" className="inline-flex justify-center border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps uppercase text-stark-white hover:border-signal-orange hover:text-signal-orange">
           {t.product.back}
         </Link>

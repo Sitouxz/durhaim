@@ -3,17 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useCommerce } from '@/components/CommerceProvider';
-import type { RegionalPrices } from '@/lib/commerce';
 
 type CartItem = {
   slug: string;
   name: string;
-  price?: number;
-  regional_prices?: RegionalPrices;
 };
 
 export default function CartPage() {
-  const { t, formatPrice } = useCommerce();
+  const { t } = useCommerce();
   const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
@@ -49,10 +46,7 @@ export default function CartPage() {
               {items.map((item) => (
                 <li key={item.slug} className="flex items-center justify-between border-b border-surface-container-highest pb-3">
                   <span className="font-data-mono text-signal-orange">{item.name}</span>
-                  <div className="flex items-center gap-4">
-                    {typeof item.price === 'number' && (
-                      <span className="font-data-mono text-on-surface-variant">{formatPrice(item.price, item.regional_prices)}</span>
-                    )}
+                  <div className="flex items-center">
                     <Link href={`/catalogue/${item.slug}`} className="font-label-caps text-label-caps uppercase text-stark-white hover:text-signal-orange">{t.cart.view}</Link>
                   </div>
                 </li>

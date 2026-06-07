@@ -15,7 +15,7 @@ const categoryOptions = [
 ] as const;
 
 export default function CataloguePage() {
-  const { language, region, t, formatPrice } = useCommerce();
+  const { language, t } = useCommerce();
   const [category, setCategory] = useState('all');
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
@@ -51,7 +51,6 @@ export default function CataloguePage() {
         const params = new URLSearchParams();
         if (category !== 'all') params.set('category', category);
         if (query.trim()) params.set('search', query.trim());
-        params.set('region', region);
         params.set('sort', sort);
         params.set('page', String(page));
         params.set('limit', '6');
@@ -81,7 +80,7 @@ export default function CataloguePage() {
     fetchProducts();
 
     return () => controller.abort();
-  }, [category, query, region, sort, page, t.catalogue.unableToLoad]);
+  }, [category, query, sort, page, t.catalogue.unableToLoad]);
 
   const pages = useMemo(() => {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -168,8 +167,6 @@ export default function CataloguePage() {
               >
                 <option className="bg-surface-container" value="newest">{t.catalogue.newest.toUpperCase()}</option>
                 <option className="bg-surface-container" value="oldest">{t.catalogue.oldest.toUpperCase()}</option>
-                <option className="bg-surface-container" value="price-high">{t.catalogue.priceHigh.toUpperCase()}</option>
-                <option className="bg-surface-container" value="price-low">{t.catalogue.priceLow.toUpperCase()}</option>
                 <option className="bg-surface-container" value="name-az">{t.catalogue.nameAz.toUpperCase()}</option>
                 <option className="bg-surface-container" value="name-za">{t.catalogue.nameZa.toUpperCase()}</option>
               </select>
@@ -217,7 +214,6 @@ export default function CataloguePage() {
                     <div className="font-data-mono text-data-mono text-signal-orange mb-2 uppercase">{localizeCategoryName(product.category.slug, product.category.name, language)}</div>
                     <h3 className="font-headline-md text-headline-md text-stark-white uppercase tracking-tight mb-2">{product.name}</h3>
                     <p className="font-data-mono text-data-mono text-on-surface-variant mb-4 flex-grow">{localizeProductDescription(product.description, language)}</p>
-                    <div className="font-data-mono text-data-mono text-stark-white mb-4">{formatPrice(product.price, product.regional_prices)}</div>
                     <Link
                       href={`/catalogue/${product.slug}`}
                       className="w-full bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 uppercase hover:bg-stark-white transition-colors duration-200 mt-auto flex items-center justify-center space-x-2"

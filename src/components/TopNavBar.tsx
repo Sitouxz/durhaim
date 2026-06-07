@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useCommerce } from '@/components/CommerceProvider';
-import { regionConfigs, supportedRegions, type Language, type RegionCode } from '@/lib/commerce';
+import type { Language } from '@/lib/commerce';
 
 const navLinks = [
   { href: '/', labelKey: 'home' },
@@ -17,7 +17,7 @@ const navLinks = [
 export default function TopNavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { language, setLanguage, region, setRegion, t } = useCommerce();
+  const { language, setLanguage, t } = useCommerce();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -82,16 +82,6 @@ export default function TopNavBar() {
                 </button>
               ))}
             </div>
-            <select
-              value={region}
-              onChange={(event) => setRegion(event.target.value as RegionCode)}
-              className="hidden max-w-[92px] border border-surface-container-highest bg-tactical-black p-1 font-data-mono text-data-mono text-stark-white focus:border-signal-orange md:block"
-              aria-label={t.common.priceRegion}
-            >
-              {supportedRegions.map((option) => (
-                <option key={option} value={option}>{regionConfigs[option].currency}</option>
-              ))}
-            </select>
             <Link href="/cart" className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95" aria-label={t.common.openCart}>
               <span className="material-symbols-outlined">shopping_cart</span>
             </Link>
@@ -136,18 +126,6 @@ export default function TopNavBar() {
                   </button>
                 ))}
               </div>
-              <select
-                value={region}
-                onChange={(event) => setRegion(event.target.value as RegionCode)}
-                className="border border-surface-container-highest bg-tactical-black p-3 font-data-mono text-stark-white"
-                aria-label={t.common.priceRegion}
-              >
-                {supportedRegions.map((option) => (
-                  <option key={option} value={option}>
-                    {regionConfigs[option].label} / {regionConfigs[option].currency}
-                  </option>
-                ))}
-              </select>
               {/* Mobile Search */}
               <form onSubmit={submitSearch} className="flex items-center bg-charcoal-field border border-surface-container-highest">
                 <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>

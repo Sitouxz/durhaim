@@ -31,12 +31,12 @@ const homeFaqs = [
   },
   {
     question: {
-      en: 'Does DURHAIM support Indonesia and global pricing?',
-      id: 'Apakah DURHAIM mendukung harga Indonesia dan global?',
+      en: 'How can buyers enquire about DURHAIM products?',
+      id: 'Bagaimana pembeli dapat bertanya tentang produk DURHAIM?',
     },
     answer: {
-      en: 'Yes. DURHAIM shows Indonesia regional pricing in IDR and global pricing in USD, with regional detection used to display the most relevant currency.',
-      id: 'Ya. DURHAIM menampilkan harga regional Indonesia dalam IDR dan harga global dalam USD, dengan deteksi wilayah untuk menampilkan mata uang yang paling relevan.',
+      en: 'Buyers in Indonesia and global markets can open a product detail page and contact DURHAIM directly through WhatsApp for availability and ordering.',
+      id: 'Pembeli di Indonesia dan pasar global dapat membuka halaman detail produk lalu menghubungi DURHAIM langsung melalui WhatsApp untuk ketersediaan dan pemesanan.',
     },
   },
   {
