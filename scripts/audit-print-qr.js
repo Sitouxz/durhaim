@@ -39,8 +39,12 @@ if (body.includes("logo.textContent = 'DURHAIM'") || body.includes("caption.text
   process.exit(1);
 }
 
-if (!body.includes('width: 100%; height: 100%;') || !body.includes('@page { margin: 2mm; }')) {
-  console.error('printQR must render only a full-page QR with minimal print margin.');
+if (
+  !body.includes('width: 100%; height: 100%;')
+  || !body.includes('@page { margin: ${QR_LABEL_MARGIN_MM}mm; }')
+  || !body.includes('padding: ${QR_LABEL_PADDING_MM}mm;')
+) {
+  console.error('printQR must render only a full-page QR with shared margin and padding.');
   process.exit(1);
 }
 

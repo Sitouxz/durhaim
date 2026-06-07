@@ -63,7 +63,6 @@ if (!/QRCode\.toDataURL/.test(text) || !/new jsPDF/.test(text)) {
 
 for (const constant of [
   'QR_LABEL_MARGIN_MM',
-  'QR_LABEL_GAP_MM',
   'QR_LABEL_PADDING_MM',
   'QR_LABEL_BORDER_WIDTH_MM',
 ]) {
@@ -72,11 +71,15 @@ for (const constant of [
   }
 }
 
-if (!/pdf\.rect\(cellX, cellY, cellWidth, cellHeight\)/.test(text)) {
+if ((text.match(/calculateQrExportLayout\(\{ rows, columns/g) || []).length < 2) {
+  failures.push('Bulk QR PDF and PNG exports must use the shared QR layout calculation.');
+}
+
+if (!/pdf\.rect\(cellX, cellY, layout\.cellWidth, layout\.cellHeight\)/.test(text)) {
   failures.push('Bulk QR PDF must draw a border around each label cell.');
 }
 
-if (!/context\.strokeRect\(cellX, cellY, cellWidth, cellHeight\)/.test(text)) {
+if (!/context\.strokeRect\(cellX, cellY, layout\.cellWidth, layout\.cellHeight\)/.test(text)) {
   failures.push('Bulk QR PNG must draw a border around each label cell.');
 }
 
@@ -104,8 +107,8 @@ if (!bulkQrMatch) {
   const serialTextIndex = body.indexOf('pdf.text(serial.serial');
   const qrImageIndex = body.indexOf('pdf.addImage(dataUrl');
 
-  if (!/const qrGap = QR_LABEL_GAP_MM;/.test(body) || !/const margin = QR_LABEL_MARGIN_MM;/.test(body)) {
-    failures.push('Bulk QR PDF must use shared margins and gaps.');
+  if (!/const layout = calculateQrExportLayout\(\{ rows, columns \}\);/.test(body)) {
+    failures.push('Bulk QR PDF must use shared layout geometry.');
   }
 
   if (body.includes("pdf.text('DURHAIM'") || body.includes("pdf.text('Scan to Verify Authenticity'") || body.includes('pdf.text(serial.serial')) {

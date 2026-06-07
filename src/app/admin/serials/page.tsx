@@ -4,6 +4,13 @@ import { Plus, Search, Filter, Download, RotateCcw, CalendarDays, ChevronLeft, C
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
+import {
+  calculateQrExportLayout,
+  QR_LABEL_BORDER_COLOR,
+  QR_LABEL_BORDER_WIDTH_MM,
+  QR_LABEL_MARGIN_MM,
+  QR_LABEL_PADDING_MM,
+} from '@/lib/qr-export-layout';
 
 type Product = {
   id: string;
@@ -64,11 +71,6 @@ const ALL_DURHAIM_PRODUCTS = 'ALL_DURHAIM_PRODUCTS';
 const CUSTOM_PRODUCT = 'CUSTOM_PRODUCT';
 const CUSTOM_PRODUCT_LABEL = 'Custom Product / All Durhaim Product';
 const ALL_FILTERED_SERIALS: QrExportScope = 'ALL_FILTERED_SERIALS';
-const QR_LABEL_MARGIN_MM = 2;
-const QR_LABEL_GAP_MM = 1;
-const QR_LABEL_PADDING_MM = 1;
-const QR_LABEL_BORDER_WIDTH_MM = 0.15;
-const QR_LABEL_BORDER_COLOR = '#111111';
 
 type DateFilterInputProps = {
   id: string;
@@ -444,16 +446,9 @@ export default function SerialsPage() {
     }
 
     try {
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = QR_LABEL_MARGIN_MM;
-      const qrGap = QR_LABEL_GAP_MM;
-      const labelPadding = QR_LABEL_PADDING_MM;
       const { columns, rows } = getQrLayout();
-      const cellWidth = (pageWidth - margin * 2 - qrGap * (columns - 1)) / columns;
-      const cellHeight = (pageHeight - margin * 2 - qrGap * (rows - 1)) / rows;
-      const qrSize = Math.max(1, Math.min(cellWidth - labelPadding * 2, cellHeight - labelPadding * 2));
+      const layout = calculateQrExportLayout({ rows, columns });
+      const pdf = new jsPDF({ orientation: layout.orientation, unit: 'mm', format: 'a4' });
       const qrPerPage = columns * rows;
       pdf.setDrawColor(QR_LABEL_BORDER_COLOR);
       pdf.setLineWidth(QR_LABEL_BORDER_WIDTH_MM);
@@ -464,18 +459,13 @@ export default function SerialsPage() {
         }
 
         const pageIndex = index % qrPerPage;
-        const col = pageIndex % columns;
-        const row = Math.floor(pageIndex / columns);
-        const cellX = margin + col * (cellWidth + qrGap);
-        const cellY = margin + row * (cellHeight + qrGap);
-        const x = cellX + (cellWidth - qrSize) / 2;
-        const y = cellY + (cellHeight - qrSize) / 2;
+        const { cellX, cellY, qrX, qrY } = layout.getCellPosition(pageIndex);
         const serial = qrSerials[index];
         const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
         const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 512, margin: 0 });
 
-        pdf.rect(cellX, cellY, cellWidth, cellHeight);
-        pdf.addImage(dataUrl, 'PNG', x, y, qrSize, qrSize);
+        pdf.rect(cellX, cellY, layout.cellWidth, layout.cellHeight);
+        pdf.addImage(dataUrl, 'PNG', qrX, qrY, layout.qrSize, layout.qrSize);
       }
 
       const date = new Date().toISOString().slice(0, 10);
@@ -500,16 +490,11 @@ export default function SerialsPage() {
 
       const { columns, rows } = getQrLayout();
       const qrPerPage = columns * rows;
-      const sheetWidth = 2480;
-      const sheetHeight = 3508;
-      const pxPerMm = sheetWidth / 210;
-      const margin = Math.round(QR_LABEL_MARGIN_MM * pxPerMm);
-      const qrGap = Math.round(QR_LABEL_GAP_MM * pxPerMm);
-      const labelPadding = Math.round(QR_LABEL_PADDING_MM * pxPerMm);
+      const pxPerMm = 2480 / 210;
+      const layout = calculateQrExportLayout({ rows, columns, unitScale: pxPerMm });
+      const sheetWidth = Math.round(layout.pageWidth);
+      const sheetHeight = Math.round(layout.pageHeight);
       const borderWidth = Math.max(1, Math.round(QR_LABEL_BORDER_WIDTH_MM * pxPerMm));
-      const cellWidth = (sheetWidth - margin * 2 - qrGap * (columns - 1)) / columns;
-      const cellHeight = (sheetHeight - margin * 2 - qrGap * (rows - 1)) / rows;
-      const qrSize = Math.max(1, Math.floor(Math.min(cellWidth - labelPadding * 2, cellHeight - labelPadding * 2)));
       const date = new Date().toISOString().slice(0, 10);
 
       for (let pageIndex = 0; pageIndex < Math.ceil(qrSerials.length / qrPerPage); pageIndex++) {
@@ -528,7 +513,7 @@ export default function SerialsPage() {
         for (let index = 0; index < pageSerials.length; index++) {
           const serial = pageSerials[index];
           const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
-          const dataUrl = await QRCode.toDataURL(verifyUrl, { width: qrSize, margin: 0 });
+          const dataUrl = await QRCode.toDataURL(verifyUrl, { width: Math.max(1, Math.floor(layout.qrSize)), margin: 0 });
           const image = new Image();
           await new Promise<void>((resolve, reject) => {
             image.onload = () => resolve();
@@ -536,14 +521,9 @@ export default function SerialsPage() {
             image.src = dataUrl;
           });
 
-          const col = index % columns;
-          const row = Math.floor(index / columns);
-          const cellX = margin + col * (cellWidth + qrGap);
-          const cellY = margin + row * (cellHeight + qrGap);
-          const x = cellX + (cellWidth - qrSize) / 2;
-          const y = cellY + (cellHeight - qrSize) / 2;
-          context.strokeRect(cellX, cellY, cellWidth, cellHeight);
-          context.drawImage(image, x, y, qrSize, qrSize);
+          const { cellX, cellY, qrX, qrY } = layout.getCellPosition(index);
+          context.strokeRect(cellX, cellY, layout.cellWidth, layout.cellHeight);
+          context.drawImage(image, qrX, qrY, layout.qrSize, layout.qrSize);
         }
 
         const url = canvas.toDataURL('image/png');
@@ -638,10 +618,10 @@ export default function SerialsPage() {
             <style>
               html, body { width: 100%; height: 100%; margin: 0; background: white; }
               body { display: flex; justify-content: center; align-items: center; }
-              .label { width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+              .label { width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: ${QR_LABEL_PADDING_MM}mm; }
               img { display: block; width: 100%; height: 100%; object-fit: contain; }
               @media print {
-                @page { margin: 2mm; }
+                @page { margin: ${QR_LABEL_MARGIN_MM}mm; }
                 html, body, .label { width: 100%; height: 100%; }
               }
             </style>
