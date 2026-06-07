@@ -26,7 +26,7 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
           href={`https://wa.me/6282120101473?text=${waText}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn btn-primary inline-flex justify-center"
+          className="inline-flex justify-center bg-signal-orange px-6 py-3 font-label-caps text-label-caps uppercase text-tactical-black transition-colors duration-200 hover:bg-stark-white"
         >
           {t.product.enquire}
         </a>

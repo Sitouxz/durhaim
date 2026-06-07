@@ -4,7 +4,7 @@
 
 **Goal:** Remove pricing from the public storefront, focus product enquiries on WhatsApp, and make QR PDF, PNG, and print spacing visually consistent.
 
-**Architecture:** Public UI components stop presenting or describing prices while admin pricing remains unchanged. A pure QR layout helper owns orientation, square-cell sizing, grid centering, and coordinates; PDF and PNG exporters consume the same geometry.
+**Architecture:** Public UI components stop presenting or describing prices while admin pricing remains unchanged. A pure QR layout helper owns orientation, flexible page sizing, square-cell sizing, equal margins, and coordinates; PDF and PNG exporters consume the same geometry.
 
 **Tech Stack:** Next.js 15 App Router, React 18, TypeScript, jsPDF, Canvas API, QRCode, Node audit scripts
 
@@ -168,7 +168,7 @@ export function calculateQrExportLayout({ rows, columns, unitScale = 1 }: {
 }): QrExportLayout;
 ```
 
-Use A4 dimensions, choose orientation from rows/columns, calculate one square cell size with `Math.min`, and center the resulting grid.
+Choose orientation from rows/columns, calculate one square cell size from the dominant grid axis, and derive a custom page size that wraps the grid with the same margin on all four sides.
 
 - [ ] **Step 4: Run the geometry audit**
 
@@ -196,7 +196,7 @@ Import the shared constants and `calculateQrExportLayout`. Construct jsPDF with 
 
 ```ts
 const layout = calculateQrExportLayout({ rows, columns });
-const pdf = new jsPDF({ orientation: layout.orientation, unit: 'mm', format: 'a4' });
+const pdf = new jsPDF({ orientation: layout.orientation, unit: 'mm', format: [layout.pageWidth, layout.pageHeight] });
 const { cellX, cellY, qrX, qrY } = layout.getCellPosition(pageIndex);
 pdf.rect(cellX, cellY, layout.cellWidth, layout.cellHeight);
 pdf.addImage(dataUrl, 'PNG', qrX, qrY, layout.qrSize, layout.qrSize);
@@ -263,4 +263,3 @@ Generate or render representative `8x4`, `4x8`, and `6x6` layouts. Confirm squar
 - [ ] **Step 4: Commit verification fixes if needed**
 
 Commit only files changed to correct issues found during verification.
-

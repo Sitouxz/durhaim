@@ -448,7 +448,7 @@ export default function SerialsPage() {
     try {
       const { columns, rows } = getQrLayout();
       const layout = calculateQrExportLayout({ rows, columns });
-      const pdf = new jsPDF({ orientation: layout.orientation, unit: 'mm', format: 'a4' });
+      const pdf = new jsPDF({ orientation: layout.orientation, unit: 'mm', format: [layout.pageWidth, layout.pageHeight] });
       const qrPerPage = columns * rows;
       pdf.setDrawColor(QR_LABEL_BORDER_COLOR);
       pdf.setLineWidth(QR_LABEL_BORDER_WIDTH_MM);

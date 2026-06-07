@@ -12,8 +12,10 @@ assert.equal(square.orientation, 'portrait');
 
 for (const layout of [wide, tall, square, scaled]) {
   assert.equal(layout.cellWidth, layout.cellHeight);
-  assert.equal(layout.gridX, (layout.pageWidth - layout.gridWidth) / 2);
-  assert.equal(layout.gridY, (layout.pageHeight - layout.gridHeight) / 2);
+  assert.equal(layout.gridX, layout.margin);
+  assert.equal(layout.gridY, layout.margin);
+  assert.equal(layout.pageWidth - layout.gridWidth, layout.margin * 2);
+  assert.equal(layout.pageHeight - layout.gridHeight, layout.margin * 2);
   assert.equal(layout.qrSize, layout.cellWidth - layout.padding * 2);
 
   const first = layout.getCellPosition(0);
@@ -32,4 +34,4 @@ const wideLast = wide.getCellPosition(31);
 assert.equal(wide.pageWidth - (wideLast.cellX + wide.cellWidth), wide.gridX);
 assert.equal(wide.pageHeight - (wideLast.cellY + wide.cellHeight), wide.gridY);
 
-console.log('QR export layout uses adaptive orientation, square cells, equal padding, and centered grids.');
+console.log('QR export layout uses flexible pages, square cells, equal padding, gaps, and outer margins.');

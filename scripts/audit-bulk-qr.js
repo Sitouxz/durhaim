@@ -75,6 +75,10 @@ if ((text.match(/calculateQrExportLayout\(\{ rows, columns/g) || []).length < 2)
   failures.push('Bulk QR PDF and PNG exports must use the shared QR layout calculation.');
 }
 
+if (!/format: \[layout\.pageWidth, layout\.pageHeight\]/.test(text)) {
+  failures.push('Bulk QR PDF must use flexible page dimensions from the shared layout.');
+}
+
 if (!/pdf\.rect\(cellX, cellY, layout\.cellWidth, layout\.cellHeight\)/.test(text)) {
   failures.push('Bulk QR PDF must draw a border around each label cell.');
 }

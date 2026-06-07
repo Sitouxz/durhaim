@@ -50,21 +50,23 @@ export function calculateQrExportLayout({
   const safeColumns = Math.max(1, Math.floor(columns) || 1);
   const safeScale = Number.isFinite(unitScale) && unitScale > 0 ? unitScale : 1;
   const orientation: QrPageOrientation = safeColumns > safeRows ? 'landscape' : 'portrait';
-  const pageWidthMm = orientation === 'landscape' ? A4_PORTRAIT_HEIGHT_MM : A4_PORTRAIT_WIDTH_MM;
-  const pageHeightMm = orientation === 'landscape' ? A4_PORTRAIT_WIDTH_MM : A4_PORTRAIT_HEIGHT_MM;
-  const pageWidth = pageWidthMm * safeScale;
-  const pageHeight = pageHeightMm * safeScale;
   const margin = QR_LABEL_MARGIN_MM * safeScale;
   const gap = QR_LABEL_GAP_MM * safeScale;
   const padding = QR_LABEL_PADDING_MM * safeScale;
-  const availableCellWidth = (pageWidth - margin * 2 - gap * (safeColumns - 1)) / safeColumns;
-  const availableCellHeight = (pageHeight - margin * 2 - gap * (safeRows - 1)) / safeRows;
-  const cellSize = Math.max(Number.EPSILON, Math.min(availableCellWidth, availableCellHeight));
+  const dominantCount = Math.max(safeRows, safeColumns);
+  const dominantPageSizeMm = safeRows === safeColumns ? A4_PORTRAIT_WIDTH_MM : A4_PORTRAIT_HEIGHT_MM;
+  const dominantPageSize = dominantPageSizeMm * safeScale;
+  const cellSize = Math.max(
+    Number.EPSILON,
+    (dominantPageSize - margin * 2 - gap * (dominantCount - 1)) / dominantCount,
+  );
   const qrSize = Math.max(Number.EPSILON, cellSize - padding * 2);
   const gridWidth = cellSize * safeColumns + gap * (safeColumns - 1);
   const gridHeight = cellSize * safeRows + gap * (safeRows - 1);
-  const gridX = (pageWidth - gridWidth) / 2;
-  const gridY = (pageHeight - gridHeight) / 2;
+  const pageWidth = gridWidth + margin * 2;
+  const pageHeight = gridHeight + margin * 2;
+  const gridX = margin;
+  const gridY = margin;
 
   return {
     orientation,
