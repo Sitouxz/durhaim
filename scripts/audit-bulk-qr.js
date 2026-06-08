@@ -91,6 +91,27 @@ if (!/handleExportAction/.test(text) || !/QR_PDF/.test(text) || !/QR_PNG/.test(t
   failures.push('Toolbar does not use a single export dropdown with QR PDF and QR PNG actions.');
 }
 
+[
+  'exportProductIds',
+  'showExportAdvanced',
+  'Export type',
+  'Advanced options',
+  'handleExportSubmit',
+  'aria-live="polite"',
+].forEach((requiredText) => {
+  if (!text.includes(requiredText)) {
+    failures.push(`Missing simplified export behavior: ${requiredText}`);
+  }
+});
+
+if (!/EXPORT \{exportScopeCount\} SERIAL/.test(text)) {
+  failures.push('Export modal does not expose an explicit count-aware export button.');
+}
+
+if (/onChange=\{\(event\) => handleExportAction/.test(text)) {
+  failures.push('Choosing an export type must not immediately start the export.');
+}
+
 if (!/QR PDF/.test(text)) {
   failures.push('Toolbar does not expose a QR PDF action.');
 }

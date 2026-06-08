@@ -23,6 +23,14 @@ const failures = [];
   }
 });
 
+if (!route.includes("searchParams.getAll('productId')")) {
+  failures.push('Serials API does not read multiple product IDs.');
+}
+
+if (!route.includes(".in('product_id'")) {
+  failures.push('Serials API does not filter multiple product IDs.');
+}
+
 if (!page.includes('selectedSerialIds')) {
   failures.push('Serials page does not track selected serial rows.');
 }
