@@ -1,7 +1,7 @@
-export const QR_LABEL_MARGIN_MM = 2;
-export const QR_LABEL_GAP_MM = 1;
-export const QR_LABEL_PADDING_MM = 1;
-export const QR_LABEL_BORDER_WIDTH_MM = 0.15;
+export const QR_LABEL_MARGIN_MM = 0.5;
+export const QR_LABEL_GAP_MM = 0.25;
+export const QR_LABEL_PADDING_MM = 0.25;
+export const QR_LABEL_BORDER_WIDTH_MM = 0.05;
 export const QR_LABEL_BORDER_COLOR = '#111111';
 
 const A4_PORTRAIT_WIDTH_MM = 210;

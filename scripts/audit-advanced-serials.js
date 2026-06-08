@@ -87,6 +87,14 @@ if (!page.includes('goToPage') || !page.includes('setPageSize')) {
   failures.push('Serials page does not expose pagination controls.');
 }
 
+if (!page.includes('handlePageJump') || !page.includes('pageInput')) {
+  failures.push('Serials page does not support direct page entry.');
+}
+
+if (!page.includes('aria-label="First page"') || !page.includes('aria-label="Last page"')) {
+  failures.push('Serials page does not expose first and last page controls.');
+}
+
 [
   'sortBy',
   'sortDirection',

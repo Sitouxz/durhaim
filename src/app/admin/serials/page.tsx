@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Search, Filter, Download, RotateCcw, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Plus, Search, Filter, Download, RotateCcw, CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
@@ -152,6 +152,7 @@ export default function SerialsPage() {
   const [serials, setSerials] = useState<Serial[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [pageSize, setPageSize] = useState(25);
   const [pagination, setPagination] = useState<SerialPagination>({
     page: 1,
@@ -231,6 +232,7 @@ export default function SerialsPage() {
         setSerials(nextSerials);
         setPagination(nextPagination);
         setCurrentPage(nextPagination.page);
+        setPageInput(String(nextPagination.page));
         setPageSize(nextPagination.pageSize);
         setSortBy(nextSortBy);
         setSortDirection(nextSortDirection);
@@ -748,10 +750,17 @@ export default function SerialsPage() {
   });
 
   const goToPage = (page: number) => {
-    const targetPage = Math.min(Math.max(page, 1), pagination.totalPages);
+    const normalizedPage = Number.isFinite(page) ? Math.floor(page) : 1;
+    const targetPage = Math.min(Math.max(normalizedPage, 1), pagination.totalPages);
+    setPageInput(String(targetPage));
     if (targetPage === currentPage || loading) return;
 
     fetchSerials(getCurrentFilters(), targetPage, pageSize, sortBy, sortDirection);
+  };
+
+  const handlePageJump = (event: React.FormEvent) => {
+    event.preventDefault();
+    goToPage(Number(pageInput) || 1);
   };
 
   const handlePageSizeChange = (nextPageSize: number) => {
@@ -935,7 +944,16 @@ export default function SerialsPage() {
                 ))}
               </select>
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => goToPage(1)}
+                disabled={loading || currentPage <= 1}
+                className="flex h-10 w-10 items-center justify-center border border-surface-container-highest bg-tactical-black text-on-surface-variant transition-colors hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="First page"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </button>
               <button
                 type="button"
                 onClick={() => goToPage(currentPage - 1)}
@@ -945,9 +963,21 @@ export default function SerialsPage() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="min-w-[8rem] text-center font-data-mono text-sm text-on-surface-variant">
-                Page <span className="text-stark-white">{pagination.page}</span> / <span className="text-stark-white">{pagination.totalPages}</span>
-              </span>
+              <form onSubmit={handlePageJump} className="flex items-center gap-2 font-data-mono text-sm text-on-surface-variant">
+                <span>Page</span>
+                <input
+                  type="number"
+                  min="1"
+                  max={pagination.totalPages}
+                  value={pageInput}
+                  onChange={(event) => setPageInput(event.target.value)}
+                  onBlur={() => goToPage(Number(pageInput) || 1)}
+                  disabled={loading}
+                  className="h-10 w-16 border border-surface-container-highest bg-tactical-black px-2 text-center text-stark-white focus:border-signal-orange focus:outline-none disabled:opacity-50"
+                  aria-label="Page number"
+                />
+                <span>of <span className="text-stark-white">{pagination.totalPages}</span></span>
+              </form>
               <button
                 type="button"
                 onClick={() => goToPage(currentPage + 1)}
@@ -956,6 +986,15 @@ export default function SerialsPage() {
                 aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => goToPage(pagination.totalPages)}
+                disabled={loading || currentPage >= pagination.totalPages}
+                className="flex h-10 w-10 items-center justify-center border border-surface-container-highest bg-tactical-black text-on-surface-variant transition-colors hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Last page"
+              >
+                <ChevronsRight className="h-4 w-4" />
               </button>
             </div>
           </div>
