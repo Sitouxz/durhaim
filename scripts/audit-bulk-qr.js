@@ -21,11 +21,11 @@ if (!/qrLayoutColumns/.test(text) || !/qrLayoutRows/.test(text)) {
   failures.push('QR export does not expose custom print layout rows and columns.');
 }
 
-if (!/qrExportScope/.test(text) || !/ALL_FILTERED_SERIALS/.test(text)) {
+if (!/qrExportScope/.test(text) || !/ALL_MATCHING_SERIALS/.test(text)) {
   failures.push('QR export does not allow exporting all matching serials.');
 }
 
-if (!/Filter Controls/.test(text) || !/Export Controls/.test(text)) {
+if (!/Filter Controls/.test(text) || !/Export Serials/.test(text)) {
   failures.push('Serials page must separate filter controls from export controls.');
 }
 
@@ -37,8 +37,8 @@ if (!/exportDateFrom/.test(text) || !/exportDateTo/.test(text)) {
   failures.push('Export controls must expose a generated-date range.');
 }
 
-if (!/getExportFilters/.test(text) || !/filterSerialsByExportDateRange/.test(text)) {
-  failures.push('Export date range must apply to all export scopes.');
+if (!/buildExportSerialsUrl/.test(text) || !/filterSerialsForExport/.test(text)) {
+  failures.push('Export date and product filters must apply to all export scopes.');
 }
 
 if (!/aria-label="Open filter controls"/.test(text) || !/aria-label="Open export controls"/.test(text)) {
@@ -53,8 +53,8 @@ if (!/exportCsv = async/.test(text) || !/getExportSerials/.test(text)) {
   failures.push('CSV export must use the export row scope instead of only the current page.');
 }
 
-if (!/buildSerialsUrl\(getExportFilters\(\), nextPage, fetchPageSize, sortBy, sortDirection\)/.test(text)) {
-  failures.push('All-filtered exports must preserve the active sort order.');
+if (!/buildExportSerialsUrl\(nextPage, fetchPageSize\)/.test(text)) {
+  failures.push('All-matching exports must use export-specific filters.');
 }
 
 if (!/QRCode\.toDataURL/.test(text) || !/new jsPDF/.test(text)) {
@@ -87,8 +87,8 @@ if (!/context\.strokeRect\(cellX, cellY, layout\.cellWidth, layout\.cellHeight\)
   failures.push('Bulk QR PNG must draw a border around each label cell.');
 }
 
-if (!/handleExportAction/.test(text) || !/QR_PDF/.test(text) || !/QR_PNG/.test(text)) {
-  failures.push('Toolbar does not use a single export dropdown with QR PDF and QR PNG actions.');
+if (!/handleExportSubmit/.test(text) || !/QR_PDF/.test(text) || !/QR_PNG/.test(text)) {
+  failures.push('Export modal does not submit CSV, QR PDF, and QR PNG actions explicitly.');
 }
 
 [

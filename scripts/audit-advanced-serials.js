@@ -42,8 +42,8 @@ if (!page.includes('toggleSerialSelection') || !page.includes('toggleAllVisibleS
   failures.push('Serials page does not expose row and visible-row selection controls.');
 }
 
-if (!/const downloadBulkQR = async \(targetSerials[^=]*= selectedSerials\)/.test(page)) {
-  failures.push('Bulk QR export does not default to the selected serial rows.');
+if (!page.includes("useState<QrExportScope>('ALL_MATCHING_SERIALS')")) {
+  failures.push('Export controls do not default to all serials matching the export filters.');
 }
 
 if (!page.includes('selectedSerials.length')) {
