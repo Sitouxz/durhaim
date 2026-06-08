@@ -15,9 +15,9 @@ const scaled = calculateQrExportLayout({ rows: 4, columns: 8, unitScale: 10 });
 assert.equal(wide.orientation, 'landscape');
 assert.equal(tall.orientation, 'portrait');
 assert.equal(square.orientation, 'portrait');
-assert.equal(QR_LABEL_MARGIN_MM, 0.5);
-assert.equal(QR_LABEL_GAP_MM, 0.25);
-assert.equal(QR_LABEL_PADDING_MM, 0.25);
+assert.equal(QR_LABEL_MARGIN_MM, 1);
+assert.equal(QR_LABEL_GAP_MM, 0.75);
+assert.equal(QR_LABEL_PADDING_MM, 0.5);
 assert.equal(QR_LABEL_BORDER_WIDTH_MM, 0.05);
 
 for (const layout of [wide, tall, square, scaled]) {

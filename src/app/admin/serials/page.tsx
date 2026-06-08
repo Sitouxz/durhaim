@@ -171,8 +171,8 @@ export default function SerialsPage() {
   const [maxScans, setMaxScans] = useState('');
   const [selectedSerialIds, setSelectedSerialIds] = useState<string[]>([]);
   const [qrExportScope, setQrExportScope] = useState<QrExportScope>('ALL_MATCHING_SERIALS');
-  const [qrLayoutColumns, setQrLayoutColumns] = useState(3);
-  const [qrLayoutRows, setQrLayoutRows] = useState(3);
+  const [qrLayoutColumns, setQrLayoutColumns] = useState(16);
+  const [qrLayoutRows, setQrLayoutRows] = useState(32);
   const [exportDateFrom, setExportDateFrom] = useState('');
   const [exportDateTo, setExportDateTo] = useState('');
   const [exportProductIds, setExportProductIds] = useState<string[] | null>(null);
@@ -1290,6 +1290,35 @@ export default function SerialsPage() {
                 </div>
               </fieldset>
 
+              {exportAction !== 'CSV' && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1">
+                    <span className="block font-label-caps text-on-surface-variant">Columns</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="40"
+                      value={qrLayoutColumns}
+                      onChange={(event) => setQrLayoutColumns(Number(event.target.value))}
+                      className="w-full border border-surface-container-highest bg-tactical-black px-3 py-2 font-data-mono text-stark-white"
+                      aria-label="QR layout columns"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="block font-label-caps text-on-surface-variant">Rows Per Sheet</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={qrLayoutRows}
+                      onChange={(event) => setQrLayoutRows(Number(event.target.value))}
+                      className="w-full border border-surface-container-highest bg-tactical-black px-3 py-2 font-data-mono text-stark-white"
+                      aria-label="QR layout rows"
+                    />
+                  </label>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => setShowExportAdvanced((current) => !current)}
@@ -1338,34 +1367,6 @@ export default function SerialsPage() {
                     ))}
                   </fieldset>
 
-                  {exportAction !== 'CSV' && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="space-y-1">
-                        <span className="block font-label-caps text-on-surface-variant">Columns</span>
-                        <input
-                          type="number"
-                          min="1"
-                          max="40"
-                          value={qrLayoutColumns}
-                          onChange={(event) => setQrLayoutColumns(Number(event.target.value))}
-                          className="w-full border border-surface-container-highest bg-charcoal-field px-3 py-2 font-data-mono text-stark-white"
-                          aria-label="QR layout columns"
-                        />
-                      </label>
-                      <label className="space-y-1">
-                        <span className="block font-label-caps text-on-surface-variant">Rows Per Sheet</span>
-                        <input
-                          type="number"
-                          min="1"
-                          max="60"
-                          value={qrLayoutRows}
-                          onChange={(event) => setQrLayoutRows(Number(event.target.value))}
-                          className="w-full border border-surface-container-highest bg-charcoal-field px-3 py-2 font-data-mono text-stark-white"
-                          aria-label="QR layout rows"
-                        />
-                      </label>
-                    </div>
-                  )}
                 </div>
               )}
 

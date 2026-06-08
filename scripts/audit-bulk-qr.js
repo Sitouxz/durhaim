@@ -25,6 +25,15 @@ if (!/qrLayoutColumns/.test(text) || !/qrLayoutRows/.test(text)) {
   failures.push('QR export does not expose custom print layout rows and columns.');
 }
 
+if (!/useState\(16\)/.test(text) || !/useState\(32\)/.test(text)) {
+  failures.push('QR export layout controls do not default to 16 columns and 32 rows.');
+}
+
+const exportModalSection = text.slice(text.indexOf('Export type'), text.indexOf('Advanced options'));
+if (!exportModalSection.includes('Rows Per Sheet') || !exportModalSection.includes('QR layout columns')) {
+  failures.push('QR layout row and column controls must stay visible before advanced options.');
+}
+
 if (!/qrExportScope/.test(text) || !/ALL_MATCHING_SERIALS/.test(text)) {
   failures.push('QR export does not allow exporting all matching serials.');
 }
