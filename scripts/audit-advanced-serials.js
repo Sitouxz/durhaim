@@ -9,7 +9,6 @@ const route = fs.readFileSync(routePath, 'utf8');
 const failures = [];
 
 [
-  'productId',
   'dateFrom',
   'dateTo',
   'minScans',
@@ -25,6 +24,10 @@ const failures = [];
 
 if (!route.includes("searchParams.getAll('productId')")) {
   failures.push('Serials API does not read multiple product IDs.');
+}
+
+if (!page.includes("url.searchParams.set('productId'") && !page.includes("url.searchParams.append('productId'")) {
+  failures.push('Serials page does not send productId.');
 }
 
 if (!route.includes(".in('product_id'")) {

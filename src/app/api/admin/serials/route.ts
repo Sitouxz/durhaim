@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 const ALL_DURHAIM_PRODUCTS = 'ALL_DURHAIM_PRODUCTS';
 const CUSTOM_PRODUCT = 'CUSTOM_PRODUCT';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const sortableSerialColumns = {
   serial: 'serial',
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search');
     const status = searchParams.get('status');
-    const productId = searchParams.get('productId');
+    const productIds = searchParams.getAll('productId').filter(Boolean);
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const minScans = searchParams.get('minScans');
@@ -107,10 +108,15 @@ export async function GET(req: NextRequest) {
       query = query.eq('status', status);
     }
 
-    if (productId === CUSTOM_PRODUCT) {
+    const includesCustomProduct = productIds.includes(CUSTOM_PRODUCT);
+    const regularProductIds = productIds.filter((id) => UUID_PATTERN.test(id));
+
+    if (includesCustomProduct && regularProductIds.length > 0) {
+      query = query.or(`product_id.is.null,product_id.in.(${regularProductIds.join(',')})`);
+    } else if (includesCustomProduct) {
       query = query.is('product_id', null);
-    } else if (productId) {
-      query = query.eq('product_id', productId);
+    } else if (regularProductIds.length > 0) {
+      query = query.in('product_id', regularProductIds);
     }
 
     if (dateFrom) {
