@@ -939,7 +939,7 @@ export default function SerialsPage() {
                 className="border border-surface-container-highest bg-tactical-black px-3 py-2 text-stark-white font-data-mono disabled:opacity-50"
                 aria-label="Rows per page"
               >
-                {[10, 25, 50, 100].map((size) => (
+                {[10, 25, 50, 100, 512].map((size) => (
                   <option key={size} value={size}>{size}</option>
                 ))}
               </select>

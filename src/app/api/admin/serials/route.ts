@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     const sortDirectionParam = searchParams.get('sortDirection');
     const wantsPagination = pageParam !== null || pageSizeParam !== null;
     const page = Math.max(1, Number(pageParam) || 1);
-    const pageSize = Math.min(100, Math.max(1, Number(pageSizeParam) || 25));
+    const pageSize = Math.min(512, Math.max(1, Number(pageSizeParam) || 25));
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     const sortBy: SortableSerialColumn = sortByParam && sortByParam in sortableSerialColumns
