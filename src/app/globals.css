@@ -34,3 +34,12 @@
   background-position: center top;
   position: relative;
 }
+
+.date-input-hide-indicator::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.date-input-hide-indicator {
+  appearance: none;
+  -webkit-appearance: none;
+}

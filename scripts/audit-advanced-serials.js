@@ -3,8 +3,10 @@ const path = require('path');
 
 const pagePath = path.join(process.cwd(), 'src', 'app', 'admin', 'serials', 'page.tsx');
 const routePath = path.join(process.cwd(), 'src', 'app', 'api', 'admin', 'serials', 'route.ts');
+const globalsPath = path.join(process.cwd(), 'src', 'app', 'globals.css');
 const page = fs.readFileSync(pagePath, 'utf8');
 const route = fs.readFileSync(routePath, 'utf8');
+const globals = fs.readFileSync(globalsPath, 'utf8');
 
 const failures = [];
 
@@ -64,6 +66,10 @@ if (!page.includes('selectedSerials.length')) {
 
 if (!page.includes('resetFilters')) {
   failures.push('Serials page does not provide an advanced filter reset.');
+}
+
+if (!page.includes('date-input-hide-indicator') || !globals.includes('.date-input-hide-indicator::-webkit-calendar-picker-indicator')) {
+  failures.push('Admin date inputs do not hide the duplicate browser-native calendar icon.');
 }
 
 const toolbarSection = page.slice(page.indexOf('<div className="bg-charcoal-field border border-surface-container-highest">'), page.indexOf('{/* Data Table */}'));
