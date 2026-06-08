@@ -17,6 +17,10 @@ if (!/const downloadQrPng/.test(text)) {
   failures.push('Admin serials page does not define downloadQrPng.');
 }
 
+if (!/downloadBulkQR\(selectedSerials\)/.test(text) || !/downloadQrPng\(selectedSerials\)/.test(text)) {
+  failures.push('Selected-row bulk bar does not export QR PDF and PNG directly.');
+}
+
 if (!/qrLayoutColumns/.test(text) || !/qrLayoutRows/.test(text)) {
   failures.push('QR export does not expose custom print layout rows and columns.');
 }

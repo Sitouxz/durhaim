@@ -284,18 +284,22 @@ export async function PATCH(req: NextRequest) {
     if (authorization.error) return authorization.error;
 
     const body = await req.json();
-    const { serialId, status } = body;
+    const { serialId, serialIds, status } = body;
+    const targetSerialIds = Array.isArray(serialIds)
+      ? serialIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
+      : typeof serialId === 'string' && serialId.length > 0
+        ? [serialId]
+        : [];
 
-    if (!serialId || !['INACTIVE', 'ACTIVE', 'REVOKED'].includes(status)) {
+    if (targetSerialIds.length === 0 || !['INACTIVE', 'ACTIVE', 'REVOKED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
     const { data, error } = await supabase
       .from('serial_numbers')
       .update({ status })
-      .eq('id', serialId)
-      .select()
-      .single();
+      .in('id', targetSerialIds)
+      .select();
 
     if (error) {
       if (isMissingSchemaError(error)) {
@@ -308,7 +312,7 @@ export async function PATCH(req: NextRequest) {
       throw error;
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(Array.isArray(serialIds) ? data ?? [] : data?.[0] ?? null);
   } catch (error) {
     console.error('Error updating serial:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

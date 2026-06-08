@@ -38,6 +38,18 @@ if (!page.includes('selectedSerialIds')) {
   failures.push('Serials page does not track selected serial rows.');
 }
 
+if (!page.includes('bulkRevokeSelected') || !route.includes('serialIds')) {
+  failures.push('Serials page does not provide an efficient bulk revoke action.');
+}
+
+if (!page.includes('BULK QR PDF') || !page.includes('BULK QR PNG') || !page.includes('CLEAR SELECTION')) {
+  failures.push('Serials page does not expose selected-row bulk actions.');
+}
+
+if (!page.includes('bg-signal-orange/10') || !page.includes('border-l-signal-orange')) {
+  failures.push('Selected serial rows are not visually emphasized.');
+}
+
 if (!page.includes('toggleSerialSelection') || !page.includes('toggleAllVisibleSerials')) {
   failures.push('Serials page does not expose row and visible-row selection controls.');
 }

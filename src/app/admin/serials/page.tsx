@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Search, Filter, Download, RotateCcw, CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Plus, Search, Filter, Download, RotateCcw, CalendarDays, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, Trash2, X } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
@@ -183,6 +183,7 @@ export default function SerialsPage() {
   const [allMatchingExportCount, setAllMatchingExportCount] = useState(0);
   const [isLoadingExportCount, setIsLoadingExportCount] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isBulkWorking, setIsBulkWorking] = useState(false);
   const [error, setError] = useState('');
 
   // Modal state
@@ -522,9 +523,9 @@ export default function SerialsPage() {
     rows: Math.max(1, Math.min(60, Math.floor(qrLayoutRows) || 1)),
   });
 
-  const downloadBulkQR = async () => {
+  const downloadBulkQR = async (targetSerials?: Serial[]) => {
     try {
-      const qrSerials = await getExportSerials();
+      const qrSerials = targetSerials ?? await getExportSerials();
       if (qrSerials.length === 0) {
         alert('No serials match the export options.');
         return false;
@@ -562,9 +563,9 @@ export default function SerialsPage() {
     }
   };
 
-  const downloadQrPng = async () => {
+  const downloadQrPng = async (targetSerials?: Serial[]) => {
     try {
-      const qrSerials = await getExportSerials();
+      const qrSerials = targetSerials ?? await getExportSerials();
       if (qrSerials.length === 0) {
         alert('No serials match the export options.');
         return false;
@@ -758,6 +759,42 @@ export default function SerialsPage() {
     fetchSerials(getCurrentFilters(), targetPage, pageSize, sortBy, sortDirection);
   };
 
+  const runSelectedQrExport = async (format: 'PDF' | 'PNG') => {
+    if (selectedSerials.length === 0 || isBulkWorking) return;
+    setIsBulkWorking(true);
+    if (format === 'PDF') await downloadBulkQR(selectedSerials);
+    if (format === 'PNG') await downloadQrPng(selectedSerials);
+    setIsBulkWorking(false);
+  };
+
+  const bulkRevokeSelected = async () => {
+    const revokableSerials = selectedSerials.filter((serial) => serial.status !== 'REVOKED');
+    if (revokableSerials.length === 0 || isBulkWorking) return;
+    if (!confirm(`Revoke ${revokableSerials.length} selected serial${revokableSerials.length === 1 ? '' : 's'}?`)) return;
+
+    setIsBulkWorking(true);
+    try {
+      const res = await fetch('/api/admin/serials', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serialIds: revokableSerials.map((serial) => serial.id), status: 'REVOKED' }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to revoke selected serials.');
+        return;
+      }
+
+      setSelectedSerialIds([]);
+      await fetchSerials(getCurrentFilters(), currentPage, pageSize, sortBy, sortDirection);
+    } catch (bulkError) {
+      console.error(bulkError);
+      alert('Error revoking selected serials.');
+    } finally {
+      setIsBulkWorking(false);
+    }
+  };
+
   const handlePageJump = (event: React.FormEvent) => {
     event.preventDefault();
     goToPage(Number(pageInput) || 1);
@@ -849,6 +886,50 @@ export default function SerialsPage() {
             </button>
           </div>
         </div>
+        {selectedSerials.length > 0 && (
+          <div className="flex flex-col gap-3 border-b border-signal-orange bg-signal-orange px-4 py-3 text-tactical-black sm:flex-row sm:items-center sm:justify-between">
+            <div className="font-data-mono text-sm font-bold">
+              {selectedSerials.length} serial{selectedSerials.length === 1 ? '' : 's'} selected
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedSerialIds([])}
+                disabled={isBulkWorking}
+                className="flex h-10 items-center justify-center border border-tactical-black/40 bg-signal-orange px-3 font-label-caps text-tactical-black transition-colors hover:bg-stark-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                CLEAR SELECTION
+              </button>
+              <button
+                type="button"
+                onClick={() => runSelectedQrExport('PDF')}
+                disabled={isBulkWorking}
+                className="flex h-10 items-center justify-center gap-2 bg-tactical-black px-3 font-label-caps text-stark-white transition-colors hover:bg-stark-white hover:text-tactical-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download className="h-4 w-4" />
+                BULK QR PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => runSelectedQrExport('PNG')}
+                disabled={isBulkWorking}
+                className="flex h-10 items-center justify-center gap-2 bg-tactical-black px-3 font-label-caps text-stark-white transition-colors hover:bg-stark-white hover:text-tactical-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Download className="h-4 w-4" />
+                BULK QR PNG
+              </button>
+              <button
+                type="button"
+                onClick={bulkRevokeSelected}
+                disabled={isBulkWorking || selectedSerials.every((serial) => serial.status === 'REVOKED')}
+                className="flex h-10 items-center justify-center gap-2 border border-tactical-black bg-transparent px-3 font-label-caps text-tactical-black transition-colors hover:bg-error hover:text-stark-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                REVOKE SELECTED
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Data Table */}
         <div className="overflow-x-auto">
@@ -890,7 +971,14 @@ export default function SerialsPage() {
                   const rowNumber = pageStart + index;
 
                   return (
-                  <tr key={s.id} className="border-b border-surface-container-highest/50 hover:bg-surface-container-highest/30">
+                  <tr
+                    key={s.id}
+                    className={`border-b border-surface-container-highest/50 transition-colors ${
+                      selectedSerialIdSet.has(s.id)
+                        ? 'border-l-2 border-l-signal-orange bg-signal-orange/10 hover:bg-signal-orange/20'
+                        : 'hover:bg-surface-container-highest/30'
+                    }`}
+                  >
                     <td className="py-3 px-4">
                       <input
                         type="checkbox"
