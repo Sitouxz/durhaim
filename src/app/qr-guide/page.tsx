@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import LocalizedText from '@/components/LocalizedText';
+import { getSiteSettings } from '@/lib/site-settings-server';
+import { buildWhatsAppUrl } from '@/lib/site-settings';
 
 export const metadata: Metadata = {
   title: 'QR Verification Guide - DURHAIM',
@@ -31,7 +33,9 @@ const steps = [
   },
 ];
 
-export default function QrGuidePage() {
+export default async function QrGuidePage() {
+  const siteSettings = await getSiteSettings();
+
   return (
     <main className="bg-texture flex-grow px-margin-edge py-section-gap">
       <div className="mx-auto max-w-[1000px]">
@@ -64,7 +68,7 @@ export default function QrGuidePage() {
             <LocalizedText en="Verify a Serial" id="Verifikasi Serial" />
           </Link>
           <a
-            href="https://wa.me/6282120101473"
+            href={buildWhatsAppUrl(siteSettings)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex justify-center border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps uppercase text-stark-white hover:border-signal-orange hover:text-signal-orange"

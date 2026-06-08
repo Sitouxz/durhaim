@@ -1,26 +1,29 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { FormEvent, useState } from 'react';
-import { useCommerce } from '@/components/CommerceProvider';
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { useCommerce } from "@/components/CommerceProvider";
+import { useSiteSettings } from "@/components/SiteSettingsProvider";
+import { buildTelHref, buildWhatsAppUrl } from "@/lib/site-settings";
 
 export default function Footer() {
   const { t } = useCommerce();
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const siteSettings = useSiteSettings();
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
   const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage('');
+    setMessage("");
 
-    const res = await fetch('/api/newsletter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
     await res.json().catch(() => ({}));
     setMessage(res.ok ? t.footer.subscribed : t.footer.failed);
-    if (res.ok) setEmail('');
+    if (res.ok) setEmail("");
   };
 
   return (
@@ -28,7 +31,10 @@ export default function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-edge py-section-gap max-w-[1440px] mx-auto">
         {/* Brand Column */}
         <div className="flex flex-col">
-          <Link href="/" className="font-display-xl text-headline-md text-stark-white mb-stack-md">
+          <Link
+            href="/"
+            className="font-display-xl text-headline-md text-stark-white mb-stack-md"
+          >
             DURHAIM
           </Link>
           <p className="font-label-caps text-label-caps text-signal-orange mb-stack-lg uppercase">
@@ -45,7 +51,7 @@ export default function Footer() {
             </a>
             <a
               className="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200"
-              href="https://wa.me/6282120101473"
+              href={buildWhatsAppUrl(siteSettings)}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -72,38 +78,75 @@ export default function Footer() {
 
         {/* Contacts Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{t.footer.contacts}</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">
+            {t.footer.contacts}
+          </h4>
           <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant">
             <li className="flex items-start gap-2">
-              <span className="material-symbols-outlined text-sm mt-1">location_on</span>
-              <span>Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung</span>
+              <span className="material-symbols-outlined text-sm mt-1">
+                location_on
+              </span>
+              <span>{siteSettings.location}</span>
             </li>
             <li className="flex items-center gap-2 hover:text-signal-orange transition-colors">
               <span className="material-symbols-outlined text-sm">mail</span>
-              <a href="mailto:durhaimgear@gmail.com">durhaimgear@gmail.com</a>
+              <a href={`mailto:${siteSettings.support_email}`}>
+                {siteSettings.support_email}
+              </a>
             </li>
             <li className="flex items-center gap-2 hover:text-signal-orange transition-colors">
               <span className="material-symbols-outlined text-sm">phone</span>
-              <a href="tel:+6282120101473">0821-2010-1473</a>
+              <a href={buildTelHref(siteSettings)}>
+                {siteSettings.whatsapp_contact}
+              </a>
             </li>
           </ul>
         </div>
 
         {/* Links Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{t.footer.navigation}</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">
+            {t.footer.navigation}
+          </h4>
           <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant flex flex-col">
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=vest">{t.catalogue.categoryLabels.vest}</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=pack">{t.catalogue.categoryLabels.pack}</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/catalogue?category=belt">{t.catalogue.categoryLabels.belt}</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/contact">{t.footer.contact}</Link>
-            <Link className="hover:text-signal-orange hover:underline w-fit" href="/latest-projects">{t.footer.latestProjects}</Link>
+            <Link
+              className="hover:text-signal-orange hover:underline w-fit"
+              href="/catalogue?category=vest"
+            >
+              {t.catalogue.categoryLabels.vest}
+            </Link>
+            <Link
+              className="hover:text-signal-orange hover:underline w-fit"
+              href="/catalogue?category=pack"
+            >
+              {t.catalogue.categoryLabels.pack}
+            </Link>
+            <Link
+              className="hover:text-signal-orange hover:underline w-fit"
+              href="/catalogue?category=belt"
+            >
+              {t.catalogue.categoryLabels.belt}
+            </Link>
+            <Link
+              className="hover:text-signal-orange hover:underline w-fit"
+              href="/contact"
+            >
+              {t.footer.contact}
+            </Link>
+            <Link
+              className="hover:text-signal-orange hover:underline w-fit"
+              href="/latest-projects"
+            >
+              {t.footer.latestProjects}
+            </Link>
           </ul>
         </div>
 
         {/* Subscribe Column */}
         <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">{t.footer.subscribe}</h4>
+          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">
+            {t.footer.subscribe}
+          </h4>
           <p className="font-body-md text-body-md text-on-tertiary-fixed-variant mb-stack-md">
             {t.footer.newsletter}
           </p>
@@ -116,11 +159,19 @@ export default function Footer() {
               type="email"
               required
             />
-            <button type="submit" className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200" aria-label={t.footer.subscribeAria}>
+            <button
+              type="submit"
+              className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200"
+              aria-label={t.footer.subscribeAria}
+            >
               <span className="material-symbols-outlined">arrow_upward</span>
             </button>
           </form>
-          {message && <p className="mt-2 font-data-mono text-data-mono text-signal-orange">{message}</p>}
+          {message && (
+            <p className="mt-2 font-data-mono text-data-mono text-signal-orange">
+              {message}
+            </p>
+          )}
         </div>
       </div>
 

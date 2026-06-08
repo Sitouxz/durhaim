@@ -83,9 +83,21 @@ type Dictionary = {
   serialChecker: {
     loading: string;
     prompt: string;
+    scanPrompt: string;
+    scanStarting: string;
+    scanActive: string;
+    scanDetected: string;
+    scanUnsupported: string;
+    scanBlocked: string;
+    scanError: string;
+    scanVideoLabel: string;
+    scanQrCode: string;
+    manualEntry: string;
+    tryScanAgain: string;
     authentic: string;
     viewCertificate: string;
     notFound: string;
+    revokedTitle: string;
     notRegistered: string;
     connectionError: string;
     instructions: string;
@@ -216,9 +228,21 @@ export const dictionaries: Record<Language, Dictionary> = {
     serialChecker: {
       loading: '...loading...',
       prompt: 'Enter serial number below',
+      scanPrompt: 'Scan the QR code on your Durhaim label',
+      scanStarting: 'Starting camera...',
+      scanActive: 'Scanning QR code...',
+      scanDetected: 'QR code detected. Verifying...',
+      scanUnsupported: 'Camera scanning is not supported in this browser.',
+      scanBlocked: 'Camera access is blocked. Allow camera access or type the serial manually.',
+      scanError: 'Scanner error. Try again or type the serial manually.',
+      scanVideoLabel: 'Durhaim QR code scanner camera preview',
+      scanQrCode: 'SCAN QR CODE',
+      manualEntry: 'TYPE SERIAL MANUALLY',
+      tryScanAgain: 'TRY SCAN AGAIN',
       authentic: 'AUTHENTIC',
       viewCertificate: 'VIEW CERTIFICATE',
       notFound: 'SERIAL NOT FOUND',
+      revokedTitle: 'SERIAL REVOKED',
       notRegistered: 'This serial number is not registered in our system.',
       connectionError: 'Connection error. Please try again.',
       instructions: 'Make sure the serial number is typed correctly, including any hyphens in the code, for example XXXX-XXXX-XXXX. Check the serial again before submitting. If you have trouble entering the code or see an error, contact Durhaim customer service.',
@@ -347,9 +371,21 @@ export const dictionaries: Record<Language, Dictionary> = {
     serialChecker: {
       loading: '...memuat...',
       prompt: 'Masukkan nomor serial di bawah ini',
+      scanPrompt: 'Pindai kode QR pada label Durhaim Anda',
+      scanStarting: 'Menyalakan kamera...',
+      scanActive: 'Memindai kode QR...',
+      scanDetected: 'Kode QR terdeteksi. Memverifikasi...',
+      scanUnsupported: 'Pemindaian kamera tidak didukung di browser ini.',
+      scanBlocked: 'Akses kamera diblokir. Izinkan kamera atau masukkan serial manual.',
+      scanError: 'Pemindai bermasalah. Coba lagi atau masukkan serial manual.',
+      scanVideoLabel: 'Pratinjau kamera pemindai kode QR Durhaim',
+      scanQrCode: 'PINDAI KODE QR',
+      manualEntry: 'KETIK SERIAL MANUAL',
+      tryScanAgain: 'COBA PINDAI LAGI',
       authentic: 'ASLI',
       viewCertificate: 'LIHAT SERTIFIKAT',
       notFound: 'SERIAL TIDAK DITEMUKAN',
+      revokedTitle: 'SERIAL DICABUT',
       notRegistered: 'Nomor serial ini tidak terdaftar di sistem kami.',
       connectionError: 'Koneksi bermasalah. Silakan coba lagi.',
       instructions: 'Pastikan nomor serial diisi dengan benar dan sesuai, termasuk tanda - (strip) yang ada pada nomor serial, misalnya XXXX-XXXX-XXXX. Periksa kembali nomor serial sebelum dikirim. Jika mengalami kendala saat penginputan atau terjadi error, silakan hubungi customer service Durhaim.',

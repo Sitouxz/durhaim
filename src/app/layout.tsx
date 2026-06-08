@@ -1,57 +1,69 @@
 /* eslint-disable @next/next/no-page-custom-font */
-import type { Metadata } from 'next';
-import { headers } from 'next/headers';
-import './globals.css';
-import TopNavBar from '@/components/TopNavBar';
-import Footer from '@/components/Footer';
-import WhatsAppFAB from '@/components/WhatsAppFAB';
-import { CommerceProvider } from '@/components/CommerceProvider';
-import JsonLd from '@/components/JsonLd';
-import { detectLanguageFromHeaders, detectRegionFromHeaders } from '@/lib/commerce';
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import "./globals.css";
+import TopNavBar from "@/components/TopNavBar";
+import Footer from "@/components/Footer";
+import WhatsAppFAB from "@/components/WhatsAppFAB";
+import { CommerceProvider } from "@/components/CommerceProvider";
+import JsonLd from "@/components/JsonLd";
+import { SiteSettingsProvider } from "@/components/SiteSettingsProvider";
+import {
+  detectLanguageFromHeaders,
+  detectRegionFromHeaders,
+} from "@/lib/commerce";
+import { getSiteSettings } from "@/lib/site-settings-server";
+import { getSiteUrl } from "@/lib/site-settings";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
+export async function generateMetadata(): Promise<Metadata> {
+  const siteSettings = await getSiteSettings();
+  const siteUrl = getSiteUrl(siteSettings);
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: 'DURHAIM - Tactical Gear',
-    template: '%s | DURHAIM',
-  },
-  description: 'DURABILITY HARD IMPACT & MODULAR - tactical gear engineered for frontline use. Battle-proven, modular, and uncompromising.',
-  alternates: {
-    canonical: '/',
-    languages: {
-      en: '/',
-      id: '/?lang=id',
-      'x-default': '/',
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: "DURHAIM - Tactical Gear",
+      template: "%s | DURHAIM",
     },
-  },
-  openGraph: {
-    type: 'website',
-    url: '/',
-    siteName: 'DURHAIM',
-    title: 'DURHAIM - Tactical Gear',
-    description: 'Battle-proven tactical gear engineered for durability, hard impact, and modular deployment.',
-    images: [
-      {
-        url: '/images/durhaim_image_1.png',
-        width: 1200,
-        height: 630,
-        alt: 'DURHAIM tactical gear',
+    description:
+      "DURABILITY HARD IMPACT & MODULAR - tactical gear engineered for frontline use. Battle-proven, modular, and uncompromising.",
+    alternates: {
+      canonical: "/",
+      languages: {
+        en: "/",
+        id: "/?lang=id",
+        "x-default": "/",
       },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'DURHAIM - Tactical Gear',
-    description: 'Battle-proven tactical gear engineered for durability, hard impact, and modular deployment.',
-    images: ['/images/durhaim_image_1.png'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+    },
+    openGraph: {
+      type: "website",
+      url: "/",
+      siteName: "DURHAIM",
+      title: "DURHAIM - Tactical Gear",
+      description:
+        "Battle-proven tactical gear engineered for durability, hard impact, and modular deployment.",
+      images: [
+        {
+          url: "/images/durhaim_image_1.png",
+          width: 1200,
+          height: 630,
+          alt: "DURHAIM tactical gear",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "DURHAIM - Tactical Gear",
+      description:
+        "Battle-proven tactical gear engineered for durability, hard impact, and modular deployment.",
+      images: ["/images/durhaim_image_1.png"],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default async function RootLayout({
   children,
@@ -59,45 +71,48 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const headersList = await headers();
+  const siteSettings = await getSiteSettings();
+  const siteUrl = getSiteUrl(siteSettings);
   const initialRegion = detectRegionFromHeaders(headersList);
-  const initialLanguage = initialRegion === 'ID' ? 'id' : detectLanguageFromHeaders(headersList);
+  const initialLanguage =
+    initialRegion === "ID" ? "id" : detectLanguageFromHeaders(headersList);
   const organizationSchema = {
-    '@context': 'https://schema.org',
-    '@graph': [
+    "@context": "https://schema.org",
+    "@graph": [
       {
-        '@type': 'Organization',
-        '@id': `${siteUrl}/#organization`,
-        name: 'DURHAIM',
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: "DURHAIM",
         url: siteUrl,
         logo: `${siteUrl}/images/35_LOGO-HITAM-PUTIHR-1024x1024-1.png`,
-        email: 'durhaimgear@gmail.com',
+        email: siteSettings.support_email,
         contactPoint: [
           {
-            '@type': 'ContactPoint',
-            telephone: '+62-821-2010-1473',
-            contactType: 'customer support',
-            areaServed: ['ID', 'GLOBAL'],
-            availableLanguage: ['English', 'Indonesian'],
+            "@type": "ContactPoint",
+            telephone: siteSettings.whatsapp_contact,
+            contactType: "customer support",
+            areaServed: ["ID", "GLOBAL"],
+            availableLanguage: ["English", "Indonesian"],
           },
         ],
         address: {
-          '@type': 'PostalAddress',
-          streetAddress: 'Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8',
-          addressLocality: 'Bandung',
-          addressCountry: 'ID',
+          "@type": "PostalAddress",
+          streetAddress: siteSettings.location,
+          addressLocality: "Bandung",
+          addressCountry: "ID",
         },
       },
       {
-        '@type': 'WebSite',
-        '@id': `${siteUrl}/#website`,
-        name: 'DURHAIM',
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        name: "DURHAIM",
         url: siteUrl,
-        inLanguage: ['en', 'id'],
-        publisher: { '@id': `${siteUrl}/#organization` },
+        inLanguage: ["en", "id"],
+        publisher: { "@id": `${siteUrl}/#organization` },
         potentialAction: {
-          '@type': 'SearchAction',
+          "@type": "SearchAction",
           target: `${siteUrl}/catalogue?search={search_term_string}`,
-          'query-input': 'required name=search_term_string',
+          "query-input": "required name=search_term_string",
         },
       },
     ],
@@ -118,12 +133,17 @@ export default async function RootLayout({
       </head>
       <body className="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
         <JsonLd data={organizationSchema} />
-        <CommerceProvider initialLanguage={initialLanguage} initialRegion={initialRegion}>
-          <TopNavBar />
-          {children}
-          <Footer />
-          <WhatsAppFAB />
-        </CommerceProvider>
+        <SiteSettingsProvider initialSettings={siteSettings}>
+          <CommerceProvider
+            initialLanguage={initialLanguage}
+            initialRegion={initialRegion}
+          >
+            <TopNavBar />
+            {children}
+            <Footer />
+            <WhatsAppFAB />
+          </CommerceProvider>
+        </SiteSettingsProvider>
       </body>
     </html>
   );

@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import JsonLd from "@/components/JsonLd";
 import { useCommerce } from "@/components/CommerceProvider";
+import { useSiteSettings } from "@/components/SiteSettingsProvider";
+import { getSiteUrl } from "@/lib/site-settings";
 
 export default function VerificationPage() {
   const { t } = useCommerce();
+  const siteSettings = useSiteSettings();
   const [serial, setSerial] = useState("");
   const router = useRouter();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://durhaim.com";
+  const siteUrl = getSiteUrl(siteSettings);
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();

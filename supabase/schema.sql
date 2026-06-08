@@ -156,7 +156,7 @@ CREATE POLICY public_read_verifiable_serials
   ON public.serial_numbers
   FOR SELECT
   TO anon, authenticated
-  USING (status IN ('ACTIVE', 'REVOKED'));
+  USING (status != 'REVOKED');
 
 DROP POLICY IF EXISTS public_insert_newsletter_subscribers ON public.newsletter_subscribers;
 CREATE POLICY public_insert_newsletter_subscribers
@@ -183,7 +183,7 @@ BEGIN
   INTO serial_row
   FROM public.serial_numbers
   WHERE serial = UPPER(TRIM(p_serial))
-    AND status = 'ACTIVE'
+    AND status != 'REVOKED'
   FOR UPDATE;
 
   IF NOT FOUND THEN
@@ -273,7 +273,7 @@ VALUES
   ('public_domain', 'durhaim.com'),
   ('whatsapp_contact', '+62 821-2010-1473'),
   ('support_email', 'durhaimgear@gmail.com'),
-  ('location', 'Komp. Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung')
+  ('location', 'Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung')
 ON CONFLICT (key) DO UPDATE SET
   value = EXCLUDED.value,
   updated_at = NOW();

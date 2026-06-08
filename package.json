@@ -19,13 +19,14 @@
     "audit:user-management": "node scripts/audit-user-management.js",
     "audit:seo-ai": "node scripts/audit-seo-ai.js",
     "audit:security-hardening": "node scripts/audit-security-hardening.js",
+    "audit:settings": "node scripts/audit-settings-workflow.js",
     "audit:public-id-copy": "node scripts/audit-public-indonesian-copy.js",
     "audit:public-pricing": "node scripts/audit-public-pricing.js",
     "audit:public-background": "node scripts/audit-public-background.js",
     "audit:qr-layout": "node scripts/audit-qr-export-layout.mjs",
     "supabase:apply": "node scripts/apply-supabase-schema.js",
     "supabase:verify": "node scripts/verify-supabase.js",
-    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:qr-layout && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run audit:public-id-copy && npm run audit:public-pricing && npm run audit:public-background && npm run build"
+    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:qr-layout && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run audit:settings && npm run audit:public-id-copy && npm run audit:public-pricing && npm run audit:public-background && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",
@@ -33,6 +34,7 @@
     "dotenv": "^17.4.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.16.0",
     "next": "^15.5.18",
     "qrcode": "^1.5.4",

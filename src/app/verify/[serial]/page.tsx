@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_noStore as noStore } from 'next/cache';
 import LocalizedText from '@/components/LocalizedText';
+import { getSiteSettings } from '@/lib/site-settings-server';
+import { buildWhatsAppUrl } from '@/lib/site-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +18,7 @@ async function getSerialData(serial: string) {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
     const { data } = await supabase
       .from('serial_numbers')
@@ -32,7 +34,7 @@ async function getSerialData(serial: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { serial } = await params;
   const data = await getSerialData(serial);
-  const productName = data?.products?.name ?? 'Unknown Product';
+  const productName = data?.products?.name ?? 'Durhaim Product';
   return {
     title: `Authenticity Certificate - ${productName} | DURHAIM`,
     description: `Serial: ${serial} - Verified authentic by DURHAIM Tactical Gear`,
@@ -45,6 +47,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VerifyPage({ params }: PageProps) {
   const { serial: rawSerial } = await params;
+  const siteSettings = await getSiteSettings();
   const data = await getSerialData(rawSerial);
   const verificationCount = data?.verification_count;
   const serial = rawSerial.toUpperCase();
@@ -147,7 +150,7 @@ export default async function VerifyPage({ params }: PageProps) {
                     <LocalizedText en="Certified product" id="Produk tersertifikasi" />
                   </div>
                   <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
-                    {product?.name ?? <LocalizedText en="Product Not Found" id="Produk Tidak Ditemukan" />}
+                    {product?.name ?? <LocalizedText en="Durhaim Product" id="Produk Durhaim" />}
                   </h1>
 
                   <div className={`mt-stack-lg border p-stack-md ${statusStyles.panel}`}>
@@ -219,7 +222,7 @@ export default async function VerifyPage({ params }: PageProps) {
 
               <div className="mt-stack-lg flex flex-col gap-stack-sm">
                 <a
-                  href={`https://wa.me/6282120101473?text=Saya%20ingin%20memverifikasi%20produk%20Durhaim%20dengan%20serial%20number:%20${serial}`}
+                  href={buildWhatsAppUrl(siteSettings, `Saya ingin memverifikasi produk Durhaim dengan serial number: ${serial}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps text-stark-white transition-colors hover:border-signal-orange hover:text-signal-orange"

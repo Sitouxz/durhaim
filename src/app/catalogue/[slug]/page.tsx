@@ -5,8 +5,8 @@ import { fallbackProducts, isMissingSchemaError, normalizeProduct, type Catalogu
 import ProductDetailClient from '@/components/ProductDetailClient';
 import JsonLd from '@/components/JsonLd';
 import LocalizedText from '@/components/LocalizedText';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
+import { getSiteSettings } from '@/lib/site-settings-server';
+import { getSiteUrl } from '@/lib/site-settings';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -71,6 +71,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const siteSettings = await getSiteSettings();
+  const siteUrl = getSiteUrl(siteSettings);
   const product = await getProduct(slug);
   if (!product) notFound();
 

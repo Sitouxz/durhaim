@@ -1,6 +1,12 @@
+"use client";
+
+import { useSiteSettings } from "@/components/SiteSettingsProvider";
+import { buildWhatsAppUrl } from "@/lib/site-settings";
+
 export default function WhatsAppFAB() {
-  const waMessage = encodeURIComponent('Halo, saya ingin bertanya tentang produk Durhaim.');
-  const waUrl = `https://wa.me/6282120101473?text=${waMessage}`;
+  const siteSettings = useSiteSettings();
+  const waMessage = 'Halo, saya ingin bertanya tentang produk Durhaim.';
+  const waUrl = buildWhatsAppUrl(siteSettings, waMessage);
 
   return (
     <a

@@ -1000,9 +1000,13 @@ export default function SerialsPage() {
                           Reset
                         </button>
                       )}
-                      {s.status !== 'REVOKED' && (
+                      {s.status !== 'REVOKED' ? (
                         <button onClick={() => updateSerialStatus(s.id, 'REVOKED')} className="text-error hover:text-error/80 underline">
                           Revoke
+                        </button>
+                      ) : (
+                        <button onClick={() => updateSerialStatus(s.id, 'ACTIVE')} className="text-signal-orange hover:text-signal-orange/80 underline">
+                          Restore
                         </button>
                       )}
                     </td>

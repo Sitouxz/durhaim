@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
 import { requireAdminRole } from '@/lib/admin-permissions';
+import {
+  normalizeSiteSettings,
+  siteSettingKeys,
+  siteSettingsFromRows,
+  validateSiteSettings,
+} from '@/lib/site-settings';
 
 export const dynamic = 'force-dynamic';
-
-const allowedSettings = ['public_domain', 'whatsapp_contact', 'support_email', 'location'] as const;
-
-type SettingKey = typeof allowedSettings[number];
-
-function settingsFromRows(rows: { key: string; value: string }[]) {
-  return Object.fromEntries(rows.map((row) => [row.key, row.value])) as Record<SettingKey, string>;
-}
 
 export async function GET() {
   try {
@@ -22,7 +20,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('site_settings')
       .select('key, value')
-      .in('key', [...allowedSettings])
+      .in('key', [...siteSettingKeys])
       .order('key');
 
     if (error) {
@@ -32,7 +30,7 @@ export async function GET() {
       throw error;
     }
 
-    return NextResponse.json(settingsFromRows(data ?? []));
+    return NextResponse.json(siteSettingsFromRows(data ?? []));
   } catch (error) {
     console.error('Error fetching settings:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -42,15 +40,18 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const updates = allowedSettings.map((key) => ({
+    const nextSettings = normalizeSiteSettings(body);
+    const validationError = validateSiteSettings(nextSettings);
+
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+
+    const updates = siteSettingKeys.map((key) => ({
       key,
-      value: typeof body[key] === 'string' ? body[key].trim() : '',
+      value: nextSettings[key],
       updated_at: new Date().toISOString(),
     }));
-
-    if (updates.some((setting) => !setting.value)) {
-      return NextResponse.json({ error: 'All settings are required.' }, { status: 400 });
-    }
 
     const supabase = createAdminClient();
     const authorization = await requireAdminRole(supabase, ['OWNER', 'ADMIN']);
@@ -60,9 +61,14 @@ export async function PATCH(req: NextRequest) {
       .from('site_settings')
       .upsert(updates, { onConflict: 'key' });
 
-    if (error) throw error;
+    if (error) {
+      if (isMissingSchemaError(error)) {
+        return NextResponse.json({ error: 'Database schema is not installed. Apply supabase/schema.sql.' }, { status: 503 });
+      }
+      throw error;
+    }
 
-    return NextResponse.json(settingsFromRows(updates));
+    return NextResponse.json(siteSettingsFromRows(updates));
   } catch (error) {
     console.error('Error saving settings:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

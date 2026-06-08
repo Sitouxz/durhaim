@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useCommerce } from '@/components/CommerceProvider';
+import { useSiteSettings } from '@/components/SiteSettingsProvider';
+import { buildWhatsAppUrl } from '@/lib/site-settings';
 
 type CartItem = {
   slug: string;
@@ -11,6 +13,7 @@ type CartItem = {
 
 export default function CartPage() {
   const { t } = useCommerce();
+  const siteSettings = useSiteSettings();
   const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
@@ -22,8 +25,8 @@ export default function CartPage() {
     const text = items.length
       ? t.cart.enquiry(items.map((item) => item.name).join(', '))
       : t.cart.genericEnquiry;
-    return `https://wa.me/6282120101473?text=${encodeURIComponent(text)}`;
-  }, [items, t]);
+    return buildWhatsAppUrl(siteSettings, text);
+  }, [items, siteSettings, t]);
 
   const clearCart = () => {
     window.localStorage.removeItem('durhaimCart');

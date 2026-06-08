@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { fallbackProducts } from '@/lib/catalogue-data';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
+import { getSiteSettings } from '@/lib/site-settings-server';
+import { getSiteUrl } from '@/lib/site-settings';
 
 const routes = [
   '',
@@ -41,6 +41,8 @@ async function getPublishedProductRoutes() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteSettings = await getSiteSettings();
+  const siteUrl = getSiteUrl(siteSettings);
   const lastModified = new Date();
   const productRoutes = await getPublishedProductRoutes();
 

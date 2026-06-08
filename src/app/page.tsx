@@ -2,8 +2,8 @@ import Link from 'next/link';
 import SerialChecker from '@/components/SerialChecker';
 import JsonLd from '@/components/JsonLd';
 import LocalizedText from '@/components/LocalizedText';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
+import { getSiteSettings } from '@/lib/site-settings-server';
+import { getSiteUrl } from '@/lib/site-settings';
 
 export const metadata = {
   title: 'DURHAIM Tactical Gear - Modular Vests, Packs, Pouches, and Belts',
@@ -51,7 +51,9 @@ const homeFaqs = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const siteSettings = await getSiteSettings();
+  const siteUrl = getSiteUrl(siteSettings);
   const homeSchema = {
     '@context': 'https://schema.org',
     '@graph': [

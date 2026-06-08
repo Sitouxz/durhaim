@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import type { CatalogueProduct } from '@/lib/catalogue-data';
 import { useCommerce } from '@/components/CommerceProvider';
+import { useSiteSettings } from '@/components/SiteSettingsProvider';
 import AddToCartButton from '@/components/AddToCartButton';
 import { localizeCategoryName, localizeProductDescription } from '@/lib/product-localization';
+import { buildWhatsAppUrl } from '@/lib/site-settings';
 
 export default function ProductDetailClient({ product }: { product: CatalogueProduct }) {
   const { language, t } = useCommerce();
-  const waText = encodeURIComponent(t.product.enquiry(product.name, product.slug));
+  const siteSettings = useSiteSettings();
+  const waText = t.product.enquiry(product.name, product.slug);
   const categoryName = localizeCategoryName(product.category.slug, product.category.name, language);
   const description = localizeProductDescription(product.description, language);
 
@@ -23,7 +26,7 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
       </p>
       <div className="mt-stack-lg flex flex-col gap-stack-sm sm:flex-row">
         <a
-          href={`https://wa.me/6282120101473?text=${waText}`}
+          href={buildWhatsAppUrl(siteSettings, waText)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex justify-center bg-signal-orange px-6 py-3 font-label-caps text-label-caps uppercase text-tactical-black transition-colors duration-200 hover:bg-stark-white"

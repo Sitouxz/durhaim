@@ -1,8 +1,11 @@
 import type { MetadataRoute } from 'next';
+import { getSiteSettings } from '@/lib/site-settings-server';
+import { getSiteUrl } from '@/lib/site-settings';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://durhaim.com';
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const siteSettings = await getSiteSettings();
+  const siteUrl = getSiteUrl(siteSettings);
 
-export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
