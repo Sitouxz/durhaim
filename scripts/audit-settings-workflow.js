@@ -69,7 +69,6 @@ const consumers = [
   'src/components/Footer.tsx',
   'src/components/WhatsAppFAB.tsx',
   'src/components/ProductDetailClient.tsx',
-  'src/app/cart/page.tsx',
   'src/app/contact/page.tsx',
   'src/app/qr-guide/page.tsx',
   'src/app/verify/[serial]/page.tsx',

@@ -8,21 +8,10 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-function assertIncludes(relativePath, needle, message) {
-  const text = read(relativePath);
-  if (!text.includes(needle)) failures.push(`${relativePath}: ${message}`);
-}
-
 function assertNotIncludes(relativePath, needle, message) {
   const text = read(relativePath);
   if (text.includes(needle)) failures.push(`${relativePath}: ${message}`);
 }
-
-assertIncludes(
-  'src/components/ProductDetailClient.tsx',
-  '<AddToCartButton product=',
-  'product detail page must let users add products to the enquiry cart',
-);
 
 assertNotIncludes(
   'src/app/verify/[serial]/page.tsx',
@@ -34,12 +23,6 @@ assertIncludes(
   'src/app/api/verify/route.ts',
   "rpc('record_serial_verification'",
   'rate-limited verification API must record verification through constrained RPC',
-);
-
-assertNotIncludes(
-  'src/app/cart/page.tsx',
-  'as the catalogue grows',
-  'cart copy should not describe a future unfinished add-to-cart flow',
 );
 
 assertNotIncludes(

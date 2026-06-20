@@ -82,9 +82,6 @@ export default function TopNavBar() {
                 </button>
               ))}
             </div>
-            <Link href="/cart" className="text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95" aria-label={t.common.openCart}>
-              <span className="material-symbols-outlined">shopping_cart</span>
-            </Link>
             {/* Mobile Menu Toggle */}
             <button
               className="md:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95"

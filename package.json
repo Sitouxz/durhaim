@@ -24,9 +24,11 @@
     "audit:public-pricing": "node scripts/audit-public-pricing.js",
     "audit:public-background": "node scripts/audit-public-background.js",
     "audit:qr-layout": "node scripts/audit-qr-export-layout.mjs",
+    "audit:whatsapp-icons": "node scripts/audit-whatsapp-icons.js",
+    "audit:whatsapp-only": "node scripts/audit-whatsapp-only-storefront.js",
     "supabase:apply": "node scripts/apply-supabase-schema.js",
     "supabase:verify": "node scripts/verify-supabase.js",
-    "verify": "npm run lint && npm run audit:routes && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:qr-layout && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run audit:settings && npm run audit:public-id-copy && npm run audit:public-pricing && npm run audit:public-background && npm run build"
+    "verify": "npm run lint && npm run audit:routes && npm run audit:whatsapp-only && npm run audit:controls && npm run audit:pages && npm run audit:catalogue && npm run audit:admin-completion && npm run audit:admin-auth && npm run audit:print-qr && npm run audit:bulk-qr && npm run audit:qr-layout && npm run audit:advanced-serials && npm run audit:user-management && npm run audit:seo-ai && npm run audit:security-hardening && npm run audit:settings && npm run audit:public-id-copy && npm run audit:public-pricing && npm run audit:public-background && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",

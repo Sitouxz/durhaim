@@ -33,7 +33,6 @@ for (const file of localizedPublicFiles) {
 
 for (const file of [
   'src/app/catalogue/page.tsx',
-  'src/app/cart/page.tsx',
   'src/app/verify/page.tsx',
   'src/components/SerialChecker.tsx',
   'src/components/Footer.tsx',

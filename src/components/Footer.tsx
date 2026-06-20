@@ -4,7 +4,8 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useCommerce } from "@/components/CommerceProvider";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
-import { buildTelHref, buildWhatsAppUrl } from "@/lib/site-settings";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
+import { buildWhatsAppUrl } from "@/lib/site-settings";
 
 export default function Footer() {
   const { t } = useCommerce();
@@ -95,8 +96,12 @@ export default function Footer() {
               </a>
             </li>
             <li className="flex items-center gap-2 hover:text-signal-orange transition-colors">
-              <span className="material-symbols-outlined text-sm">phone</span>
-              <a href={buildTelHref(siteSettings)}>
+              <WhatsAppIcon className="h-4 w-4 shrink-0" />
+              <a
+                href={buildWhatsAppUrl(siteSettings)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {siteSettings.whatsapp_contact}
               </a>
             </li>

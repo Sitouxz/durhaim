@@ -4,7 +4,6 @@ import Link from 'next/link';
 import type { CatalogueProduct } from '@/lib/catalogue-data';
 import { useCommerce } from '@/components/CommerceProvider';
 import { useSiteSettings } from '@/components/SiteSettingsProvider';
-import AddToCartButton from '@/components/AddToCartButton';
 import { localizeCategoryName, localizeProductDescription } from '@/lib/product-localization';
 import { buildWhatsAppUrl } from '@/lib/site-settings';
 
@@ -33,7 +32,6 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
         >
           {t.product.enquire}
         </a>
-        <AddToCartButton product={{ slug: product.slug, name: product.name }} />
         <Link href="/catalogue" className="inline-flex justify-center border border-surface-container-highest px-6 py-3 font-label-caps text-label-caps uppercase text-stark-white hover:border-signal-orange hover:text-signal-orange">
           {t.product.back}
         </Link>

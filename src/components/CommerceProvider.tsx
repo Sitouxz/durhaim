@@ -28,7 +28,6 @@ type Dictionary = {
     followSocialUpdates: string;
     verifySerial: string;
     priceRegion: string;
-    openCart: string;
     searchCatalogue: string;
   };
   catalogue: {
@@ -66,19 +65,6 @@ type Dictionary = {
     enquire: string;
     back: string;
     enquiry: (name: string, slug: string) => string;
-  };
-  cart: {
-    title: string;
-    intro: string;
-    empty: string;
-    view: string;
-    send: string;
-    browse: string;
-    clear: string;
-    added: string;
-    add: string;
-    enquiry: (names: string) => string;
-    genericEnquiry: string;
   };
   serialChecker: {
     loading: string;
@@ -173,7 +159,6 @@ export const dictionaries: Record<Language, Dictionary> = {
       followSocialUpdates: 'Follow Social Updates',
       verifySerial: 'Verify a Serial',
       priceRegion: 'Price region',
-      openCart: 'Open cart',
       searchCatalogue: 'Search catalogue',
     },
     catalogue: {
@@ -211,19 +196,6 @@ export const dictionaries: Record<Language, Dictionary> = {
       enquire: 'Enquire on WhatsApp',
       back: 'Back to Catalogue',
       enquiry: (name, slug) => `Hi Durhaim, I would like to ask about ${name}. Product URL: /catalogue/${slug}`,
-    },
-    cart: {
-      title: 'Enquiry Cart',
-      intro: 'Collect products from catalogue detail pages and send them to Durhaim in one WhatsApp enquiry.',
-      empty: 'Your enquiry cart is empty.',
-      view: 'View',
-      send: 'Send WhatsApp Enquiry',
-      browse: 'Browse Catalogue',
-      clear: 'Clear',
-      added: 'Added to Enquiry Cart',
-      add: 'Add to Enquiry Cart',
-      enquiry: (names) => `Hi Durhaim, I would like to ask about: ${names}`,
-      genericEnquiry: 'Hi Durhaim, I would like to ask about your products.',
     },
     serialChecker: {
       loading: '...loading...',
@@ -316,7 +288,6 @@ export const dictionaries: Record<Language, Dictionary> = {
       followSocialUpdates: 'Ikuti Media Sosial',
       verifySerial: 'Verifikasi Serial',
       priceRegion: 'Wilayah harga',
-      openCart: 'Buka keranjang',
       searchCatalogue: 'Cari katalog',
     },
     catalogue: {
@@ -354,19 +325,6 @@ export const dictionaries: Record<Language, Dictionary> = {
       enquire: 'Tanya via WhatsApp',
       back: 'Kembali ke Katalog',
       enquiry: (name, slug) => `Halo Durhaim, saya ingin bertanya tentang ${name}. URL produk: /catalogue/${slug}`,
-    },
-    cart: {
-      title: 'Keranjang Pertanyaan',
-      intro: 'Kumpulkan produk dari halaman detail lalu kirim ke Durhaim dalam satu pertanyaan WhatsApp.',
-      empty: 'Keranjang pertanyaan masih kosong.',
-      view: 'Lihat',
-      send: 'Kirim Pertanyaan WhatsApp',
-      browse: 'Lihat Katalog',
-      clear: 'Bersihkan',
-      added: 'Ditambahkan ke Keranjang',
-      add: 'Tambah ke Keranjang',
-      enquiry: (names) => `Halo Durhaim, saya ingin bertanya tentang: ${names}`,
-      genericEnquiry: 'Halo Durhaim, saya ingin bertanya tentang produk Durhaim.',
     },
     serialChecker: {
       loading: '...memuat...',

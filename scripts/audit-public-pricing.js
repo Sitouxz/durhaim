@@ -15,7 +15,6 @@ const forbidden = [
   ['src/app/catalogue/page.tsx', 'price-high'],
   ['src/app/catalogue/page.tsx', 'price-low'],
   ['src/components/ProductDetailClient.tsx', 'formatPrice'],
-  ['src/app/cart/page.tsx', 'formatPrice'],
   ['src/app/catalogue/[slug]/page.tsx', 'offers:'],
   ['src/app/catalogue/[slug]/page.tsx', 'regional pricing'],
   ['src/app/page.tsx', 'regional pricing'],

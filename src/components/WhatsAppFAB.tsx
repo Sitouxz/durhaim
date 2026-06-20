@@ -1,6 +1,7 @@
 "use client";
 
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { buildWhatsAppUrl } from "@/lib/site-settings";
 
 export default function WhatsAppFAB() {
@@ -15,7 +16,7 @@ export default function WhatsAppFAB() {
       target="_blank"
       rel="noopener noreferrer"
     >
-      <span className="material-symbols-outlined text-stark-white group-hover:text-tactical-black">chat</span>
+      <WhatsAppIcon className="h-6 w-6 text-stark-white group-hover:text-tactical-black" />
     </a>
   );
 }
