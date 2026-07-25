@@ -169,6 +169,18 @@ Driven by the `public_domain` site setting (`durhaim.com`). Fix is either to set
 canonical `www` host or to make `www` redirect to the apex — but pick one and make every
 signal agree.
 
+**Also affects printed labels.** QR codes encoding the apex host take two redirects to reach
+the certificate:
+
+```
+durhaim.com/?code=X&action=validate → 308 → www.durhaim.com/?code=X&action=validate
+                                     → 308 → www.durhaim.com/verify/X
+```
+
+Functionally fine, but it is two extra round trips on a mobile connection in the field, for
+every scan of every label already in circulation. Resolving the host mismatch removes one hop
+for all future labels.
+
 ---
 
 ## F-7 · P2 · Nothing is cacheable, and functions run on the wrong continent
@@ -252,7 +264,20 @@ be a real identifier or be dropped.
 
 ## F-11 · P1 · Applying the F-1 migration broke the deployed `/api/verify`
 
-**Status:** resolved by shipping the branch; recorded for the process lesson
+**Status: RESOLVED** — merged to `main` (`c033dfa`) and deployed 2026-07-25; production
+re-verified below. Recorded for the process lesson.
+
+**Production verification after deploy**
+
+| Check | Result |
+|---|---|
+| `POST /api/verify` real active serial | `{"found":true,"serial":"ZY1956EW9KJF","product":{"name":null,"status":"ACTIVE"}}` |
+| `POST /api/verify` unknown serial | `{"found":false,"message":"Serial number not found in our system."}` |
+| `/verify/ZY1956EW9KJF` | renders `ASLI` (authentic) |
+| Legacy QR `durhaim.com/?code=…&action=validate` | 2 hops → `www.durhaim.com/verify/ZY1956EW9KJF`, 200 |
+| anon `SELECT` on `serial_numbers` | `*/0`, body `[]` — leak stayed closed through the deploy |
+
+`product.name` is `null` because of F-2, not this fix.
 
 **Cause.** The F-1 migration revokes anon's `SELECT` on `serial_numbers`. The code deployed at
 that moment (`main`) read that table with the anon key in `/api/verify`, so every lookup
