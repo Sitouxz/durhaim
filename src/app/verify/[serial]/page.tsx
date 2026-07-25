@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_noStore as noStore } from 'next/cache';
 import { headers } from 'next/headers';
@@ -7,6 +8,7 @@ import LocalizedText from '@/components/LocalizedText';
 import { getSiteSettings } from '@/lib/site-settings-server';
 import { buildWhatsAppUrl } from '@/lib/site-settings';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { parseSerialVerification, type SerialVerification } from '@/lib/serial-verification';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,28 +19,20 @@ interface PageProps {
   params: Promise<{ serial: string }>;
 }
 
-async function getSerialData(serial: string) {
-  noStore();
-
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const { data } = await supabase
-      .from('serial_numbers')
-      .select('*, products(*)')
-      .eq('serial', serial.toUpperCase())
-      .single();
-    return data;
-  } catch {
-    return null;
-  }
-}
-
 // Viewing the certificate page (e.g. via a scanned QR code) counts as a verification,
 // same as the manual /verify form submission, so scan analytics reflect real-world scans.
-async function recordScanVerification(serial: string): Promise<number | null> {
+//
+// serial_numbers is not readable by the anon role — the anon key is public, and a
+// table-level grant would expose the whole registry — so the lookup and the
+// recording both happen inside the constrained RPC.
+//
+// Wrapped in cache() because generateMetadata and the page body both need this
+// data: without deduping, a single scan would be counted twice.
+const getSerialVerification = cache(async (rawSerial: string): Promise<SerialVerification | null> => {
+  noStore();
+
+  const serial = rawSerial.trim().toUpperCase();
+
   try {
     const headersList = await headers();
     const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -51,7 +45,6 @@ async function recordScanVerification(serial: string): Promise<number | null> {
       limit: SCAN_MAX_ATTEMPTS,
       windowMs: SCAN_WINDOW_MS,
     });
-    if (rateLimit.limited) return null;
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,18 +54,20 @@ async function recordScanVerification(serial: string): Promise<number | null> {
       p_serial: serial,
       p_ip_address: ip,
       p_user_agent: userAgent,
+      // Past the rate limit the certificate is still shown, it just stops counting.
+      p_count: !rateLimit.limited,
     });
     if (error) return null;
-    return typeof data === 'number' ? data : null;
+    return parseSerialVerification(data);
   } catch {
     return null;
   }
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { serial } = await params;
-  const data = await getSerialData(serial);
-  const productName = data?.products?.name ?? 'Durhaim Product';
+  const data = await getSerialVerification(serial);
+  const productName = data?.productName ?? 'Durhaim Product';
   return {
     title: `Authenticity Certificate - ${productName} | DURHAIM`,
     description: `Serial: ${serial} - Verified authentic by DURHAIM Tactical Gear`,
@@ -86,15 +81,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function VerifyPage({ params }: PageProps) {
   const { serial: rawSerial } = await params;
   const siteSettings = await getSiteSettings();
-  const data = await getSerialData(rawSerial);
+  const data = await getSerialVerification(rawSerial);
   const serial = rawSerial.toUpperCase();
-  const recordedCount = data ? await recordScanVerification(serial) : null;
-  const verificationCount = recordedCount ?? data?.verification_count;
+  const verificationCount = data?.verificationCount ?? undefined;
   const status = !data ? 'UNVERIFIED' : data.status === 'REVOKED' ? 'REVOKED' : 'AUTHENTIC';
-  const product = data?.products;
-  const productImage = Array.isArray(product?.images) ? product.images[0] : null;
-  const registeredDate = data?.created_at
-    ? new Date(data.created_at).toLocaleDateString('id-ID', {
+  const productName = data?.productName ?? null;
+  const productImage = data?.productImage ?? null;
+  const registeredDate = data?.createdAt
+    ? new Date(data.createdAt).toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -172,7 +166,7 @@ export default async function VerifyPage({ params }: PageProps) {
                   <div className="flex aspect-square items-center justify-center bg-surface-container-lowest">
                     {productImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                    <img src={productImage} alt={product?.name ?? 'Produk Durhaim'} className="h-full w-full object-contain p-4" />
+                    <img src={productImage} alt={productName ?? 'Produk Durhaim'} className="h-full w-full object-contain p-4" />
                     ) : (
                       <div className="flex h-32 w-32 items-center justify-center border border-signal-orange/40 text-signal-orange">
                         <span className="material-symbols-outlined text-[56px]">military_tech</span>
@@ -189,7 +183,7 @@ export default async function VerifyPage({ params }: PageProps) {
                     <LocalizedText en="Certified product" id="Produk tersertifikasi" />
                   </div>
                   <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
-                    {product?.name ?? <LocalizedText en="Durhaim Product" id="Produk Durhaim" />}
+                    {productName ?? <LocalizedText en="Durhaim Product" id="Produk Durhaim" />}
                   </h1>
 
                   <div className={`mt-stack-lg border p-stack-md ${statusStyles.panel}`}>

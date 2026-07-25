@@ -151,12 +151,13 @@ CREATE POLICY public_read_published_products
   TO anon, authenticated
   USING (is_published = true);
 
+-- serial_numbers is deliberately NOT readable by anon/authenticated. The anon key
+-- ships in the browser bundle, so any public SELECT policy here lets anyone
+-- enumerate the whole authenticity registry and print matching counterfeit
+-- labels. Public verification goes through record_serial_verification instead,
+-- which is constrained to one serial per call.
+-- See supabase/fix-serial-rls-exposure.sql.
 DROP POLICY IF EXISTS public_read_verifiable_serials ON public.serial_numbers;
-CREATE POLICY public_read_verifiable_serials
-  ON public.serial_numbers
-  FOR SELECT
-  TO anon, authenticated
-  USING (status != 'REVOKED');
 
 DROP POLICY IF EXISTS public_insert_newsletter_subscribers ON public.newsletter_subscribers;
 CREATE POLICY public_insert_newsletter_subscribers
@@ -165,49 +166,79 @@ CREATE POLICY public_insert_newsletter_subscribers
   TO anon, authenticated
   WITH CHECK (email ~* '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$');
 
-CREATE OR REPLACE FUNCTION public.record_serial_verification(
+-- This is the only path the public anon key has to serial data. It returns the
+-- certificate payload for exactly one serial per call, so it cannot be used to
+-- enumerate the registry the way a table-level SELECT policy could.
+DROP FUNCTION IF EXISTS public.record_serial_verification(TEXT, TEXT, TEXT);
+
+-- p_count => false looks the certificate up without incrementing or logging, so a
+-- rate-limited visitor still sees an accurate certificate.
+CREATE FUNCTION public.record_serial_verification(
   p_serial TEXT,
   p_ip_address TEXT,
-  p_user_agent TEXT
+  p_user_agent TEXT,
+  p_count BOOLEAN DEFAULT TRUE
 )
-RETURNS INTEGER
+RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
   serial_row public.serial_numbers%ROWTYPE;
+  product_row public.products%ROWTYPE;
   next_count INTEGER;
 BEGIN
   SELECT *
   INTO serial_row
   FROM public.serial_numbers
   WHERE serial = UPPER(TRIM(p_serial))
-    AND status != 'REVOKED'
   FOR UPDATE;
 
   IF NOT FOUND THEN
-    RETURN NULL;
+    RETURN jsonb_build_object('found', false);
   END IF;
 
-  UPDATE public.serial_numbers
-  SET verification_count = COALESCE(verification_count, 0) + 1
-  WHERE id = serial_row.id
-  RETURNING verification_count INTO next_count;
+  SELECT *
+  INTO product_row
+  FROM public.products
+  WHERE id = serial_row.product_id;
 
-  INSERT INTO public.verification_logs (serial_id, ip_address, user_agent)
-  VALUES (
-    serial_row.id,
-    LEFT(COALESCE(p_ip_address, 'unknown'), 256),
-    LEFT(COALESCE(p_user_agent, ''), 512)
+  -- A revoked certificate is reported as revoked, but is not counted or logged
+  -- as a verification.
+  IF serial_row.status = 'REVOKED' OR NOT p_count THEN
+    next_count := COALESCE(serial_row.verification_count, 0);
+  ELSE
+    UPDATE public.serial_numbers
+    SET verification_count = COALESCE(verification_count, 0) + 1
+    WHERE id = serial_row.id
+    RETURNING verification_count INTO next_count;
+
+    INSERT INTO public.verification_logs (serial_id, ip_address, user_agent)
+    VALUES (
+      serial_row.id,
+      LEFT(COALESCE(p_ip_address, 'unknown'), 256),
+      LEFT(COALESCE(p_user_agent, ''), 512)
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'found', true,
+    'serial', serial_row.serial,
+    'status', serial_row.status,
+    'verification_count', next_count,
+    'created_at', serial_row.created_at,
+    'product_name', product_row.name,
+    'product_image', CASE
+      WHEN product_row.images IS NULL OR array_length(product_row.images, 1) IS NULL THEN NULL
+      ELSE product_row.images[1]
+    END
   );
-
-  RETURN next_count;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.record_serial_verification(TEXT, TEXT, TEXT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.record_serial_verification(TEXT, TEXT, TEXT) TO anon, authenticated;
+REVOKE ALL ON FUNCTION public.record_serial_verification(TEXT, TEXT, TEXT, BOOLEAN) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_serial_verification(TEXT, TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 
 INSERT INTO public.categories (name, slug) VALUES
   ('Vest & Chestrig', 'vest'),

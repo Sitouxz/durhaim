@@ -8,6 +8,11 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
+function assertIncludes(relativePath, needle, message) {
+  const text = read(relativePath);
+  if (!text.includes(needle)) failures.push(`${relativePath}: ${message}`);
+}
+
 function assertNotIncludes(relativePath, needle, message) {
   const text = read(relativePath);
   if (text.includes(needle)) failures.push(`${relativePath}: ${message}`);
