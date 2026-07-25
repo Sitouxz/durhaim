@@ -21,20 +21,6 @@ type VerifyResult = {
 type InputMode = 'scan' | 'manual';
 type ScannerState = 'starting' | 'scanning' | 'detected' | 'error';
 
-type BarcodeDetection = {
-  rawValue?: string;
-};
-
-type BarcodeDetectorInstance = {
-  detect: (source: HTMLVideoElement) => Promise<BarcodeDetection[]>;
-};
-
-type BarcodeDetectorConstructor = new (options?: { formats?: string[] }) => BarcodeDetectorInstance;
-
-type BarcodeDetectorWindow = Window & typeof globalThis & {
-  BarcodeDetector?: BarcodeDetectorConstructor;
-};
-
 export default function SerialChecker() {
   const { language, t } = useCommerce();
   const [serial, setSerial] = useState('');
@@ -77,6 +63,14 @@ export default function SerialChecker() {
 
       if (serialFromUrl) {
         return decodeURIComponent(serialFromUrl).trim().toUpperCase();
+      }
+
+      // Legacy WordPress labels encode https://durhaim.com/?code=XXXX&action=validate.
+      // src/middleware.ts rewrites those to /verify/XXXX, but only on a real navigation —
+      // the in-app scanner never navigates, so it has to read the query itself.
+      const legacyCode = scannedUrl.searchParams.get('code');
+      if (legacyCode?.trim()) {
+        return legacyCode.trim().toUpperCase();
       }
     } catch {
       // Non-URL QR codes are treated as raw serial codes.
