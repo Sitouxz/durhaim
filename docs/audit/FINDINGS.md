@@ -261,6 +261,41 @@ request, on every request, with no cache to absorb it.
 
 Quantify in Track E; likely the single largest available performance win.
 
+### Measured 2026-07-25 from Indonesia — the region split is the dominant cost
+
+| Target | Result |
+|---|---|
+| Supabase REST | ~50ms connect, ~160ms total → **database is in SE Asia** |
+| `www.durhaim.com/api/products` | **1.3–3.7s TTFB**, `X-Vercel-Id: sin1::iad1` |
+
+Functions executed in `iad1` (US East) while both the audience and the database sit in SE Asia,
+so every request crossed the Pacific twice: user → Singapore edge → US East function → back to
+Singapore for Postgres → US East → user. A three-product query cost over a second of TTFB.
+
+**Fixed — functions pinned to Singapore.** Added `vercel.json` with `"regions": ["sin1"]`, which
+co-locates the functions with both the database and the audience.
+
+### The caching half had two causes; one was removable
+
+**Fixed:** `getSiteSettings()` called `unstable_noStore()`. Because the **root layout** reads site
+settings, that opted *every page on the site* out of caching, and spent a Supabase round trip per
+request fetching four rows that change a few times a year. It is now `unstable_cache` with a
+300s window and a `site-settings` tag, and `PATCH /api/admin/settings` calls `revalidateTag`, so
+admin edits still appear immediately. Verified end-to-end: edit the WhatsApp number in admin →
+public `/contact` shows the new number on the next request → restore works. `robots.txt` and
+`sitemap.xml` are now statically generated.
+
+**Not fixed, and deliberately so:** the content pages remain dynamic because the root layout calls
+`await headers()` to detect region and language server-side, so an Indonesian visitor gets
+Indonesian copy and IDR pricing on first paint. That is a real design choice, not an oversight.
+Making pages fully static would mean moving locale detection to the client and accepting a
+flash of the wrong language and currency. That trade is a product decision, not an audit fix —
+flagging it rather than making it. With the region fix and the removed per-request query, dynamic
+rendering is now much cheaper regardless.
+
+Still outstanding in Track E: Lighthouse/Core Web Vitals numbers, image weights and formats
+(product photography is PNG), bundle analysis (`/admin/serials` ships 149 kB), and font loading.
+
 ---
 
 ## F-8 · P3 · REVOKED was unreachable in public verification
