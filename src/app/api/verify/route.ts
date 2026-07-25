@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { parseSerialVerification } from '@/lib/serial-verification';
 
 const VERIFY_WINDOW_MS = 10 * 60 * 1000;
 const VERIFY_MAX_ATTEMPTS = 20;
@@ -41,12 +42,15 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
-    // Look up serial number
-    const { data, error } = await supabase
-      .from('serial_numbers')
-      .select('id, serial, status, verification_count, products(name, id)')
-      .eq('serial', normalizedSerial)
-      .single();
+    // serial_numbers is not readable by the anon role, because the anon key is
+    // public and a table-level grant would expose the whole registry. The RPC
+    // looks up exactly one serial and records the verification in the same call.
+    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+    const { data, error } = await supabase.rpc('record_serial_verification', {
+      p_serial: normalizedSerial,
+      p_ip_address: ip,
+      p_user_agent: req.headers.get('user-agent') ?? '',
+    });
 
     if (isMissingSchemaError(error)) {
       return NextResponse.json({
@@ -55,47 +59,33 @@ export async function POST(req: NextRequest) {
       }, { status: 503 });
     }
 
-    if (error || !data) {
+    if (error) {
+      console.error('Verify API log error:', error);
+      return NextResponse.json({ found: false, message: 'Unable to record verification attempt.' }, { status: 500 });
+    }
+
+    const result = parseSerialVerification(data);
+
+    if (!result) {
       return NextResponse.json({
         found: false,
         message: 'Serial number not found in our system.',
       });
     }
 
-    if (data.status === 'REVOKED') {
+    if (result.status === 'REVOKED') {
       return NextResponse.json({
         found: false,
         message: 'This serial number has been revoked.',
       });
     }
 
-    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
-    const { error: verificationError } = await supabase.rpc('record_serial_verification', {
-      p_serial: normalizedSerial,
-      p_ip_address: ip,
-      p_user_agent: req.headers.get('user-agent') ?? '',
-    });
-
-    if (verificationError) {
-      console.error('Verify API log error:', verificationError);
-      return NextResponse.json({ found: false, message: 'Unable to record verification attempt.' }, { status: 500 });
-    }
-
-    // Supabase may return joined data as array or object depending on schema
-    const products = data.products as unknown;
-    let productName: string | null = null;
-    if (Array.isArray(products) && products.length > 0) {
-      productName = (products[0] as { name: string }).name ?? null;
-    } else if (products && typeof products === 'object') {
-      productName = (products as { name: string }).name ?? null;
-    }
-
     return NextResponse.json({
       found: true,
-      serial: data.serial,
+      serial: result.serial,
       product: {
-        name: productName,
-        status: data.status,
+        name: result.productName,
+        status: result.status,
       },
     });
   } catch (err) {
