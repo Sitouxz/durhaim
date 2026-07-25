@@ -275,6 +275,18 @@ Singapore for Postgres → US East → user. A three-product query cost over a s
 **Fixed — functions pinned to Singapore.** Added `vercel.json` with `"regions": ["sin1"]`, which
 co-locates the functions with both the database and the audience.
 
+**Verified in production after deploy** (`X-Vercel-Id: sin1::sin1`):
+
+| Measurement | Before (`iad1`) | After (`sin1`) |
+|---|---|---|
+| `/api/products` warm TTFB | 1.3-3.7s | **0.27-0.55s** |
+| Homepage warm TTFB | ~1.0s+ | **0.25s** |
+| First (cold) request | - | 2.2s |
+
+Roughly a 4-5x improvement on warm requests. Certificate rendering re-checked after the move and
+still correct. Cold starts remain ~2.2s, which matters more now that nothing is cacheable at the
+page level - worth revisiting if the locale-detection trade-off is ever changed.
+
 ### The caching half had two causes; one was removable
 
 **Fixed:** `getSiteSettings()` called `unstable_noStore()`. Because the **root layout** reads site
@@ -781,6 +793,52 @@ for personal data — and an IP address is personal data under it. This is the o
 a regulatory rather than technical exposure, and it needs a policy decision plus copy, not just
 code: what the retention window should be, and whether IP logging is needed at all versus a
 coarser signal (verification counts alone would still drive the scan analytics).
+
+---
+
+## F-25 · P3 · Serial generation can fail on a keyspace collision at larger batch sizes
+
+**Status:** open · Track G
+
+Generated serials are `DRH-<CAT>-<YYMMDD>-<4 chars from A-Z0-9>`, so each
+(category, date) prefix has 36⁴ = 1,679,616 slots. `generateSerialRows` draws each suffix
+independently with no intra-batch dedupe, so a single batch can contain duplicates of itself as
+well as colliding with existing rows. `serial` is `UNIQUE`, so that surfaces as `23505`.
+
+The route does handle it — on `23505` it regenerates the **whole batch** and retries once. But the
+retry has the same collision probability, so the failure mode is only reduced, not removed:
+
+| Batch size in one prefix | ≈ chance of at least one collision | after one retry |
+|---|---|---|
+| 512 (the largest real batch to date) | 7.5% | 0.6% |
+| 1,000 | 26% | 6.8% |
+| 2,000 | 70% | 49% |
+
+Today's data sits at the safe end — all 512 generated serials share `CUS-260630`, one prefix. But
+a 2,000-serial print run would fail roughly half the time even with the retry, and the whole batch
+is discarded rather than just the clashing rows.
+
+Cheap fix: dedupe within the batch using a `Set` before insert, and on `23505` regenerate only the
+rows that clashed rather than the whole batch. A 5th character would also take the keyspace to 60
+million.
+
+**Format split, for the record:** 40,338 legacy WordPress serials (no dashes, 9–12 chars) and 512
+in the new `DRH-` format. Both verify correctly — covered in F-1's verification.
+
+---
+
+## N-6 · Referential integrity is clean
+
+Checked, no orphans:
+
+| Check | Result |
+|---|---|
+| `verification_logs` with a NULL `serial_id` | 0 |
+| `products` with a NULL `category_id` | 0 |
+| `serial_numbers` carrying a `list_id` | 38,666 across 19 lists — all resolve |
+
+The one anomaly is that all 19 `serial_lists` have a NULL `product_id`, which is the same event as
+F-2 rather than a separate defect.
 
 ---
 
