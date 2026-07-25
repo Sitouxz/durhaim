@@ -115,3 +115,69 @@ status code.
 | `site_settings` | 4 | 4 | 0 |
 | `admin_users` | 1 | 1 | 0 |
 | `admin_activity_logs` | 29 | 29 | 0 |
+
+---
+
+## 2026-07-25 · Batch 2 · `public_domain` changed (intentional, retained)
+
+The one deliberate data change of the audit. F-6: canonical, `og:url`, `sitemap.xml` and every
+generated QR label pointed at the apex, which 308-redirects to `www`.
+
+```sql
+UPDATE public.site_settings SET value = 'www.durhaim.com', updated_at = NOW()
+WHERE key = 'public_domain';   -- was 'durhaim.com'
+```
+
+**Reversal** (only if the canonical host is instead switched to the apex, which would also
+require changing the Vercel domain redirect):
+
+```sql
+UPDATE public.site_settings SET value = 'durhaim.com' WHERE key = 'public_domain';
+```
+
+Existing printed labels encoding the apex continue to work via the redirect.
+
+---
+
+## 2026-07-25 · Batch 2 · F-9 verification fixtures
+
+Two tagged serials mapped to a real product, to exercise the AUTHENTIC and REVOKED certificate
+branches (impossible with production data: every real serial has a null `product_id` per F-2,
+and there are zero `REVOKED` rows).
+
+| Serial | Status |
+|---|---|
+| `ZZAUDIT-ACT-0002` | ACTIVE |
+| `ZZAUDIT-REV-0002` | REVOKED |
+
+**Reversal — executed:** `DELETE FROM serial_numbers WHERE serial ILIKE '%ZZAUDIT%'` (2 rows).
+
+**Self-generated verification records removed.** Testing the certificate page against the real
+serial `ZY1956EW9KJF` incremented its `verification_count` 8 → 11 and wrote log rows, which
+would have polluted genuine scan analytics. Both were reverted from the snapshot:
+
+```sql
+UPDATE public.serial_numbers SET verification_count = 8 WHERE serial = 'ZY1956EW9KJF';
+DELETE FROM public.verification_logs WHERE id IN (<ids absent from the snapshot>);
+```
+
+**A cleanup bug worth recording.** The first attempt diffed live rows against the snapshot
+using an unpaged PostgREST query, which silently caps at 1,000 rows — so it compared an
+incomplete set and missed two rows. Paging fixed it. Every candidate row was then checked by
+`ip_address`/`user_agent` before deletion (`::1`, the audit machine's public IP, `curl/8.17.0`)
+so that **genuine visitor verification records were never deleted** — that data is not
+reconstructible.
+
+**Final reconciliation — all 9 tables match the pre-audit snapshot exactly:**
+
+| Table | Snapshot | After batch 2 |
+|---|---|---|
+| `categories` | 4 | 4 |
+| `products` | 3 | 3 |
+| `serial_lists` | 19 | 19 |
+| `serial_numbers` | 40,850 | 40,850 |
+| `verification_logs` | 1,031 | 1,031 |
+| `newsletter_subscribers` | 0 | 0 |
+| `site_settings` | 4 | 4 (one value intentionally changed) |
+| `admin_users` | 1 | 1 |
+| `admin_activity_logs` | 29 | 29 |

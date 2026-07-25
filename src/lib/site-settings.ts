@@ -9,7 +9,10 @@ export type SiteSettingKey = (typeof siteSettingKeys)[number];
 export type SiteSettings = Record<SiteSettingKey, string>;
 
 export const defaultSiteSettings: SiteSettings = {
-  public_domain: "durhaim.com",
+  // Must match the host the site is actually served from. The apex 308-redirects to www, so
+  // using the apex here pointed every canonical, og:url and sitemap entry at a redirect, and
+  // added a redirect hop to every QR label generated.
+  public_domain: "www.durhaim.com",
   whatsapp_contact: "+62 821-2010-1473",
   support_email: "durhaimgear@gmail.com",
   location: "Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung",

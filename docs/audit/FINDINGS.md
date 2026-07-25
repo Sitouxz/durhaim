@@ -94,7 +94,7 @@ needed to reconstruct the mapping — to be assessed in Track G.
 
 ## F-3 · P1 · `npm run verify` has been dead for over a month
 
-**Status:** partially fixed on `fix/serial-rls-exposure` (crash fixed; two revealed failures left open)
+**Status: FIXED** (batch 2) — `npm run verify` now runs all 20 steps and **exits 0**, for the first time since 2026-06-21. The two regressions it had been hiding (F-4, F-5) are also fixed.
 
 Commit `875a966` (2026-06-21, *"feat: make storefront WhatsApp-only"*) deleted the
 `assertIncludes` helper from `scripts/audit-page-completion.js` but left a call to it behind.
@@ -118,7 +118,7 @@ CI, since a local-only gate is one nobody runs.
 
 ## F-4 · P2 · Serial table exposes an Activate action it must not
 
-**Status:** open (pre-existing, was masked by F-3)
+**Status: FIXED** (batch 2) — the "Restore" button now sets INACTIVE instead of ACTIVE.
 
 `audit:admin-completion` fails:
 
@@ -135,9 +135,9 @@ go, or the business rule changed and the assertion is stale. Not fixed pending t
 
 ---
 
-## F-5 · P2 · Serial QR exports may not use the configured public domain
+## F-5 · **P1** · QR exports encoded whatever host the admin happened to be on
 
-**Status:** open (pre-existing, was masked by F-3)
+**Status: FIXED** (batch 2) — severity raised from P2 on inspection; see below.
 
 `audit:settings-workflow` fails at `scripts/audit-settings-workflow.js:85`:
 
@@ -145,15 +145,33 @@ go, or the business rule changed and the assertion is stale. Not fixed pending t
 AssertionError: serial QR exports must use the configured public domain
 ```
 
-If QR exports embed a hardcoded domain rather than the `public_domain` site setting, printed
-labels can point at the wrong host — and printed labels cannot be recalled. High
-consequence for a physical product; worth prioritising above its severity once confirmed.
+Confirmed and worse than the assertion implied. All three QR generators in
+`src/app/admin/serials/page.tsx` (lines 549, 598, 693 — single print, bulk export, PDF label
+sheet) built their target from the **browser's current origin**:
+
+```js
+const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
+```
+
+**Impact.** The encoded host is whatever the admin's address bar happened to show when they
+clicked export:
+
+- generated from `localhost:3000` → every printed label encodes `http://localhost:3000/verify/…`, which resolves to nothing on a customer's phone
+- generated from a Vercel preview URL → labels die when that deployment is cleaned up
+- generated from the apex → labels take an extra redirect hop
+
+Printed labels are applied to physical products and cannot be recalled, so a single export
+from the wrong tab produces permanently dead authenticity QR codes. Raised to **P1**.
+
+**Fix.** All three now use `buildVerifyUrl(siteSettings, serial)`, which derives the host from
+the `public_domain` setting. The two remaining `window.location.origin` uses in that file are
+same-origin `/api/admin/serials` fetches and are correct.
 
 ---
 
 ## F-6 · P2 · Canonical URLs point at a redirect
 
-**Status:** open
+**Status: FIXED** (batch 2) — `public_domain` is now `www.durhaim.com` in code default, schema seed and the live database. Canonical, og:url, robots sitemap line and all sitemap entries verified on the www host.
 
 The site serves from `www.durhaim.com`, but `<link rel="canonical">`, `og:url` and
 `sitemap.xml` all point at `https://durhaim.com`, which 308-redirects to the `www` host.
@@ -216,7 +234,7 @@ returns revoked status explicitly, without counting or logging it as a verificat
 
 ## F-9 · P1 · A serial that does not exist still renders as a certificate, with a "VERIFIED" seal
 
-**Status:** open (found during F-1 verification)
+**Status: FIXED** (batch 2) — verified across all three statuses; see the table at the end of this entry.
 
 `/verify/<any-string>` always renders the full certificate layout. For an unregistered serial
 the status panel correctly reads `SERIAL TIDAK TERDAFTAR` ("Serial Not Registered") — but
@@ -242,6 +260,26 @@ The same applies to the `REVOKED` state, which also keeps the `TERVERIFIKASI` se
 **Recommendation.** For `UNVERIFIED` and `REVOKED`, suppress the certificate chrome
 entirely — no seal, no certificate ID, no issue date, no "Certified Product" framing. Show a
 rejection page. The certificate layout should be reachable only by an `ACTIVE` serial.
+
+**Fix applied and verified** — every authenticity assertion is now conditional on the serial
+actually verifying:
+
+| Element | AUTHENTIC | REVOKED | UNREGISTERED |
+|---|---|---|---|
+| Page heading | Authenticity Certificate | Verification Result | Verification Result |
+| Section label | Certified product | Checked serial | Checked serial |
+| Sidebar seal | **Verified** (orange) | Revoked (muted) | Not registered (muted) |
+| Registry label | Official Registry | Withdrawn from registry | Not in registry |
+| Certificate ID | shown | — | — |
+| Issued date | shown | — | — |
+| Headline | product name | product name | Unrecognised Serial |
+| `<title>` | Authenticity Certificate - … | Certificate Revoked | Serial Not Registered |
+| `robots` | index, follow | **noindex, nofollow** | **noindex, nofollow** |
+
+The metadata mattered as much as the page body: `generateMetadata` previously returned
+"Verified authentic by DURHAIM Tactical Gear" for *any* input, and that string is what appeared
+in search results and chat unfurls — where the on-page warning panel is not visible. Arbitrary
+`/verify/<anything>` URLs are now also `noindex`, so they cannot accumulate in the index.
 
 ---
 
@@ -409,7 +447,7 @@ available range rather than letting the range error surface.
 
 ## F-15 · P2 · `/catalogue` and `/verify` have no page-specific title or description
 
-**Status:** open · Track F
+**Status: FIXED** (batch 2) — both now have distinct titles, descriptions and canonicals via sibling `layout.tsx` files (the pages are client components and cannot export metadata).
 
 Both fall back to the root layout default, `DURHAIM - Tactical Gear`:
 
@@ -423,6 +461,33 @@ Both fall back to the root layout default, `DURHAIM - Tactical Gear`:
 These are the two highest-intent pages on the site — the product index and the authenticity
 checker — and they are the two competing for the same generic title. Duplicate titles across
 routes also suppress each page's own ranking. Both need a `metadata` export.
+
+---
+
+## F-16 · P2 · `INACTIVE` serials verify as authentic, so the status is publicly meaningless
+
+**Status:** open · Track B/G
+
+`/verify` and `/verify/[serial]` treat anything that is not `REVOKED` as authentic:
+
+```ts
+const status = !data ? 'UNVERIFIED' : data.status === 'REVOKED' ? 'REVOKED' : 'AUTHENTIC';
+```
+
+So the 512 `INACTIVE` serials — generated in the admin but, by the naming, not yet issued or
+shipped — return a full authenticity certificate. Only `REVOKED` is distinguished.
+
+**Why it matters.** `INACTIVE` presumably means "printed but not yet released". If a sheet of
+unissued labels leaks, or a serial is guessed, the holder gets the same "Verified Authentic"
+certificate as a real customer. The status field that should gate that has no public effect.
+
+Discovered while fixing F-4: the "Restore" button could safely target `INACTIVE` instead of
+`ACTIVE` precisely *because* the two are publicly indistinguishable — which is itself the
+finding.
+
+**Needs a product decision** before code: should `INACTIVE` verify as authentic, as
+"registered but not yet issued", or not at all? Each is defensible; the current state looks
+unintentional rather than chosen.
 
 ---
 
