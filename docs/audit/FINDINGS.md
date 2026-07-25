@@ -1073,6 +1073,48 @@ work-in-progress products leaking, and it holds.
 
 ---
 
+## F-32 · P2 · The WhatsApp support button overlaps destructive admin controls
+
+**Status:** open · Track C
+**Evidence:** [`screenshots/C-F32-admin-serials-1440-fab-overlap.png`](screenshots/C-F32-admin-serials-1440-fab-overlap.png)
+
+`WhatsAppFAB` is rendered from the **root** layout, so it floats over the admin interface as well
+as the storefront. On `/admin/serials` at 1440px it sits directly on top of the row-9 **`Revoke`**
+link, partially obscuring it.
+
+Revoking a serial is the most destructive per-row action in the admin — it invalidates a
+customer's authenticity certificate — and it is the control being covered. An admin aiming for it
+can hit a customer-support deep link instead, or mis-click the row beneath the button.
+
+Two things are wrong here, and the second is the more interesting one:
+
+1. **The FAB should not render on `/admin`.** It is a customer-facing support shortcut; an admin
+   has no use for it.
+2. **Neither should the rest of the storefront chrome.** The admin pages are wrapped in the full
+   public header (BERANDA / KATALOG / TERUJI LAPANGAN nav, product search, EN/ID toggle) *and* the
+   full public footer (newsletter signup, contact details, social links, "Proyek Terbaru"). An
+   operator managing 40,850 serials scrolls past a newsletter form to reach the end of the table.
+   `/admin/layout.tsx` exists but nests inside the root layout, so it inherits all of it.
+
+Fix: gate `TopNavBar`, `Footer` and `WhatsAppFAB` on the route, or move the admin section into its
+own root layout via a route group so it does not inherit the storefront shell at all.
+
+Also visible in the same capture, consistent with F-2: every serial's product column reads
+`Custom Product / All Durhaim Product` rather than a real product name.
+
+---
+
+## F-33 · P3 · Every admin page shares the default storefront title
+
+**Status:** open · Track C/F
+
+All six admin routes plus the login page return `<title>DURHAIM - Tactical Gear</title>`. With
+several admin tabs open there is no way to tell them apart, and browser history is
+undifferentiated. Same root cause as F-15 (client components without a metadata-exporting layout);
+`/admin/layout.tsx` already exists and can carry a `title.template` such as `%s | Durhaim Admin`.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a

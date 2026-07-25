@@ -106,14 +106,19 @@ for (const shot of manifest.shots) {
       }, S);
     }
 
-    // Authenticated captures (the admin surface) need the session cookie set before navigation.
-    // Pass `url` rather than `domain`: the domain form does not reliably apply on localhost.
+    // Authenticated captures (the admin surface) need the session cookie bound to the origin.
+    // Setting it on a fresh about:blank target does not work — the cookie jar has no origin to
+    // attach to yet, and every admin page came back as the login screen. Land on the origin
+    // first, then set the cookie, then navigate to the target path.
     if (shot.cookie) {
       const m = /^([^=]+)=(.*)$/.exec(shot.cookie.trim());
       if (m) {
+        const origin = new URL(shot.url).origin;
         await cdp.send('Network.enable', {}, S);
+        await cdp.send('Page.navigate', { url: origin }, S);
+        await sleep(1200);
         const res = await cdp.send('Network.setCookie', {
-          name: m[1], value: m[2], url: new URL(shot.url).origin, path: '/',
+          name: m[1], value: m[2], url: origin, path: '/', httpOnly: true, sameSite: 'Lax',
         }, S);
         if (res && res.success === false) console.log(`    warn: cookie not set for ${shot.name}`);
       }

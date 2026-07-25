@@ -37,6 +37,8 @@
 | F-28 | P3 | 36 of 46 image files unreferenced (5MB WP leftovers) | open, not deleted by choice |
 | F-30 | P2 | Serial generation unbounded; count=100000 hung the server | **FIXED** |
 | F-31 | P3 | Duplicate product slug returns 400 where category returns 409 | open |
+| F-32 | P2 | WhatsApp FAB overlaps the Revoke control in admin; storefront chrome wraps admin | open |
+| F-33 | P3 | All admin pages share the default storefront title | open |
 | F-29 | P2 | No tests, no error tracking, no uptime monitoring, no CI | **partly FIXED** (RLS test + gate hardened; CI, error tracking, uptime open) |
 
 **19 fixed · 3 blocked on your decision · 1 needs DDL · 8 open**
@@ -68,29 +70,24 @@ injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API
 | A9 infrastructure | done (F-22, F-23); Vercel preview exposure still unverified |
 | A10 privacy | done (F-24) |
 | B functional flows | mostly done — verification + admin CRUD exercised (F-30, F-31, N-7); WhatsApp deep-link and camera scanner outstanding |
-| C UI/UX | partial — public baseline captured, F-12/F-13 fixed; **admin UI unverified** (authenticated capture blocked, see below); cross-browser outstanding |
+| C UI/UX | mostly done — public + admin captured; F-12/F-13 fixed, F-32/F-33 logged; cross-browser outstanding |
 | D accessibility | partial (F-21) - keyboard/scanner, admin UI, zoom reflow, reduced-motion outstanding |
 | E performance | partial — F-7 fixed and measured (4-5x); F-27 images and bundle documented; Lighthouse + fonts outstanding |
 | F SEO | partial — F-6, F-15 fixed; structured data validated (F-26); crawl + hreflang outstanding |
 | G data integrity | partial — F-2 root cause, F-25 collisions, N-6 orphans clean; restore drill outstanding |
 | H reliability / ops | done (F-3 fixed, F-29 documents the gaps) |
 
-## Known gap: authenticated screenshot capture
+## Note on authenticated capture
 
-Track C's admin UI is **not visually verified**. `tools/shoot.mjs` gained a `cookie` option, and
-the session cookie provably authenticates over `fetch` (`GET /admin/users` -> 200), but inside the
-CDP-driven browser every admin page still rendered the login page: all 12 captures came back with
-identical heights, including the deliberately-unauthenticated `/admin/login` control, which is how
-the failure was spotted rather than shipped as coverage.
+`tools/shoot.mjs` supports a `cookie` option and **does** capture the authenticated admin surface
+correctly. Two earlier attempts were wrongly judged failures: I compared total document heights
+across pages, saw them identical, and concluded the cookie was not applying. It was. The admin
+layout is a fixed shell whose table scrolls internally, so total page height is the same on every
+admin route while the content differs completely. Opening one image settled in seconds what the
+heuristic had got wrong twice.
 
-`Network.setCookie` was tried with both the `domain` and `url` forms. The likely cause is that the
-cookie is set on a fresh `about:blank` target before any same-origin navigation, so it is not
-associated with the origin when the first request goes out. The fix to try next is: navigate to the
-origin, set the cookie, then navigate to the target path.
-
-Until that works, the admin interface has been verified functionally (API-level: F-17, F-19, F-30,
-F-31, N-7) but not visually. Given `/admin/serials` is 1,469 LOC and the largest single surface in
-the app, its layout, empty states and bulk-selection affordances remain unreviewed.
+Lesson, and it is the second time in this audit: a proxy metric that looks decisive is not
+evidence. `scrollWidth` hid F-13's left-clipped labels the same way.
 
 ## Reproducing
 
