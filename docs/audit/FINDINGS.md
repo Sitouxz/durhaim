@@ -303,6 +303,75 @@ intermediate step.
 
 ---
 
+## F-12 · P2 · Header overflows the viewport from 768–943px, causing horizontal page scroll
+
+**Status:** open · Track C
+**Evidence:** [`screenshots/C-F12-home-768-header-overflow.png`](screenshots/C-F12-home-768-header-overflow.png)
+
+Every page scrolls sideways on iPad portrait and small laptops. Measured on the homepage:
+
+| Viewport | `scrollWidth` | Overflow |
+|---|---|---|
+| 744 | 744 | 0 |
+| **768** | **943** | **175px** |
+| 800 | 943 | 143px |
+| 834 | 943 | 109px |
+| 900 | 943 | 43px |
+| 1024 | 1024 | 0 |
+
+**Cause.** `src/components/TopNavBar.tsx` reveals the entire desktop header at the `md:`
+breakpoint (768px), but that layout needs 943px:
+
+- [`TopNavBar.tsx:41`](../../src/components/TopNavBar.tsx#L41) — nav links, `hidden md:flex`
+- [`TopNavBar.tsx:63`](../../src/components/TopNavBar.tsx#L63) — search form, `hidden md:flex`
+- [`TopNavBar.tsx:68`](../../src/components/TopNavBar.tsx#L68) — search input, fixed `w-48` (192px)
+- [`TopNavBar.tsx:73`](../../src/components/TopNavBar.tsx#L73) — EN/ID toggle, `hidden … md:flex`
+- [`TopNavBar.tsx:87`](../../src/components/TopNavBar.tsx#L87) — hamburger disappears at `md:hidden`
+
+So the mobile menu is dismissed at exactly the width where the desktop header no longer fits.
+The offending boxes end at x=943 in a 768px viewport (search form +96px, language toggle
++175px past the right edge).
+
+**Fix options.** Move these reveals from `md:` to `lg:`; or let the search input flex instead
+of `w-48`; or collapse search to an icon between `md:` and `lg:`. Whichever is chosen, the
+hamburger breakpoint must match the reveal breakpoint.
+
+---
+
+## F-13 · P2 · Homepage category labels are clipped at every width below 1440px
+
+**Status:** open · Track C
+**Evidence:** [`screenshots/C-F13-home-375-clipped-labels.png`](screenshots/C-F13-home-375-clipped-labels.png)
+
+The three rotated category labels in the homepage strip lose 34px off their left edge, so
+visitors read **"HESTRIG"** instead of "VEST CHESTRIG" and **"OUCH"** instead of "PACK POUCH".
+"BELT" is short enough to survive.
+
+Measured `getBoundingClientRect().left = -34` for the long labels at 375px, 768px and 1024px;
+clean only at 1440px. So the defect is visible to essentially every phone and tablet visitor —
+the majority of the audience — on the homepage's main product navigation.
+
+**Cause.** [`src/app/page.tsx:254`, `:269`, `:284`](../../src/app/page.tsx#L254) — three
+identical headings:
+
+```
+origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4
+```
+
+Rotating about `bottom-left` sends the text up and to the left; `translate-x-4` (16px) does not
+compensate for a label longer than its container is tall, so the text runs off the left edge and
+is clipped by the parent's `overflow-hidden`.
+
+Not the source of the F-12 scroll: this overflows to the *left*, which `scrollWidth` does not
+report — which is why it was invisible to the overflow metric and only showed up in the
+screenshot.
+
+**Fix.** Increase the x-translation to the measured overhang, or switch to
+`writing-mode: vertical-rl` which reserves correct layout space instead of transforming out of
+the box.
+
+---
+
 ## Carried into the full audit
 
 Read from source during scoping, not yet reproduced — these are Track A work items, listed
