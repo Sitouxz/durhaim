@@ -11,7 +11,7 @@ or major UX failure · **P2** meaningful defect · **P3** polish.
 
 ## F-1 · P0 · Entire serial registry publicly readable
 
-**Status:** fix built on `fix/serial-rls-exposure`, **DDL not yet applied — still live**
+**Status: CLOSED** — DDL applied 2026-07-25, fix verified end-to-end
 
 RLS policy `public_read_verifiable_serials` granted `SELECT` on `serial_numbers` to `anon`
 for every row where `status != 'REVOKED'`. Zero rows are revoked, so 100% of the table was
@@ -38,6 +38,33 @@ payload directly.
 **Note.** RLS on every other table is correct — `serial_lists`, `verification_logs`,
 `newsletter_subscribers`, `site_settings`, `admin_users`, `admin_activity_logs` all return 0
 rows to `anon`. This was one isolated policy mistake, not systemic.
+
+### Post-apply verification — all passed
+
+| # | Check | Result |
+|---|---|---|
+| 1 | anon `SELECT` on `serial_numbers` | **`*/0`, body `[]`** (was `0-4/40338`) |
+| 2 | anon reads still work where intended | `products` 3, `categories` 4; all other tables 0 |
+| 3 | RPC as anon, ACTIVE serial | `found:true`, status, `product_name`, `product_image`, count 1 → 2 |
+| 4 | RPC `p_count:false` | payload returned, count stayed at 2, no log row |
+| 5 | RPC, REVOKED serial | `status:"REVOKED"`, count **not** incremented, no log row |
+| 6 | RPC, unknown serial | `{"found":false}` |
+| 7 | RPC input normalisation | `"  zzaudit-active-0001  "` resolved correctly |
+| 8 | `verification_logs` side effects | exactly 3 rows: 2 ACTIVE + 1 INACTIVE, 0 for REVOKED/`p_count:false` |
+| 9 | `/verify/[serial]` page view increments by **exactly 1** | 2 → 3 → 4 across two views (the `cache()` dedupe; without it each view would double-count) |
+| 10 | Certificate page renders AUTHENTIC | `ASLI` / `KEASLIAN TERVERIFIKASI`, product name `TBP VEST MK-IV` resolved |
+| 11 | Certificate page renders REVOKED | `DICABUT` / `SERTIFIKAT DICABUT` — previously unreachable, see F-8 |
+| 12 | Certificate page renders UNVERIFIED | `SERIAL TIDAK TERDAFTAR`, dates and count `N/A` |
+| 13 | `POST /api/verify` all branches | ACTIVE → `found:true` + product name; REVOKED → revoked message; unknown → not found; `"ab"` → format error |
+| 14 | Legacy WordPress QR redirect | `/?code=…&action=validate` → 308 → `/verify/…` |
+| 15 | Teardown reconciliation | 40,850 serials / 1,024 logs / 3 products — identical to pre-test baseline, 0 residual `ZZAUDIT` rows |
+
+Evidence and reversals: [MUTATION-LOG.md](MUTATION-LOG.md).
+
+Testing used three `ZZAUDIT` fixture serials rather than production data, so no real
+serial's `verification_count` was touched. The fixtures also gave the first-ever test of the
+`product_name` / `product_image` payload, which is untestable with production data because
+of F-2.
 
 ---
 
@@ -172,6 +199,82 @@ both dead code — a revoked serial was indistinguishable from an unknown one.
 Since a revoked certificate is a *stronger* signal than an unknown serial (it means "this
 was ours and we withdrew it"), collapsing the two lost real information. The rewritten RPC
 returns revoked status explicitly, without counting or logging it as a verification.
+
+---
+
+## F-9 · P1 · A serial that does not exist still renders as a certificate, with a "VERIFIED" seal
+
+**Status:** open (found during F-1 verification)
+
+`/verify/<any-string>` always renders the full certificate layout. For an unregistered serial
+the status panel correctly reads `SERIAL TIDAK TERDAFTAR` ("Serial Not Registered") — but
+everything around it still asserts authenticity:
+
+- page heading: **SERTIFIKAT KEASLIAN** ("Authenticity Certificate")
+- section label: **PRODUK TERSERTIFIKASI** ("Certified Product")
+- the `DRH` seal in the sidebar: **TERVERIFIKASI** ("VERIFIED")
+- a fabricated **ID SERTIFIKAT** (`DRH-CERT-PE999999`) is generated for the unknown input
+- **DITERBITKAN** ("Issued") shows today's date
+- **OTORITAS: DURHAIM TACTICAL**
+
+**Reproduction:** `http://localhost:3000/verify/ZZAUDIT-NOPE-999999` (any unregistered string).
+
+**Impact.** Someone holding a counterfeit scans its QR, lands on a page headed "Authenticity
+Certificate" bearing a "VERIFIED" seal, a certificate ID, an issue date and Durhaim's
+authority — and one panel of contradicting text, in a page whose every other signal says
+genuine. On the product whose entire job is distinguishing real from fake, the default
+presentation should be refusal, not a certificate with a caveat.
+
+The same applies to the `REVOKED` state, which also keeps the `TERVERIFIKASI` seal.
+
+**Recommendation.** For `UNVERIFIED` and `REVOKED`, suppress the certificate chrome
+entirely — no seal, no certificate ID, no issue date, no "Certified Product" framing. Show a
+rejection page. The certificate layout should be reachable only by an `ACTIVE` serial.
+
+---
+
+## F-10 · P3 · Certificate page title has a doubled brand suffix
+
+**Status:** open (found during F-1 verification)
+
+Rendered title: `Authenticity Certificate - TBP VEST MK-IV | DURHAIM | DURHAIM`
+
+`generateMetadata` in `src/app/verify/[serial]/page.tsx` already appends `| DURHAIM`, and the
+root layout's title template appends it again. Cosmetic, but it is the text shown in search
+results and browser tabs for every scanned QR code.
+
+Related: the certificate ID is just the serial's last 8 alphanumerics
+(`DRH-CERT-` + `serial.replace(/[^A-Z0-9]/g,'').slice(-8)`), so it carries no independent
+information and collides for any two serials sharing a tail. Worth deciding whether it should
+be a real identifier or be dropped.
+
+---
+
+## F-11 · P1 · Applying the F-1 migration broke the deployed `/api/verify`
+
+**Status:** resolved by shipping the branch; recorded for the process lesson
+
+**Cause.** The F-1 migration revokes anon's `SELECT` on `serial_numbers`. The code deployed at
+that moment (`main`) read that table with the anon key in `/api/verify`, so every lookup
+started returning empty and the endpoint reported "Serial number not found in our system"
+for valid serials.
+
+```
+POST https://www.durhaim.com/api/verify  {"serial":"ZY1956EW9KJF"}
+→ {"found":false,"message":"Serial number not found in our system."}
+```
+
+**Blast radius.** `/verify` — both the manual entry form and the camera QR scanner, which
+share `SerialChecker.tsx:104` → `POST /api/verify`. The certificate page `/verify/[serial]`,
+where scanned QR labels actually land, was unaffected because it used the service-role key.
+So printed labels kept working; the on-site checker did not.
+
+**Lesson.** The hand-off said "apply the SQL before the code ships", which was right for the
+new code and silent about the old. Revoking a grant the running code depends on is breaking in
+both directions — schema and code had to be released together, or the code had to tolerate
+both RPC shapes during a transition. Several remaining remediation items also touch schema and
+code together; each needs an explicit ordering plan, and ideally a backward-compatible
+intermediate step.
 
 ---
 

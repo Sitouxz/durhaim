@@ -321,32 +321,21 @@ was the file that *created* the leaking policy. Applying only a migration would 
 | `npx tsc --noEmit` | clean |
 | `next lint` | clean (1 pre-existing unused-var warning in `SerialChecker.tsx`) |
 | `npm run build` | passes, all 20 routes |
-| 18 `audit:*` scripts | 16 pass; 2 fail pre-existing (see F-3, F-4 in `FINDINGS.md`) |
+| 18 `audit:*` scripts | 16 pass; 2 fail pre-existing (see F-4, F-5 in `FINDINGS.md`) |
 | `audit:security-hardening` | passes — the guardrail that caught my first attempt |
-| anon can no longer read `serial_numbers` | **not yet verified — DDL not applied** |
+| anon can no longer read `serial_numbers` | **verified: `*/0`, was `0-4/40338`** |
+| End-to-end behaviour | **verified — 15 checks, see `FINDINGS.md` F-1** |
 
-### ⚠️ Deployment order is not optional
+**DDL applied 2026-07-25** by Executor via the Supabase dashboard SQL editor. F-1 is closed.
 
-The code now expects the JSONB RPC. **Apply the SQL before the code ships.** If the code
-deploys first, `parseSerialVerification` receives the old `INTEGER` return, yields `null`,
-and *every* serial reports as "not registered" — a total verification outage.
+### ⚠️ Applying the DDL broke the deployed code — see F-11
 
-I could not apply the DDL myself: the Supabase MCP token only reaches the "Neu Entity" org
-(`ne-website-manager`), and Durhaim's project (`cqubvuytiulpjvqceanz`) is not in it. There
-is no `DATABASE_URL`/`SUPABASE_DB_URL` in `.env.local`, so `npm run supabase:apply` cannot
-connect either.
+The migration had to land before the new code, but applying it alone broke the *previously
+deployed* code, which read `serial_numbers` with the anon key that the migration revokes.
+Production `/api/verify` returned "not found" for every serial until the branch shipped.
 
-To apply, either paste `supabase/fix-serial-rls-exposure.sql` into the Supabase dashboard
-SQL editor, or add the Postgres connection string to `.env.local` and tell me — I will run
-it and complete the verification below.
-
-### Post-apply verification (I will run these once the DDL is in)
-
-1. Anon `SELECT` on `serial_numbers` returns 0 rows (currently 40,338).
-2. `/api/verify` returns `found: true` for a known-good serial, with the count incrementing.
-3. `/verify/[serial]` renders AUTHENTIC, and increments by exactly **1** per page view (the
-   `cache()` dedupe — regression-test this specifically).
-4. A `ZZAUDIT` serial set to `REVOKED` renders the REVOKED state, and does **not** increment.
-5. An unknown serial renders UNVERIFIED.
-6. Legacy WordPress QR redirect still resolves end-to-end.
-7. Screenshots of each state at mobile and desktop, filed as evidence.
+The hand-off instruction ("apply the SQL before the code ships") was correct for the new code
+and incomplete about the old. A schema change that removes a grant the running code depends on
+is a breaking change in *both* directions; the two must be released together, or the code
+must tolerate both shapes. Recorded as F-11 so the sequencing lesson carries into the
+remaining remediation batches, several of which also touch schema and code together.
