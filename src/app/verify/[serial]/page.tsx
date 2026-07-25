@@ -68,6 +68,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { serial } = await params;
   const data = await getSerialVerification(serial);
   const productName = data?.productName ?? 'Durhaim Product';
+  const authentic = Boolean(data) && data?.status !== 'REVOKED';
+
+  // Never claim authenticity in the title, description or link preview for a serial that did
+  // not verify — this text is what appears in search results and chat unfurls, where the
+  // status panel on the page is not visible.
+  if (!authentic) {
+    const revoked = data?.status === 'REVOKED';
+    const summary = revoked
+      ? `Serial ${serial} has been revoked by DURHAIM.`
+      : `Serial ${serial} is not registered with DURHAIM.`;
+    return {
+      title: revoked ? 'Certificate Revoked' : 'Serial Not Registered',
+      description: summary,
+      openGraph: { title: revoked ? 'DURHAIM - Certificate Revoked' : 'DURHAIM - Serial Not Registered', description: summary },
+      // Arbitrary /verify/<anything> URLs must not accumulate in the index.
+      robots: { index: false, follow: false },
+    };
+  }
+
   return {
     // The root layout's title template already appends "| DURHAIM".
     title: `Authenticity Certificate - ${productName}`,
@@ -100,7 +119,13 @@ export default async function VerifyPage({ params }: PageProps) {
     month: 'short',
     year: 'numeric',
   });
-  const certificateId = `DRH-CERT-${serial.replace(/[^A-Z0-9]/g, '').slice(-8) || 'UNKNOWN'}`;
+  // Only a genuine, non-revoked serial gets certificate framing. Presenting the seal,
+  // a certificate ID and an issue date around an unregistered serial makes a counterfeit
+  // look endorsed — every signal on the page said "genuine" except one panel of text.
+  const isAuthentic = status === 'AUTHENTIC';
+  const certificateId = isAuthentic
+    ? `DRH-CERT-${serial.replace(/[^A-Z0-9]/g, '').slice(-8) || 'UNKNOWN'}`
+    : null;
   const statusStyles = status === 'AUTHENTIC'
     ? {
         panel: 'border-[#9FE870]/50 bg-[#9FE870]/10 text-[#9FE870]',
@@ -133,11 +158,20 @@ export default async function VerifyPage({ params }: PageProps) {
             id: 'Nomor serial ini tidak terdaftar di sistem DURHAIM. Jika Anda yakin ini kesalahan, silakan hubungi bantuan.',
           },
         };
-  const certificateFacts = [
-    { label: { en: 'Certificate ID', id: 'ID Sertifikat' }, value: certificateId },
-    { label: { en: 'Registered', id: 'Terdaftar' }, value: registeredDate },
-    { label: { en: 'Verification Count', id: 'Jumlah Verifikasi' }, value: verificationCount !== undefined ? `${verificationCount}` : 'N/A' },
-  ];
+  // An unregistered serial has no registration date, no scan history and no certificate id —
+  // showing "N/A" rows under a certificate heading still reads as a partly-filled certificate.
+  const certificateFacts = isAuthentic
+    ? [
+        { label: { en: 'Certificate ID', id: 'ID Sertifikat' }, value: certificateId as string },
+        { label: { en: 'Registered', id: 'Terdaftar' }, value: registeredDate },
+        { label: { en: 'Verification Count', id: 'Jumlah Verifikasi' }, value: verificationCount !== undefined ? `${verificationCount}` : 'N/A' },
+      ]
+    : status === 'REVOKED'
+      ? [
+          { label: { en: 'Registered', id: 'Terdaftar' }, value: registeredDate },
+          { label: { en: 'Status', id: 'Status' }, value: 'REVOKED' },
+        ]
+      : [];
 
   return (
     <main className="flex-grow bg-texture min-h-screen">
@@ -153,7 +187,9 @@ export default async function VerifyPage({ params }: PageProps) {
                 <div>
                   <div className="font-display-xl text-headline-lg text-stark-white tracking-tighter uppercase">DURHAIM</div>
                   <div className="mt-1 font-label-caps text-label-caps text-signal-orange uppercase">
-                    <LocalizedText en="Authenticity Certificate" id="Sertifikat Keaslian" />
+                    {isAuthentic
+                      ? <LocalizedText en="Authenticity Certificate" id="Sertifikat Keaslian" />
+                      : <LocalizedText en="Verification Result" id="Hasil Verifikasi" />}
                   </div>
                 </div>
                 <div className={`inline-flex items-center gap-2 self-start border px-4 py-3 font-label-caps text-label-caps uppercase ${statusStyles.panel}`}>
@@ -175,16 +211,28 @@ export default async function VerifyPage({ params }: PageProps) {
                     )}
                   </div>
                   <div className="mt-stack-md border-t border-surface-container-highest pt-stack-sm text-center font-data-mono text-data-mono uppercase text-on-surface-variant">
-                    <LocalizedText en="Official Registry" id="Registri Resmi" />
+                    {isAuthentic
+                      ? <LocalizedText en="Official Registry" id="Registri Resmi" />
+                      : status === 'REVOKED'
+                        // A revoked serial was in the registry; it is the certificate that
+                        // was withdrawn. Saying "not in registry" would misstate that.
+                        ? <LocalizedText en="Withdrawn from registry" id="Ditarik dari registri" />
+                        : <LocalizedText en="Not in registry" id="Tidak ada di registri" />}
                   </div>
                 </div>
 
                 <div>
                   <div className="mb-stack-md font-data-mono text-data-mono uppercase text-on-surface-variant">
-                    <LocalizedText en="Certified product" id="Produk tersertifikasi" />
+                    {isAuthentic
+                      ? <LocalizedText en="Certified product" id="Produk tersertifikasi" />
+                      : <LocalizedText en="Checked serial" id="Serial diperiksa" />}
                   </div>
                   <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
-                    {productName ?? <LocalizedText en="Durhaim Product" id="Produk Durhaim" />}
+                    {/* An unregistered serial has no product, so the generic "Durhaim Product"
+                        fallback would headline the page with a product that does not exist. */}
+                    {productName ?? (status === 'UNVERIFIED'
+                      ? <LocalizedText en="Unrecognised Serial" id="Serial Tidak Dikenal" />
+                      : <LocalizedText en="Durhaim Product" id="Produk Durhaim" />)}
                   </h1>
 
                   <div className={`mt-stack-lg border p-stack-md ${statusStyles.panel}`}>
@@ -221,22 +269,31 @@ export default async function VerifyPage({ params }: PageProps) {
             </div>
 
             <aside className="border-t border-surface-container-highest bg-tactical-black/80 p-6 md:p-10 lg:border-l lg:border-t-0">
-              <div className="mx-auto flex h-36 w-36 items-center justify-center border-2 border-signal-orange text-center">
+              {/* The seal is an assertion of authenticity, so it is shown only when the
+                  serial actually verifies. Revoked and unregistered serials get the neutral
+                  status mark instead. */}
+              <div className={`mx-auto flex h-36 w-36 items-center justify-center border-2 text-center ${isAuthentic ? 'border-signal-orange' : 'border-surface-container-highest'}`}>
                 <div>
-                  <div className="font-display-xl text-headline-md uppercase tracking-tighter text-stark-white">DRH</div>
-                  <div className="mt-1 font-data-mono text-[10px] uppercase text-signal-orange">
-                    <LocalizedText en="Verified" id="Terverifikasi" />
+                  <div className={`font-display-xl text-headline-md uppercase tracking-tighter ${isAuthentic ? 'text-stark-white' : 'text-on-surface-variant'}`}>DRH</div>
+                  <div className={`mt-1 font-data-mono text-[10px] uppercase ${isAuthentic ? 'text-signal-orange' : 'text-on-surface-variant'}`}>
+                    {isAuthentic
+                      ? <LocalizedText en="Verified" id="Terverifikasi" />
+                      : status === 'REVOKED'
+                        ? <LocalizedText en="Revoked" id="Dicabut" />
+                        : <LocalizedText en="Not registered" id="Tidak terdaftar" />}
                   </div>
                 </div>
               </div>
 
               <div className="mt-stack-lg space-y-stack-md">
-                <div className="border border-surface-container-highest p-stack-md">
-                  <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">
-                    <LocalizedText en="Issued" id="Diterbitkan" />
+                {isAuthentic && (
+                  <div className="border border-surface-container-highest p-stack-md">
+                    <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">
+                      <LocalizedText en="Issued" id="Diterbitkan" />
+                    </div>
+                    <div className="mt-1 font-data-mono text-data-mono uppercase text-stark-white">{issuedDate}</div>
                   </div>
-                  <div className="mt-1 font-data-mono text-data-mono uppercase text-stark-white">{issuedDate}</div>
-                </div>
+                )}
                 <div className="border border-surface-container-highest p-stack-md">
                   <div className="font-data-mono text-data-mono uppercase text-on-surface-variant">
                     <LocalizedText en="Authority" id="Otoritas" />

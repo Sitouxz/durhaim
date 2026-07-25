@@ -301,7 +301,9 @@ ON CONFLICT (serial) DO UPDATE SET
 
 INSERT INTO public.site_settings (key, value)
 VALUES
-  ('public_domain', 'durhaim.com'),
+  -- www, not the apex: the apex 308-redirects to www, so seeding the apex here points every
+  -- canonical/og:url/sitemap entry and every generated QR label at a redirect.
+  ('public_domain', 'www.durhaim.com'),
   ('whatsapp_contact', '+62 821-2010-1473'),
   ('support_email', 'durhaimgear@gmail.com'),
   ('location', 'Mitra Dago Parahyangan Jl. Anyelir No. C8 Bandung')

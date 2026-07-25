@@ -11,6 +11,8 @@ import {
   QR_LABEL_MARGIN_MM,
   QR_LABEL_PADDING_MM,
 } from '@/lib/qr-export-layout';
+import { useSiteSettings } from '@/components/SiteSettingsProvider';
+import { buildVerifyUrl } from '@/lib/site-settings';
 
 type Product = {
   id: string;
@@ -149,6 +151,10 @@ function DateFilterInput({ id, label, value, onChange }: DateFilterInputProps) {
 }
 
 export default function SerialsPage() {
+  // QR targets come from the configured public domain, never window.location.origin: labels
+  // generated from localhost or a Vercel preview URL would be printed onto physical products
+  // pointing at a host that does not resolve, and printed labels cannot be recalled.
+  const siteSettings = useSiteSettings();
   const [serials, setSerials] = useState<Serial[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -546,7 +552,7 @@ export default function SerialsPage() {
         const pageIndex = index % qrPerPage;
         const { cellX, cellY, qrX, qrY } = layout.getCellPosition(pageIndex);
         const serial = qrSerials[index];
-        const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
+        const verifyUrl = buildVerifyUrl(siteSettings, serial.serial);
         const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 512, margin: 0 });
 
         pdf.rect(cellX, cellY, layout.cellWidth, layout.cellHeight);
@@ -595,7 +601,7 @@ export default function SerialsPage() {
 
         for (let index = 0; index < pageSerials.length; index++) {
           const serial = pageSerials[index];
-          const verifyUrl = `${window.location.origin}/verify/${serial.serial}`;
+          const verifyUrl = buildVerifyUrl(siteSettings, serial.serial);
           const dataUrl = await QRCode.toDataURL(verifyUrl, { width: Math.max(1, Math.floor(layout.qrSize)), margin: 0 });
           const image = new Image();
           await new Promise<void>((resolve, reject) => {
@@ -690,7 +696,7 @@ export default function SerialsPage() {
     printWindow.document.close();
 
     try {
-      const verifyUrl = `${window.location.origin}/verify/${serial}`;
+      const verifyUrl = buildVerifyUrl(siteSettings, serial);
       const dataUrl = await QRCode.toDataURL(verifyUrl, { width: 1024, margin: 0 });
 
       printWindow.document.open();
@@ -1005,7 +1011,10 @@ export default function SerialsPage() {
                           Revoke
                         </button>
                       ) : (
-                        <button onClick={() => updateSerialStatus(s.id, 'ACTIVE')} className="text-signal-orange hover:text-signal-orange/80 underline">
+                        // Restores to INACTIVE, not ACTIVE: activation is not a manual admin
+                        // action anywhere in this system, and INACTIVE already verifies as
+                        // authentic publicly, so undoing a revocation loses nothing.
+                        <button onClick={() => updateSerialStatus(s.id, 'INACTIVE')} className="text-signal-orange hover:text-signal-orange/80 underline">
                           Restore
                         </button>
                       )}
