@@ -106,6 +106,19 @@ for (const shot of manifest.shots) {
       }, S);
     }
 
+    // Authenticated captures (the admin surface) need the session cookie set before navigation.
+    // Pass `url` rather than `domain`: the domain form does not reliably apply on localhost.
+    if (shot.cookie) {
+      const m = /^([^=]+)=(.*)$/.exec(shot.cookie.trim());
+      if (m) {
+        await cdp.send('Network.enable', {}, S);
+        const res = await cdp.send('Network.setCookie', {
+          name: m[1], value: m[2], url: new URL(shot.url).origin, path: '/',
+        }, S);
+        if (res && res.success === false) console.log(`    warn: cookie not set for ${shot.name}`);
+      }
+    }
+
     await cdp.send('Page.navigate', { url: shot.url }, S);
     await sleep(shot.waitMs ?? 2500);
 

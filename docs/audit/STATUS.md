@@ -68,12 +68,29 @@ injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API
 | A9 infrastructure | done (F-22, F-23); Vercel preview exposure still unverified |
 | A10 privacy | done (F-24) |
 | B functional flows | mostly done — verification + admin CRUD exercised (F-30, F-31, N-7); WhatsApp deep-link and camera scanner outstanding |
-| C UI/UX | partial — baseline captured, F-12/F-13 fixed; admin UI and cross-browser outstanding |
+| C UI/UX | partial — public baseline captured, F-12/F-13 fixed; **admin UI unverified** (authenticated capture blocked, see below); cross-browser outstanding |
 | D accessibility | partial (F-21) - keyboard/scanner, admin UI, zoom reflow, reduced-motion outstanding |
 | E performance | partial — F-7 fixed and measured (4-5x); F-27 images and bundle documented; Lighthouse + fonts outstanding |
 | F SEO | partial — F-6, F-15 fixed; structured data validated (F-26); crawl + hreflang outstanding |
 | G data integrity | partial — F-2 root cause, F-25 collisions, N-6 orphans clean; restore drill outstanding |
 | H reliability / ops | done (F-3 fixed, F-29 documents the gaps) |
+
+## Known gap: authenticated screenshot capture
+
+Track C's admin UI is **not visually verified**. `tools/shoot.mjs` gained a `cookie` option, and
+the session cookie provably authenticates over `fetch` (`GET /admin/users` -> 200), but inside the
+CDP-driven browser every admin page still rendered the login page: all 12 captures came back with
+identical heights, including the deliberately-unauthenticated `/admin/login` control, which is how
+the failure was spotted rather than shipped as coverage.
+
+`Network.setCookie` was tried with both the `domain` and `url` forms. The likely cause is that the
+cookie is set on a fresh `about:blank` target before any same-origin navigation, so it is not
+associated with the origin when the first request goes out. The fix to try next is: navigate to the
+origin, set the cookie, then navigate to the target path.
+
+Until that works, the admin interface has been verified functionally (API-level: F-17, F-19, F-30,
+F-31, N-7) but not visually. Given `/admin/serials` is 1,469 LOC and the largest single surface in
+the app, its layout, empty states and bulk-selection affordances remain unreviewed.
 
 ## Reproducing
 
