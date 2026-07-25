@@ -491,6 +491,38 @@ unintentional rather than chosen.
 
 ---
 
+## F-17 · P2 · `GET /api/admin/users` had no role check — any STAFF could enumerate every admin
+
+**Status: FIXED** (batch 3) · Track A3
+
+Every other admin endpoint calls `requireAdminRole`; the users **GET** handler did not, relying
+only on middleware's "is authenticated" check. A STAFF account could therefore read the full
+admin roster — `full_name`, `email`, `role`, `status`, `last_login_at`, `notes` — which is
+exactly the information needed to pick a higher-privileged account to target.
+
+Confirmed by exercising the full matrix with three seeded `ZZAUDIT` accounts, one per role:
+
+| Endpoint | Method | OWNER | ADMIN | STAFF | Expected |
+|---|---|---|---|---|---|
+| `/api/admin/overview` | GET | 200 | 200 | 200 | all |
+| `/api/admin/products` | GET | 200 | 200 | 200 | all |
+| `/api/admin/categories` | GET | 200 | 200 | 200 | all |
+| `/api/admin/serials` | GET | 200 | 200 | 200 | all |
+| `/api/admin/settings` | GET | 200 | 200 | 200 | all |
+| `/api/admin/user-logs` | GET | 200 | 200 | 403 | OWNER/ADMIN |
+| `/api/admin/users` | GET | 200 | 200 | **200 ← gap** | OWNER/ADMIN |
+| `/api/admin/settings` | PATCH | 200 | 200 | 403 | OWNER/ADMIN |
+| `/api/admin/users` | POST | 201 | 201 | 403 | OWNER/ADMIN |
+
+**Fix.** The GET handler now calls the same `requireUserManager` guard as POST and PATCH.
+Re-running the matrix reports STAFF 403 and no remaining gaps.
+
+The rest of the authorization model held up under test — this was one missing call, not a
+systemic weakness. Password hashing was validated incidentally: the seeded accounts were given
+PBKDF2 hashes derived independently to the app's parameters, and all three logged in.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a

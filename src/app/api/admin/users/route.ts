@@ -58,6 +58,11 @@ function requiresOwnerRole(targetRole: string, existingRole?: string) {
 export async function GET() {
   try {
     const supabase = createAdminClient();
+    // The roster carries every admin's email, role and last_login_at — useful for targeting a
+    // specific account. Gate it to the same roles that may manage users, as POST/PATCH do.
+    const authorization = await requireUserManager(supabase);
+    if (authorization.error) return authorization.error;
+
     const { data, error } = await supabase
       .from('admin_users')
       .select(USER_SELECT)
