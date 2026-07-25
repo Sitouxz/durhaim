@@ -3,6 +3,14 @@ import { cookies } from "next/headers";
 import { LayoutDashboard, Box, FolderTree, QrCode, Settings, Users } from "lucide-react";
 import AdminSignOutButton from "@/components/AdminSignOutButton";
 import { ADMIN_SESSION_COOKIE, getAdminSessionUser } from "@/lib/admin-auth";
+import type { Metadata } from "next";
+
+// Every admin route previously returned the default storefront title, so open admin tabs were
+// indistinguishable. Child pages are client components and cannot export metadata themselves.
+export const metadata: Metadata = {
+  title: { default: "Durhaim Admin", template: "%s | Durhaim Admin" },
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({
   children,

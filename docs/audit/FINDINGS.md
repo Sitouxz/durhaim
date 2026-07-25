@@ -1075,7 +1075,7 @@ work-in-progress products leaking, and it holds.
 
 ## F-32 · P2 · The WhatsApp support button overlaps destructive admin controls
 
-**Status:** open · Track C
+**Status: FIXED** (batch 9) · Track C
 **Evidence:** [`screenshots/C-F32-admin-serials-1440-fab-overlap.png`](screenshots/C-F32-admin-serials-1440-fab-overlap.png)
 
 `WhatsAppFAB` is rendered from the **root** layout, so it floats over the admin interface as well
@@ -1096,8 +1096,10 @@ Two things are wrong here, and the second is the more interesting one:
    operator managing 40,850 serials scrolls past a newsletter form to reach the end of the table.
    `/admin/layout.tsx` exists but nests inside the root layout, so it inherits all of it.
 
-Fix: gate `TopNavBar`, `Footer` and `WhatsAppFAB` on the route, or move the admin section into its
-own root layout via a route group so it does not inherit the storefront shell at all.
+**Fixed:** a `StorefrontChrome` client component wraps `TopNavBar`, `Footer` and `WhatsAppFAB` in
+the root layout and returns `null` for any path under `/admin`. Verified on `/admin/serials`: the
+storefront nav, newsletter form and FAB are all absent from the HTML while the admin sidebar
+remains, and the storefront itself still renders all three.
 
 Also visible in the same capture, consistent with F-2: every serial's product column reads
 `Custom Product / All Durhaim Product` rather than a real product name.
@@ -1106,12 +1108,15 @@ Also visible in the same capture, consistent with F-2: every serial's product co
 
 ## F-33 · P3 · Every admin page shares the default storefront title
 
-**Status:** open · Track C/F
+**Status: FIXED** (batch 9) · Track C/F
 
 All six admin routes plus the login page return `<title>DURHAIM - Tactical Gear</title>`. With
 several admin tabs open there is no way to tell them apart, and browser history is
-undifferentiated. Same root cause as F-15 (client components without a metadata-exporting layout);
-`/admin/layout.tsx` already exists and can carry a `title.template` such as `%s | Durhaim Admin`.
+undifferentiated. Same root cause as F-15 (client components without a metadata-exporting layout).
+
+**Fixed:** `/admin/layout.tsx` now exports metadata with a `Durhaim Admin` default, a
+`%s | Durhaim Admin` template for child routes, and `robots: { index: false }` so no admin route
+can be indexed. Verified: `/admin/serials` returns `Durhaim Admin | DURHAIM`.
 
 ---
 
