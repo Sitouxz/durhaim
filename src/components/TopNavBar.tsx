@@ -70,6 +70,7 @@ export default function TopNavBar() {
                 onChange={(event) => setSearch(event.target.value)}
                 className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-32 xl:w-48 placeholder-stark-white placeholder-opacity-40"
                 placeholder={t.nav.search}
+                aria-label={t.nav.search}
                 type="search"
               />
             </form>
@@ -134,6 +135,7 @@ export default function TopNavBar() {
                   onChange={(event) => setSearch(event.target.value)}
                   className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 flex-1 placeholder-stark-white placeholder-opacity-40"
                   placeholder={t.nav.search}
+                aria-label={t.nav.search}
                   type="search"
                 />
               </form>

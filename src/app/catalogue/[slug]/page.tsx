@@ -125,7 +125,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   };
 
   return (
-    <main className="bg-texture flex-grow px-margin-edge py-section-gap">
+    <main id="main-content" className="bg-texture flex-grow px-margin-edge py-section-gap">
       <JsonLd data={productSchema} />
       <div className="mx-auto grid max-w-[1440px] gap-gutter lg:grid-cols-12">
         <div className="lg:col-span-6 border border-surface-container-highest bg-surface-container/60 p-stack-lg">

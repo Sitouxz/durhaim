@@ -16,7 +16,10 @@ const config: Config = {
         "tactical-black": "#0D0D0D",
         "error": "#ffb4ab",
         "surface": "#131313",
-        "on-tertiary-fixed-variant": "#464747",
+        // #464747 measured 2.08:1 against the #0d0d0d surface (needs 4.5:1). Used only as a
+        // muted *text* colour in the footer and catalogue, never as a background, so lifting
+        // it to #8a8a8a (5.6:1) fixes every instance without altering any fill.
+        "on-tertiary-fixed-variant": "#8a8a8a",
         "on-surface-variant": "#e3bfb4",
         "primary-fixed-dim": "#ffb59e",
         "on-error": "#690005",

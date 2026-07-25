@@ -174,7 +174,7 @@ export default async function VerifyPage({ params }: PageProps) {
       : [];
 
   return (
-    <main className="flex-grow bg-texture min-h-screen">
+    <main id="main-content" className="flex-grow bg-texture min-h-screen">
       <div className="mx-auto max-w-[1180px] px-margin-edge py-section-gap">
         <section className="relative overflow-hidden border border-surface-container-highest bg-charcoal-field/95 shadow-2xl">
           <div className="absolute inset-x-0 top-0 h-1 bg-signal-orange" />

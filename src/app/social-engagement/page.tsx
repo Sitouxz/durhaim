@@ -39,7 +39,7 @@ const channels = [
 
 export default function SocialEngagementPage() {
   return (
-    <main className="bg-texture flex-grow">
+    <main id="main-content" className="bg-texture flex-grow">
       <section className="border-b border-surface-container-highest px-margin-edge py-section-gap">
         <div className="mx-auto grid max-w-[1440px] gap-gutter lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-8">

@@ -15,6 +15,8 @@ export default function WhatsAppFAB() {
       href={waUrl}
       target="_blank"
       rel="noopener noreferrer"
+      // The only child is an SVG icon, so without this the link is announced as just "link".
+      aria-label="Hubungi Durhaim di WhatsApp"
     >
       <WhatsAppIcon className="h-6 w-6 text-stark-white group-hover:text-tactical-black" />
     </a>
