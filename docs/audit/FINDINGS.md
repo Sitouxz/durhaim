@@ -372,6 +372,100 @@ the box.
 
 ---
 
+## F-14 · P2 · `/api/products` reflects upstream error bodies to the public, and 500s on an out-of-range page
+
+**Status:** open · Track A
+
+[`src/app/api/products/route.ts`](../../src/app/api/products/route.ts) returns
+`NextResponse.json({ error: error.message }, { status: 500 })`, passing whatever the database
+layer produced straight to the caller. Two consequences, both reproducible on production:
+
+**a) Out-of-range pagination is a 500, not an empty page.**
+
+```
+GET /api/products?page=99999
+→ 500  {"error":"Requested range not satisfiable"}
+```
+
+A page past the end is ordinary user input; it should yield an empty result set. Any crawler
+or stale link that requests a high page currently gets a server error.
+
+**b) Upstream HTML is echoed inside the JSON error field.**
+
+```
+GET /api/products?search=' OR 1=1--
+→ 500  {"error":"<!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" …
+```
+
+The payload trips an edge WAF upstream of Postgres, which replies with an HTML block page.
+`supabase-js` puts that HTML into `error.message`, and the route forwards it verbatim. So an
+attacker can use this endpoint to fingerprint the upstream infrastructure and its filtering
+rules, and any client parsing `error` gets an HTML document where a sentence was expected.
+
+**Fix.** Return a fixed, generic message and log the detail server-side. Clamp `page` to the
+available range rather than letting the range error surface.
+
+---
+
+## Verified safe — negative results worth recording
+
+Tested and **not** exploitable. Recorded so these are not re-litigated, and because a
+negative result is only useful if the method is stated.
+
+### N-1 · Anon write access — none, on any table
+
+The anon key ships in the browser bundle, so this is the real public attack surface. Result
+after the F-1 fix:
+
+| Table | anon SELECT | anon INSERT | anon UPDATE | anon DELETE |
+|---|---|---|---|---|
+| `categories` | 4 rows (intended) | denied | denied | denied |
+| `products` | 3 rows (intended) | denied | denied | denied |
+| `serial_numbers` | **0** (fixed, F-1) | denied | denied | denied |
+| `serial_lists` | 0 | denied | denied | denied |
+| `verification_logs` | 0 | denied | denied | denied |
+| `newsletter_subscribers` | 0 | **allowed, by design** | denied | denied |
+| `site_settings` | 0 | denied | denied | denied |
+| `admin_users` | 0 | denied | denied | denied |
+| `admin_activity_logs` | 0 | denied | denied | denied |
+
+`newsletter_subscribers` is correct: anon may insert but not read, and the policy's
+`WITH CHECK` regex rejects malformed addresses (`not-an-email` → 42501).
+
+**Two methodology traps this exposed — both produced wrong answers on the first pass:**
+
+1. **`PATCH`/`DELETE` with a filter that matches nothing returns 204 regardless of
+   permission.** My first matrix read that as "allowed" on all nine tables. Under RLS the rows
+   are simply invisible, so the statement is a legitimate no-op. The only valid test is to
+   seed a real row, attempt the write against *that* row, then re-read it and confirm it is
+   unchanged and still present.
+2. **`Prefer: return=representation` on an INSERT also requires SELECT.** Because
+   `newsletter_subscribers` correctly has no anon SELECT policy, the insert failed with 42501
+   and looked like a blocked write — which nearly became a false "production is misconfigured"
+   report. Without the header the same insert returns 201.
+
+### N-2 · PostgREST `.or()` filter injection — not exploitable
+
+`buildSearchFilter` interpolates user input into
+`name.ilike.%X%,description.ilike.%X%`. `sanitizeSearch` strips `%`, `,`, `(` and `)` — which
+are precisely the characters needed to terminate a value, add a term, or open a group — and
+caps length at 80. Attempts, all inert:
+
+| Payload | Result |
+|---|---|
+| `a,is_published.eq.false` | comma stripped → literal search → 0 results |
+| `a)&or=(is_published.eq.false` | parens stripped → 3 published products, no leak |
+| `name.eq.x` | treated as a literal string → 0 results |
+| `a:b::text` | literal → 0 results |
+| `abc'def` | literal → 200, 0 results |
+
+The `.` and `:` characters that survive sanitisation are not sufficient to break out, because
+a PostgREST filter value runs to the next comma and dots inside it are literal. `is_published`
+is additionally enforced as a separate `.eq()` outside the `or` group, so even a successful
+breakout could not unpublish-leak without injecting a comma.
+
+---
+
 ## Carried into the full audit
 
 Read from source during scoping, not yet reproduced — these are Track A work items, listed
