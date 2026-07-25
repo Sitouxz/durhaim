@@ -35,6 +35,12 @@ function getCategoryPrefix(categoryData: unknown) {
   return categorySlug.split('-').map((s) => s[0]).join('').substring(0, 3).toUpperCase().padEnd(3, 'X');
 }
 
+// One request previously accepted count=100000 (and count x products for ALL_DURHAIM_PRODUCTS),
+// built every row in memory and attempted a single insert, which hung the function until the
+// client timed out. Serials are printed onto label sheets, so a per-request ceiling well above
+// any real print run is still generous — the largest batch to date is 512.
+const MAX_SERIALS_PER_REQUEST = 2000;
+
 function generateSerialRows(productsToGenerate: ProductForSerialGeneration[], count: number) {
   const date = new Date();
   const yymmdd = date.getFullYear().toString().slice(-2) +
@@ -50,13 +56,24 @@ function generateSerialRows(productsToGenerate: ProductForSerialGeneration[], co
     return result;
   };
 
+  // Suffixes were drawn independently, so a batch could contain duplicates of itself and the
+  // whole insert would fail the UNIQUE constraint. 36^4 is only ~1.68M per (category, date)
+  // prefix, which makes that likely well before the request cap. Draw against a Set instead.
   return productsToGenerate.flatMap((product) => {
     const catPrefix = product.id === null ? 'CUS' : getCategoryPrefix(product.categories);
-    return Array.from({ length: count }, () => ({
-      product_id: product.id,
-      serial: `DRH-${catPrefix}-${yymmdd}-${generateRandom4Char()}`,
-      status: 'INACTIVE',
-    }));
+    const prefix = `DRH-${catPrefix}-${yymmdd}-`;
+    const seen = new Set<string>();
+    const rows: { product_id: string | null; serial: string; status: string }[] = [];
+
+    // Bounded so an exhausted keyspace cannot spin forever; count is capped far below 36^4.
+    for (let attempts = 0; rows.length < count && attempts < count * 50; attempts += 1) {
+      const serial = `${prefix}${generateRandom4Char()}`;
+      if (seen.has(serial)) continue;
+      seen.add(serial);
+      rows.push({ product_id: product.id, serial, status: 'INACTIVE' });
+    }
+
+    return rows;
   });
 }
 
@@ -189,8 +206,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { productId, count } = body;
 
-    if (!productId || !count || count <= 0) {
+    if (!productId || !Number.isInteger(count) || count <= 0) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
+    }
+
+    if (count > MAX_SERIALS_PER_REQUEST) {
+      return NextResponse.json(
+        { error: `Cannot generate more than ${MAX_SERIALS_PER_REQUEST} serials per request.` },
+        { status: 400 },
+      );
     }
 
     let productsToGenerate: ProductForSerialGeneration[] = [];

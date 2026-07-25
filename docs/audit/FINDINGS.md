@@ -1003,6 +1003,76 @@ everything after it — which is precisely how F-3 went unnoticed for a month.
 
 ---
 
+## F-30 · P2 · Serial generation had no upper bound and hung the server
+
+**Status: FIXED** (batch 8) · Track B
+
+Validation was `if (!productId || !count || count <= 0)` — a lower bound only. So:
+
+- `count=100000` passed validation, built 100,000 row objects in memory and attempted them as a
+  **single insert**. The request never returned; it tied up the dev server for minutes and only
+  ended when the client timed out. I hit this by accident while probing edge cases, and it also
+  killed the rest of that test run.
+- With `productId=ALL_DURHAIM_PRODUCTS` the count is applied **per product**, so the real ceiling
+  was `count × products`.
+- `count` was never type-checked. `count="50"` passed both guards (a string is not falsy and
+  `"50" <= 0` is false), then `Array.from({ length: "50" })` produced **zero** rows — a silent
+  no-op reported as success.
+
+**Fixed:** `Number.isInteger(count)` plus a `MAX_SERIALS_PER_REQUEST = 2000` ceiling, generous
+against a largest-ever real batch of 512.
+
+**Also fixes F-25 in the same change.** A cap is only safe if the batch cannot collide with
+itself, so `generateSerialRows` now draws suffixes against a `Set` with a bounded attempt limit
+instead of independently. Unit-checked in isolation: 3 / 512 / 2000 requested each yield exactly
+that many *unique* serials.
+
+Verified after the fix:
+
+| Request | Before | After |
+|---|---|---|
+| `count=100000` | hung until client timeout | **400 in 670ms** |
+| `count=2001` | accepted | 400 |
+| `count=0` | 400 | 400 |
+| `count=1.5` | accepted | 400 |
+| `count="50"` | 200, silently generated 0 | 400 |
+| `count=2` | 200 | 200 |
+
+---
+
+## F-31 · P3 · Duplicate product slug returns 400 where category returns 409
+
+**Status:** open · Track B
+
+`POST /api/admin/categories` with an existing slug correctly returns **409 Conflict**. The
+equivalent `POST /api/admin/products` returns **400**. Same class of error, two different codes, so
+a client cannot distinguish "this name is taken" from "your input is malformed" without parsing the
+message text.
+
+---
+
+## N-7 · Admin CRUD flows behave correctly, including the unpublished-product boundary
+
+Exercised end to end against a seeded OWNER account:
+
+| Flow | Result |
+|---|---|
+| `GET /api/admin/overview` | 200, correct totals (40,850 serials / 512 unactivated / 0 revoked) |
+| Category create / rename / delete | 201 / 200 / 200 |
+| Category duplicate slug | 409 |
+| Category empty name and slug | 400 |
+| Product create | 201 |
+| Product negative price (`-500`) | 400 |
+| Product 5,000-character name | 400 |
+| Serial generation, valid count | 200 |
+| `GET /api/admin/user-logs` | 200 |
+
+**The important one:** an unpublished product is correctly invisible publicly — absent from
+`GET /api/products`, and `/catalogue/<slug>` returns **404**. That boundary is what stops
+work-in-progress products leaking, and it holds.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a
