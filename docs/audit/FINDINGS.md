@@ -888,6 +888,110 @@ public verification, F-1). They are doing real work and should stay.
 
 ---
 
+## F-27 · P2 · Images are unoptimised PNG; `next/image` is not used anywhere
+
+**Status:** open · Track E
+
+The homepage transfers **~1.45 MB of PNG** across six images:
+
+| KB | File | How it is used |
+|---|---|---|
+| 607 | `11_Anaconda-MCB-1.png` | CSS `backgroundImage`, **three times** (`page.tsx:98`, `:144`, `:311`) |
+| 240 | `29_VC-1.png` | product card |
+| 208 | `31_PP-1.png` | product card |
+| 197 | `33_B-1.png` | product card |
+| 198 | `35_LOGO-...-1024x1024-1.png` | logo, served at 1024² |
+| 1 | `durhaim_image_1.png` | OG image |
+
+`next/image` is used **nowhere** — there are 12 raw `<img>` tags. So there is no AVIF/WebP
+conversion, no responsive `srcset`, no intrinsic `width`/`height` (a CLS source), and no
+optimisation pipeline, even though every image is local and would need no `remotePatterns` config.
+
+Two distinct fixes, because the biggest offender cannot use `next/image`:
+
+1. **The 607 KB background** is a CSS `background-image`, which the optimiser cannot touch. It
+   needs either a pre-compressed AVIF/WebP source, or restructuring to `next/image` with `fill`.
+   It is also referenced three times, so it is worth confirming all three want the same asset.
+2. **The 12 `<img>` tags** can become `next/image` for automatic AVIF/WebP and `srcset`. Product
+   photography typically drops 60–80% in AVIF, so ~850 KB of product/logo PNG should land nearer
+   200 KB.
+
+Not attempted in this pass: converting 12 tags touches layout in several files, and doing it
+partially — or without verifying every breakpoint — risks visual regressions worse than the
+weight it saves. The screenshot baseline in `docs/audit/screenshots/` plus
+`tools/shoot.mjs` is the right harness for it as a dedicated change.
+
+**Bundle note:** `/admin/serials` ships 149 kB of page JS (251 kB first load) from `jspdf`,
+`html2canvas` and `qrcode`. That is admin-only so it does not affect customers, but those three
+are only needed when an export is actually clicked and would suit `await import()`.
+
+---
+
+## F-28 · P3 · 36 of 46 image files are unreferenced WordPress leftovers
+
+**Status:** open — deliberately not deleted, see below · Track E/H
+
+`public/images/` holds 46 files totalling 7.0 MB. Cross-referencing every `/images/...` string in
+`src/` against the `products.images` column in the database, only **10 are referenced**. The
+remaining **36 files (5.07 MB)** are unused, and their names give them away as WordPress
+derivative sizes:
+
+```
+13_Anaconda-MCB-1-768x718.png
+14_Anaconda-MCB-1-600x561.png
+17_Holster-1-768x497.png
+41_LOGO-HITAM-PUTIHR-1024x1024-1-720x720.png
+```
+
+They cost no customer bandwidth — nothing requests them — but they are committed to the repo and
+shipped in every deployment.
+
+**I have not deleted them.** They are unreferenced *by this codebase*, which is not the same as
+unreferenced by the world: the old WordPress site may have indexed them, and other sites or
+Google Images may hotlink them, in which case deleting produces 404s I cannot detect from here.
+Confirming that needs access to search-console or referrer data. Low value, non-zero risk,
+someone else's information to check — so it is a recommendation, not an action.
+
+---
+
+## F-29 · P2 · No tests, no error tracking, no uptime monitoring
+
+**Status:** open · Track H
+
+| Capability | State |
+|---|---|
+| Test framework | **none** — `package.json` has no test runner or `test` script |
+| Error tracking | **none** — no Sentry or equivalent; failures reach `console.error` in Vercel logs and nowhere else |
+| Uptime monitoring | **none** found |
+| Alerting | **none** |
+| CI | **none** — `npm run verify` is local-only |
+
+The 20 `audit:*` scripts are the entire safety net, and they are *static source assertions*: they
+check that files contain expected strings. That is genuinely useful — those gates caught two of my
+own mistakes during this audit — but they cannot catch anything runtime or data-level. Every P0 and
+P1 in this report was invisible to them, including the 40,338-serial exposure.
+
+F-3 is the cautionary evidence: the gate silently crashed on 2026-06-21 and nobody noticed for over
+a month, because it only runs when a human remembers to run it. Two real regressions accumulated
+behind it in the meantime.
+
+Minimum worth having, in priority order:
+
+1. **Run `verify` in CI** on every push. A local gate nobody runs is not a gate.
+2. **An RLS regression test.** F-1 was a single policy line and had catastrophic reach; an
+   assertion that `anon` reads 0 rows from `serial_numbers` would have caught it, and would catch
+   its reintroduction. `docs/audit/tools/a1-verbs2.mjs` already does exactly this and could be
+   promoted into the suite as-is.
+3. **Error tracking**, so a broken `/api/verify` surfaces without someone curling it — F-11 was
+   found by hand.
+4. **Uptime check on `/api/verify`**, since that endpoint being down is invisible from the
+   homepage.
+
+Un-`&&`-ing the `verify` chain also matters: one broken script currently hides the nineteen after
+it. Run all, collect failures, exit non-zero at the end.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a

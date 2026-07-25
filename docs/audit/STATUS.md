@@ -33,8 +33,11 @@
 | F-24 | P2 | IP/UA logged with no privacy policy or retention (PDP Law) | open |
 | F-25 | P3 | Serial generation can fail on keyspace collision at scale | open |
 | F-26 | P2 | No-pricing policy enforced in UI but not in API/database | open, **needs decision** |
+| F-27 | P2 | 1.45MB of unoptimised PNG; next/image unused | open |
+| F-28 | P3 | 36 of 46 image files unreferenced (5MB WP leftovers) | open, not deleted by choice |
+| F-29 | P2 | No tests, no error tracking, no uptime monitoring, no CI | open |
 
-**16 fixed · 3 blocked on your decision · 1 needs DDL · 6 open**
+**16 fixed · 3 blocked on your decision · 1 needs DDL · 9 open**
 
 Negative results (tested, not exploitable): N-1 anon write access, N-2 PostgREST `.or()`
 injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API header coverage.
@@ -65,10 +68,10 @@ injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API
 | B functional flows | partial — verification flows done; catalogue, WhatsApp, newsletter, admin CRUD outstanding |
 | C UI/UX | partial — baseline captured, F-12/F-13 fixed; admin UI and cross-browser outstanding |
 | D accessibility | partial (F-21) - keyboard/scanner, admin UI, zoom reflow, reduced-motion outstanding |
-| E performance | partial (F-7) — region + settings cache fixed; Lighthouse, images, bundle, fonts outstanding |
+| E performance | partial — F-7 fixed and measured (4-5x); F-27 images and bundle documented; Lighthouse + fonts outstanding |
 | F SEO | partial — F-6, F-15 fixed; structured data validated (F-26); crawl + hreflang outstanding |
 | G data integrity | partial — F-2 root cause, F-25 collisions, N-6 orphans clean; restore drill outstanding |
-| H reliability / ops | partial — F-3 fixed; no error tracking, no uptime monitoring, no test framework |
+| H reliability / ops | done (F-3 fixed, F-29 documents the gaps) |
 
 ## Reproducing
 
