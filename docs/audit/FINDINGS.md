@@ -523,6 +523,79 @@ PBKDF2 hashes derived independently to the app's parameters, and all three logge
 
 ---
 
+## F-18 · P2 · A captured session cookie survives logout and password rotation
+
+**Status:** open — full fix needs one DDL column (migration below) · Track A2
+
+Tokens are `v1.<base64 email>.<sha256("v1:email:secret")>` — no session id, no issued-at, no
+nonce. Measured behaviour:
+
+| Action | Old token afterwards |
+|---|---|
+| Two separate logins | **byte-identical token** — no per-session component |
+| Log out | **200** — replay works; logout only clears the browser's copy |
+| Change the account's password | **200** — still valid |
+| Suspend the account | 401 — correctly rejected |
+
+So the only working revocation lever is suspending the account. If a cookie is captured, it
+stays valid for its full 8-hour `Max-Age`, and rotating the password — the instinctive response
+to a suspected compromise — does nothing. Cookie flags themselves are correct:
+`HttpOnly; SameSite=lax; Path=/; Max-Age=28800`, with `Secure` applied off-localhost.
+
+Also `sha256(concatenation)` rather than HMAC. Not forgeable here (the secret is the trailing
+component, so length-extension does not help an attacker), but HMAC-SHA256 is the correct
+primitive and costs nothing to switch to.
+
+**Fix requires a schema change**, so it is not in this batch:
+
+```sql
+ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS session_epoch INTEGER NOT NULL DEFAULT 0;
+```
+
+Then include `session_epoch` and an issued-at in the signed payload, bump the epoch on logout
+and on password change, and reject tokens older than the window. That yields real revocation
+with one integer column and no session table.
+
+---
+
+## F-19 · P2 · An unparseable body to `PATCH /api/admin/settings` reset every setting to defaults
+
+**Status: FIXED** (batch 4) · Track A4
+
+```ts
+const body = await req.json().catch(() => ({}));   // ← any parse failure becomes {}
+const nextSettings = normalizeSiteSettings(body);  // ← fills every absent key with a default
+```
+
+`normalizeSiteSettings` backfills all four keys, so a request whose body failed to parse — wrong
+`Content-Type`, truncated payload, a client sending form encoding — upserted the hardcoded
+defaults over the live values and returned **200 OK**. Any admin-customised WhatsApp number,
+support email or address would be silently replaced.
+
+Verified before the fix: `PATCH` with `application/x-www-form-urlencoded`, `text/plain` and
+`multipart/form-data` all returned 200. After: all return `400 {"error":"Request body must be a
+JSON object."}`, and a valid JSON PATCH still returns 200.
+
+**On CSRF specifically — not exploitable, and I want to be precise about why.** Accepting
+`text/plain` would normally open a simple-request CSRF path, because such requests skip the CORS
+preflight. But the session cookie is `SameSite=Lax`, which withholds it from cross-site
+`fetch`/form submissions, so a cross-origin caller reaches the endpoint unauthenticated. My probe
+supplied the cookie explicitly, which simulates same-origin. The defect is body handling, not
+CSRF.
+
+---
+
+## F-20 · P3 · Login responses distinguished real admin accounts
+
+**Status: FIXED** (batch 4) · Track A2
+
+`Invalid or inactive admin user.` for an unknown address versus `Invalid admin password.` for a
+real one — a reliable oracle for which addresses are admin accounts, and the roster was readable
+by any STAFF until F-17. Both branches now return `Invalid email or password.`, verified
+identical for a nonexistent address and a real address with a wrong password.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a
@@ -559,6 +632,38 @@ after the F-1 fix:
    `newsletter_subscribers` correctly has no anon SELECT policy, the insert failed with 42501
    and looked like a blocked write — which nearly became a false "production is misconfigured"
    report. Without the header the same insert returns 201.
+
+### N-3 · Login rate limiting works, with one architectural caveat
+
+Nine consecutive bad logins against one address: `401 401 401 401 401 429 429 429 429` — the
+limiter engages on attempt 6, matching `LOGIN_MAX_ATTEMPTS = 5`. Casing variants
+(`ZZAUDIT-SESS@…`, `…@Durhaim.test`) all stayed 429, because the email is lowercased before the
+bucket key is built. Correct.
+
+**Caveat, not retested here:** the bucket is a module-level `Map`. On Vercel that is per-instance
+and lost on cold start, so the effective ceiling across a scaled-out deployment is
+5 × (live instances), and an attacker can also reset it by pausing until the instance recycles.
+Same applies to the `/api/verify` and `/api/newsletter` limiters. Durable limiting needs shared
+state (Postgres or Upstash). Worth doing before the admin surface is used by more than one
+person, but the single-instance behaviour is correct as written.
+
+### N-4 · Service-role key is not exposed, and no secret is in git history
+
+- `grep` for the service-role key across `.next/static` (everything shipped to browsers): **absent**.
+- Same key across all history via `git log --all -S`: **never committed**.
+- No `.env*` file has ever been tracked.
+- Earlier scan of all 10 production JS chunks found no `sb_secret_` or JWT material.
+
+### N-5 · Security headers are applied to API routes, not just pages
+
+`GET /api/products` returns the full set — CSP, HSTS (`includeSubDomains; preload`),
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+`Permissions-Policy`. The `next.config.mjs` `source: '/:path*'` rule genuinely covers everything.
+
+Remaining CSP weakness is `script-src 'self' 'unsafe-inline'`, which negates most of the
+protection against injected inline script. Moving to a nonce-based policy is a real improvement
+but touches how Next.js emits its bootstrap inline script, so it is scoped as its own task rather
+than folded into a batch.
 
 ### N-2 · PostgREST `.or()` filter injection — not exploitable
 
