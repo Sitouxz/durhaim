@@ -39,7 +39,15 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
+    // Falling back to {} here silently resets every setting to its code default and reports
+    // success, because normalizeSiteSettings fills absent keys. Any request with an
+    // unparseable body — a wrong Content-Type, a truncated payload — wiped admin-customised
+    // contact details. Reject instead.
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Request body must be a JSON object.' }, { status: 400 });
+    }
+
     const nextSettings = normalizeSiteSettings(body);
     const validationError = validateSiteSettings(nextSettings);
 

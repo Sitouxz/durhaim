@@ -71,7 +71,9 @@ export async function POST(req: NextRequest) {
         summary: `Failed admin login for ${email}`,
         metadata: { reason: error ? 'user_not_found' : 'inactive_user' },
       });
-      return NextResponse.json({ ok: false, error: 'Invalid or inactive admin user.' }, { status: 401 });
+      // Same wording as the bad-password branch: distinguishing them told an attacker which
+      // addresses are real admin accounts.
+      return NextResponse.json({ ok: false, error: 'Invalid email or password.' }, { status: 401 });
     }
 
     const passwordMatchesHash = await verifyAdminPasswordHash(
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest) {
         summary: `Failed admin password check for ${email}`,
         metadata: { reason: 'invalid_password' },
       });
-      return NextResponse.json({ ok: false, error: 'Invalid admin password.' }, { status: 401 });
+      return NextResponse.json({ ok: false, error: 'Invalid email or password.' }, { status: 401 });
     }
 
     if (passwordMatchesBootstrap) {
