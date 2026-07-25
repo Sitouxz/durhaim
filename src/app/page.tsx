@@ -239,9 +239,12 @@ export default async function HomePage() {
       {/* Category Grid Showcase */}
       <section className="py-section-gap px-margin-edge border-y border-surface-container-highest bg-tactical-black relative">
         <div className="max-w-[1440px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter h-[600px]">
+          {/* h-[600px] is a 3-column dimension: when the grid stacks to one column the three
+              cards had to share those 600px (~193px each), too short for the vertical labels.
+              Constrain it to the multi-column layout and give stacked cards their own height. */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter md:h-[600px]">
             {/* Item 1 */}
-            <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field">
+            <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field min-h-[360px] md:min-h-0">
               <div className="absolute inset-0 bg-gradient-to-t from-tactical-black via-transparent to-transparent z-10"></div>
               <div className="absolute inset-0 flex justify-center items-center p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -251,12 +254,16 @@ export default async function HomePage() {
                   src="/images/29_VC-1.png"
                 />
               </div>
-              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
+              {/* Vertical writing mode rather than `origin-bottom-left -rotate-90`: a rotate
+                  transform does not reserve layout space, so the label hung 34px past the
+                  container's left edge and `overflow-hidden` clipped it ("VEST CHESTRIG" read
+                  as "HESTRIG") at every width below 1440px. */}
+              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase [writing-mode:vertical-rl] rotate-180 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
                 <LocalizedText en="Vest Chestrig" id="Vest Chestrig" />
               </h4>
             </div>
             {/* Item 2 */}
-            <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field">
+            <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field min-h-[360px] md:min-h-0">
               <div className="absolute inset-0 bg-gradient-to-t from-tactical-black via-transparent to-transparent z-10"></div>
               <div className="absolute inset-0 flex justify-center items-center p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -266,12 +273,16 @@ export default async function HomePage() {
                   src="/images/31_PP-1.png"
                 />
               </div>
-              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
+              {/* Vertical writing mode rather than `origin-bottom-left -rotate-90`: a rotate
+                  transform does not reserve layout space, so the label hung 34px past the
+                  container's left edge and `overflow-hidden` clipped it ("VEST CHESTRIG" read
+                  as "HESTRIG") at every width below 1440px. */}
+              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase [writing-mode:vertical-rl] rotate-180 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
                 <LocalizedText en="Pack Pouch" id="Pack Pouch" />
               </h4>
             </div>
             {/* Item 3 */}
-            <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field">
+            <div className="group relative overflow-hidden border border-surface-container-highest flex items-end p-8 bg-charcoal-field min-h-[360px] md:min-h-0">
               <div className="absolute inset-0 bg-gradient-to-t from-tactical-black via-transparent to-transparent z-10"></div>
               <div className="absolute inset-0 flex justify-center items-center p-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -281,7 +292,11 @@ export default async function HomePage() {
                   src="/images/33_B-1.png"
                 />
               </div>
-              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase origin-bottom-left -rotate-90 translate-y-1/2 translate-x-4 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
+              {/* Vertical writing mode rather than `origin-bottom-left -rotate-90`: a rotate
+                  transform does not reserve layout space, so the label hung 34px past the
+                  container's left edge and `overflow-hidden` clipped it ("VEST CHESTRIG" read
+                  as "HESTRIG") at every width below 1440px. */}
+              <h4 className="relative z-20 font-display-xl text-headline-lg text-stark-white uppercase [writing-mode:vertical-rl] rotate-180 opacity-80 group-hover:opacity-100 group-hover:text-signal-orange transition-colors">
                 <LocalizedText en="Belt" id="Belt" />
               </h4>
             </div>

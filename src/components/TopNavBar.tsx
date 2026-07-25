@@ -38,7 +38,10 @@ export default function TopNavBar() {
           </Link>
 
           {/* Navigation Links (Desktop) */}
-          <div className="hidden md:flex space-x-gutter items-center">
+          {/* Revealed at lg:, not md: — the full desktop header needs ~943px, so showing it
+              at 768px pushed the page into horizontal scroll. The mobile drawer below carries
+              the same links, language toggle and search between md: and lg:. */}
+          <div className="hidden lg:flex space-x-gutter items-center">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -60,17 +63,17 @@ export default function TopNavBar() {
           {/* Trailing Actions */}
           <div className="flex items-center space-x-stack-md">
             {/* Search Bar (Desktop) */}
-            <form onSubmit={submitSearch} className="hidden md:flex items-center bg-charcoal-field border border-surface-container-highest rounded-none focus-within:border-signal-orange transition-colors duration-200">
+            <form onSubmit={submitSearch} className="hidden lg:flex items-center bg-charcoal-field border border-surface-container-highest rounded-none focus-within:border-signal-orange transition-colors duration-200">
               <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-48 placeholder-stark-white placeholder-opacity-40"
+                className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-32 xl:w-48 placeholder-stark-white placeholder-opacity-40"
                 placeholder={t.nav.search}
                 type="search"
               />
             </form>
-            <div className="hidden items-center border border-surface-container-highest md:flex">
+            <div className="hidden items-center border border-surface-container-highest lg:flex">
               {(['en', 'id'] as Language[]).map((option) => (
                 <button
                   key={option}
@@ -84,7 +87,7 @@ export default function TopNavBar() {
             </div>
             {/* Mobile Menu Toggle */}
             <button
-              className="md:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95"
+              className="lg:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
@@ -94,7 +97,7 @@ export default function TopNavBar() {
 
         {/* Mobile Menu Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-tactical-black border-t border-surface-container-highest">
+          <div className="lg:hidden bg-tactical-black border-t border-surface-container-highest">
             <div className="flex flex-col px-margin-edge py-stack-md gap-stack-md">
               {navLinks.map((link) => {
                 const isActive = pathname === link.href;

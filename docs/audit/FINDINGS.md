@@ -247,7 +247,7 @@ rejection page. The certificate layout should be reachable only by an `ACTIVE` s
 
 ## F-10 · P3 · Certificate page title has a doubled brand suffix
 
-**Status:** open (found during F-1 verification)
+**Status: FIXED** (batch 1) — page title no longer hardcodes the suffix; the root template supplies it. Verified: `Authenticity Certificate - Durhaim Product | DURHAIM`.
 
 Rendered title: `Authenticity Certificate - TBP VEST MK-IV | DURHAIM | DURHAIM`
 
@@ -305,7 +305,7 @@ intermediate step.
 
 ## F-12 · P2 · Header overflows the viewport from 768–943px, causing horizontal page scroll
 
-**Status:** open · Track C
+**Status: FIXED** (batch 1) — verified zero overflow at 14 widths from 360 to 1440.
 **Evidence:** [`screenshots/C-F12-home-768-header-overflow.png`](screenshots/C-F12-home-768-header-overflow.png)
 
 Every page scrolls sideways on iPad portrait and small laptops. Measured on the homepage:
@@ -340,7 +340,7 @@ hamburger breakpoint must match the reveal breakpoint.
 
 ## F-13 · P2 · Homepage category labels are clipped at every width below 1440px
 
-**Status:** open · Track C
+**Status: FIXED** (batch 1) — verified all 9 labels fully visible at 8 widths.
 **Evidence:** [`screenshots/C-F13-home-375-clipped-labels.png`](screenshots/C-F13-home-375-clipped-labels.png)
 
 The three rotated category labels in the homepage strip lose 34px off their left edge, so
@@ -374,7 +374,7 @@ the box.
 
 ## F-14 · P2 · `/api/products` reflects upstream error bodies to the public, and 500s on an out-of-range page
 
-**Status:** open · Track A
+**Status: FIXED** (batch 1) — out-of-range page now returns an empty 200; errors return a fixed message.
 
 [`src/app/api/products/route.ts`](../../src/app/api/products/route.ts) returns
 `NextResponse.json({ error: error.message }, { status: 500 })`, passing whatever the database
@@ -404,6 +404,25 @@ rules, and any client parsing `error` gets an HTML document where a sentence was
 
 **Fix.** Return a fixed, generic message and log the detail server-side. Clamp `page` to the
 available range rather than letting the range error surface.
+
+---
+
+## F-15 · P2 · `/catalogue` and `/verify` have no page-specific title or description
+
+**Status:** open · Track F
+
+Both fall back to the root layout default, `DURHAIM - Tactical Gear`:
+
+| Route | `<title>` |
+|---|---|
+| `/` | DURHAIM Tactical Gear - Modular Vests, Packs, Pouches, and Belts |
+| `/catalogue` | **DURHAIM - Tactical Gear** (default) |
+| `/verify` | **DURHAIM - Tactical Gear** (default) |
+| `/contact` | Contact DURHAIM - Tactical Gear Support Indonesia \| DURHAIM |
+
+These are the two highest-intent pages on the site — the product index and the authenticity
+checker — and they are the two competing for the same generic title. Duplicate titles across
+routes also suppress each page's own ranking. Both need a `metadata` export.
 
 ---
 
