@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase';
+import { SITE_SETTINGS_CACHE_TAG } from '@/lib/site-settings-server';
 import { isMissingSchemaError } from '@/lib/catalogue-data';
 import { requireAdminRole } from '@/lib/admin-permissions';
 import {
@@ -75,6 +77,10 @@ export async function PATCH(req: NextRequest) {
       }
       throw error;
     }
+
+    // The public site reads settings through a tagged cache; without this an edit would not
+    // surface until the revalidate window expired.
+    revalidateTag(SITE_SETTINGS_CACHE_TAG);
 
     return NextResponse.json(siteSettingsFromRows(updates));
   } catch (error) {

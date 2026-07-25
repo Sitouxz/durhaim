@@ -1,6 +1,6 @@
 # Audit Status — 2026-07-25
 
-`main` @ `7cf7834`. `npm run verify` exits 0. Database reconciled to
+`main` @ `HEAD`. `npm run verify` exits 0. Database reconciled to
 `backups/pre-audit-2026-07-25/` after every batch.
 
 ## Findings
@@ -13,7 +13,7 @@
 | F-4 | P2 | Serial table exposed a manual Activate | **FIXED** |
 | F-5 | P1 | QR labels encoded `window.location.origin` | **FIXED** |
 | F-6 | P2 | Canonical URLs pointed at a redirect | **FIXED** |
-| F-7 | P2 | Nothing cacheable; functions run in `iad1` | open |
+| F-7 | P2 | Nothing cacheable; functions run in `iad1` | **mostly FIXED** |
 | F-8 | P3 | REVOKED unreachable in public verification | **FIXED** |
 | F-9 | P1 | Unregistered serials rendered as certificates | **FIXED** |
 | F-10 | P3 | Doubled brand suffix in certificate title | **FIXED** |
@@ -32,7 +32,7 @@
 | F-23 | P2 | SPF authorises the old WordPress host; DMARC p=none | open |
 | F-24 | P2 | IP/UA logged with no privacy policy or retention (PDP Law) | open |
 
-**15 fixed · 2 blocked on your decision · 1 needs DDL · 6 open**
+**16 fixed · 2 blocked on your decision · 1 needs DDL · 5 open**
 
 Negative results (tested, not exploitable): N-1 anon write access, N-2 PostgREST `.or()`
 injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API header coverage.
@@ -63,7 +63,7 @@ injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API
 | B functional flows | partial — verification flows done; catalogue, WhatsApp, newsletter, admin CRUD outstanding |
 | C UI/UX | partial — baseline captured, F-12/F-13 fixed; admin UI and cross-browser outstanding |
 | D accessibility | partial (F-21) - keyboard/scanner, admin UI, zoom reflow, reduced-motion outstanding |
-| E performance | **not started** — F-7 is the known item |
+| E performance | partial (F-7) — region + settings cache fixed; Lighthouse, images, bundle, fonts outstanding |
 | F SEO | partial — F-6, F-15 fixed; structured data, crawl, hreflang outstanding |
 | G data integrity | partial — F-2 root cause found; collisions, orphans, restore drill outstanding |
 | H reliability / ops | partial — F-3 fixed; no error tracking, no uptime monitoring, no test framework |
