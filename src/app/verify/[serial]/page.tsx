@@ -2,11 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { unstable_noStore as noStore } from 'next/cache';
+import { headers } from 'next/headers';
 import LocalizedText from '@/components/LocalizedText';
 import { getSiteSettings } from '@/lib/site-settings-server';
 import { buildWhatsAppUrl } from '@/lib/site-settings';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
+
+const SCAN_WINDOW_MS = 10 * 60 * 1000;
+const SCAN_MAX_ATTEMPTS = 20;
 
 interface PageProps {
   params: Promise<{ serial: string }>;
@@ -31,6 +36,39 @@ async function getSerialData(serial: string) {
   }
 }
 
+// Viewing the certificate page (e.g. via a scanned QR code) counts as a verification,
+// same as the manual /verify form submission, so scan analytics reflect real-world scans.
+async function recordScanVerification(serial: string): Promise<number | null> {
+  try {
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || headersList.get('x-real-ip')
+      || 'unknown';
+    const userAgent = headersList.get('user-agent') ?? '';
+
+    const rateLimit = checkRateLimit({
+      key: `verify-scan:${ip}:${serial}`,
+      limit: SCAN_MAX_ATTEMPTS,
+      windowMs: SCAN_WINDOW_MS,
+    });
+    if (rateLimit.limited) return null;
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { data, error } = await supabase.rpc('record_serial_verification', {
+      p_serial: serial,
+      p_ip_address: ip,
+      p_user_agent: userAgent,
+    });
+    if (error) return null;
+    return typeof data === 'number' ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { serial } = await params;
   const data = await getSerialData(serial);
@@ -49,8 +87,9 @@ export default async function VerifyPage({ params }: PageProps) {
   const { serial: rawSerial } = await params;
   const siteSettings = await getSiteSettings();
   const data = await getSerialData(rawSerial);
-  const verificationCount = data?.verification_count;
   const serial = rawSerial.toUpperCase();
+  const recordedCount = data ? await recordScanVerification(serial) : null;
+  const verificationCount = recordedCount ?? data?.verification_count;
   const status = !data ? 'UNVERIFIED' : data.status === 'REVOKED' ? 'REVOKED' : 'AUTHENTIC';
   const product = data?.products;
   const productImage = Array.isArray(product?.images) ? product.images[0] : null;
