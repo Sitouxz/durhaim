@@ -977,18 +977,29 @@ behind it in the meantime.
 
 Minimum worth having, in priority order:
 
-1. **Run `verify` in CI** on every push. A local gate nobody runs is not a gate.
-2. **An RLS regression test.** F-1 was a single policy line and had catastrophic reach; an
-   assertion that `anon` reads 0 rows from `serial_numbers` would have caught it, and would catch
-   its reintroduction. `docs/audit/tools/a1-verbs2.mjs` already does exactly this and could be
-   promoted into the suite as-is.
+1. **Run `verify` in CI** on every push. A local gate nobody runs is not a gate. **Still outstanding**
+   — needs a workflow file and repo secrets, which is a decision about where CI runs.
+2. **An RLS regression test. DONE.** `scripts/audit-rls-exposure.js`, wired in as
+   `audit:rls-exposure` and part of `verify`. It asserts at runtime that `anon` reads **0 rows**
+   from `serial_numbers`, `serial_lists`, `verification_logs`, `newsletter_subscribers`,
+   `site_settings`, `admin_users` and `admin_activity_logs`, and that `products`/`categories`
+   remain readable so the storefront cannot silently break the other way. Skips cleanly without
+   credentials so a secretless CI job does not fail spuriously.
+
+   **Verified by negative control**, not just by passing: pointing the "must be empty" list at
+   `products` (which *is* anon-readable) produced
+   `products: anon can read 3 row(s) - must be 0` and exit 1. A regression test that has only ever
+   passed proves nothing.
 3. **Error tracking**, so a broken `/api/verify` surfaces without someone curling it — F-11 was
    found by hand.
 4. **Uptime check on `/api/verify`**, since that endpoint being down is invisible from the
    homepage.
 
-Un-`&&`-ing the `verify` chain also matters: one broken script currently hides the nineteen after
-it. Run all, collect failures, exit non-zero at the end.
+**The `&&` chain is fixed.** `verify` now runs `scripts/verify-all.js`, which executes all 21
+steps regardless of individual failures, then reports every failure and exits non-zero. Also
+verified by negative control: inserting a deliberately failing first step still ran the remaining
+20 and reported `1 of 21 steps FAILED`. Under the old chain that failure would have hidden
+everything after it — which is precisely how F-3 went unnoticed for a month.
 
 ---
 
