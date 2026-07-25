@@ -842,6 +842,52 @@ F-2 rather than a separate defect.
 
 ---
 
+## F-26 · P2 · The no-public-pricing policy is enforced in the UI but not in the API or database
+
+**Status:** open, needs your call on which way to resolve it · Track A/F
+
+There is a deliberate, systematic decision not to publish prices. `scripts/audit-public-pricing.js`
+enforces it as a build gate, forbidding:
+
+- `formatPrice` in `catalogue/page.tsx` and `ProductDetailClient.tsx`
+- `price-low` / `price-high` sort options in the catalogue
+- `supportedRegions` / `priceRegion` in the nav
+- **`offers:`** in the product page's structured data
+
+Enquiries go through WhatsApp instead. The UI honours this completely — I confirmed the
+storefront shows no pricing anywhere.
+
+**But the data is public two layers down:**
+
+```
+GET https://www.durhaim.com/api/products
+→ "price": 1850000, "regional_prices": {"ID":1850000,"GLOBAL":139}
+
+GET <project>.supabase.co/rest/v1/products?select=name,price,regional_prices   [anon key]
+→ 200, full pricing for all three products
+```
+
+`/api/products` selects `*`, and the `public_read_published_products` RLS policy grants `SELECT`
+on all columns to `anon`. So anyone — including a competitor scraping systematically — reads every
+price and both regional tiers, which is exactly what the UI policy sets out to prevent.
+
+**Two coherent resolutions, and the choice is a business one:**
+
+1. **The policy is what matters** → stop selecting `price`/`regional_prices` in `/api/products`, and
+   restrict the anon RLS grant to non-price columns (a view, or column-level privileges). Prices
+   then live only behind the admin API.
+2. **The policy is obsolete** → if prices being public is acceptable, then the build gate is
+   fighting nothing and structured-data `offers` should be added, which would make the products
+   eligible for Google rich results.
+
+**Worth recording how this was found:** I initially added an `offers` node to the Product schema,
+treating the missing pricing as an SEO defect. `audit:public-pricing` rejected it, correctly — the
+absence was deliberate. I reverted. That is the second time one of these gates caught me
+"improving" something the team had chosen on purpose (the first was the service-role client in
+public verification, F-1). They are doing real work and should stay.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a
