@@ -69,7 +69,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const data = await getSerialVerification(serial);
   const productName = data?.productName ?? 'Durhaim Product';
   return {
-    title: `Authenticity Certificate - ${productName} | DURHAIM`,
+    // The root layout's title template already appends "| DURHAIM".
+    title: `Authenticity Certificate - ${productName}`,
     description: `Serial: ${serial} - Verified authentic by DURHAIM Tactical Gear`,
     openGraph: {
       title: `Durhaim Authenticity Certificate - ${productName}`,

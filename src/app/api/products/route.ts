@@ -23,6 +23,16 @@ function sanitizeSearch(value: string | null) {
   return search.replace(/[%,()]/g, ' ').replace(/\s+/g, ' ').slice(0, 80).trim();
 }
 
+// PostgREST answers an offset past the end of the result set with PGRST103.
+function isRangeNotSatisfiableError(error: unknown) {
+  return Boolean(
+    error
+      && typeof error === 'object'
+      && 'code' in error
+      && (error as { code?: string }).code === 'PGRST103',
+  );
+}
+
 function buildSearchFilter(search: string) {
   return ['name', 'description']
     .map((column) => `${column}.ilike.%${search}%`)
@@ -98,7 +108,18 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // A page past the end of the result set is ordinary user input (stale links,
+      // crawlers), not a server fault. Report it as an empty page.
+      if (isRangeNotSatisfiableError(error)) {
+        return NextResponse.json({
+          products: [], total: 0, page, limit, totalPages: 1, region, source: 'database',
+        });
+      }
+
+      // Never forward error.message: it carries upstream text verbatim, including full
+      // HTML block pages from the edge WAF, which fingerprints the infrastructure.
+      console.error('Products API query error:', error);
+      return NextResponse.json({ error: 'Unable to load products.' }, { status: 500 });
     }
 
     const normalized = (data ?? []).map((product) => normalizeProduct(product as Record<string, unknown>));
