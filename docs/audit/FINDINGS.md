@@ -642,6 +642,43 @@ identical for a nonexistent address and a real address with a wrong password.
 
 ---
 
+## F-21 · P2 · Accessibility: contrast, unlabelled inputs, no skip link, unnamed FAB
+
+**Status: mostly FIXED** (batch 5) · Track D · WCAG 2.2 AA
+
+Measured on `/` and `/verify` at 1440px with `docs/audit/tools/a11y.mjs`.
+
+**Fixed:**
+
+| WCAG | Issue | Fix |
+|---|---|---|
+| 1.4.3 | `on-tertiary-fixed-variant` `#464747` on the `#0d0d0d` surface measured **2.08:1** (needs 4.5:1) — footer address, contact icons, social buttons and the catalogue all used it | token lifted to `#8a8a8a` (**5.6:1**). All 9 uses are text/placeholder, never a background, so one token change fixed every instance. Re-measured: **0 low-contrast combinations** |
+| 4.1.2 | WhatsApp FAB's only child is an SVG, so it announced as bare "link" | `aria-label` added |
+| 1.3.1 | Nav search, footer newsletter email, and **both** serial-number inputs had only placeholders | `aria-label` on the search/newsletter inputs, `sr-only` `<label>` on both serial inputs |
+| 2.4.1 | No skip-to-content link — keyboard users tabbed the whole nav on every page | skip link as the first focusable element, visible on focus, plus `id="main-content"` on `<main>` across all 13 pages |
+
+A placeholder is not a label: it disappears the moment the user types and is not reliably
+announced. The serial input is the primary control of the entire authenticity flow, and it existed
+twice — once in `SerialChecker` (homepage) and again inline in `/verify`. I initially fixed only
+the first and the checker caught the second still failing.
+
+**Still open:**
+
+| WCAG | Issue | Detail |
+|---|---|---|
+| 1.3.1 | Heading hierarchy skips | `/` jumps h2→h4; `/verify` jumps h1→h4. Sections are styled by size rather than nesting level |
+| 2.5.8 | Nav link target height 14px | Top-nav links are ~14px tall against a 24px minimum. Needs vertical padding, not a font change |
+| 4.1.3 | **`/verify` has no live region** | The verification result replaces content with no `aria-live`, so a screen-reader user submits a serial and hears nothing. Most significant remaining item — it silently breaks the core flow for AT users |
+
+**Not yet covered in Track D:** keyboard traversal and focus-visibility of the camera scanner,
+the admin interface, 200%/400% zoom reflow, `prefers-reduced-motion`, and a non-camera equivalent
+path for QR scanning.
+
+**Checker caveat:** `a11y.mjs`'s 2.5.8 rule flags the `sr-only` skip link as a 1×1px target. That
+is how `sr-only` works and is a false positive, not a regression.
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a

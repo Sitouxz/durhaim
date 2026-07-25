@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-tactical-black px-margin-edge py-section-gap flex items-center justify-center">
+    <main id="main-content" className="min-h-screen bg-tactical-black px-margin-edge py-section-gap flex items-center justify-center">
       <form onSubmit={submitLogin} className="w-full max-w-md border border-surface-container-highest bg-charcoal-field p-stack-lg">
         <h1 className="font-display-xl text-headline-lg uppercase text-stark-white">Admin Login</h1>
         <p className="mt-stack-sm font-body-md text-on-surface-variant">

@@ -3,7 +3,7 @@ import LocalizedText from '@/components/LocalizedText';
 
 export default function NotFoundPage() {
   return (
-    <main className="flex min-h-[70vh] flex-grow items-center justify-center bg-tactical-black px-margin-edge py-section-gap">
+    <main id="main-content" className="flex min-h-[70vh] flex-grow items-center justify-center bg-tactical-black px-margin-edge py-section-gap">
       <section className="max-w-2xl border border-surface-container-highest bg-charcoal-field/85 p-stack-lg text-center shadow-2xl">
         <p className="font-data-mono text-data-mono text-signal-orange">404 // DURHAIM</p>
         <h1 className="mt-stack-sm font-display-xl text-headline-lg uppercase text-stark-white">

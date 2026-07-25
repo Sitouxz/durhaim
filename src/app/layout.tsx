@@ -138,6 +138,15 @@ export default async function RootLayout({
             initialLanguage={initialLanguage}
             initialRegion={initialRegion}
           >
+            {/* First focusable element, so keyboard and screen-reader users can bypass the
+                nav instead of tabbing through it on every page (WCAG 2.4.1). Visually hidden
+                until focused. Pages render their content inside <main id="main-content">. */}
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:bg-signal-orange focus:px-4 focus:py-2 focus:font-label-caps focus:text-label-caps focus:uppercase focus:text-tactical-black"
+            >
+              Lompat ke konten utama
+            </a>
             <TopNavBar />
             {children}
             <Footer />

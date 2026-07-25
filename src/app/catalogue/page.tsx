@@ -107,7 +107,7 @@ export default function CataloguePage() {
 
   return (
     <div className="bg-texture selection:bg-signal-orange selection:text-stark-white relative">
-      <main className="max-w-[1440px] mx-auto px-margin-edge py-section-gap grid grid-cols-1 lg:grid-cols-12 gap-gutter relative z-10">
+      <main id="main-content" className="max-w-[1440px] mx-auto px-margin-edge py-section-gap grid grid-cols-1 lg:grid-cols-12 gap-gutter relative z-10">
         <aside className="lg:col-span-3 space-y-stack-lg">
           <div className="bg-surface-container/50 backdrop-blur p-stack-md border border-surface-container-highest">
             <h2 className="font-headline-md text-headline-md text-stark-white uppercase tracking-wider mb-stack-md border-b border-surface-container-highest pb-unit">

@@ -24,7 +24,7 @@ const projects = [
 
 export default function LatestProjectsPage() {
   return (
-    <main className="bg-texture flex-grow px-margin-edge py-section-gap">
+    <main id="main-content" className="bg-texture flex-grow px-margin-edge py-section-gap">
       <div className="mx-auto max-w-[1000px]">
         <h1 className="font-display-xl text-headline-lg-mobile uppercase tracking-tighter text-stark-white md:text-display-xl">
           <LocalizedText en="Latest Projects" id="Proyek Terbaru" />

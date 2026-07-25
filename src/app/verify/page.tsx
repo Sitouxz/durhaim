@@ -23,7 +23,7 @@ export default function VerificationPage() {
   };
 
   return (
-    <main className="flex-grow flex flex-col min-h-[80vh] bg-tactical-black">
+    <main id="main-content" className="flex-grow flex flex-col min-h-[80vh] bg-tactical-black">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -73,7 +73,11 @@ export default function VerificationPage() {
 
           <form onSubmit={handleVerify} className="flex flex-col gap-md items-center">
             <div className="w-full relative">
+              {/* A placeholder is not a label: it vanishes on input and is not reliably
+                  announced. This is the primary input of the verification flow. */}
+              <label htmlFor="verify-serial-input" className="sr-only">{t.verify.title}</label>
               <input
+                id="verify-serial-input"
                 type="text"
                 value={serial}
                 onChange={(e) => setSerial(e.target.value.toUpperCase())}

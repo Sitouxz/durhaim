@@ -161,6 +161,7 @@ export default function Footer() {
               onChange={(event) => setEmail(event.target.value)}
               className="bg-charcoal-field border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 w-full focus:outline-none focus:border-signal-orange rounded-none placeholder-on-tertiary-fixed-variant"
               placeholder={t.footer.email}
+              aria-label={t.footer.email}
               type="email"
               required
             />

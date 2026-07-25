@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function BattleProvenPage() {
   return (
-    <main className="flex-grow flex flex-col relative w-full">
+    <main id="main-content" className="flex-grow flex flex-col relative w-full">
       {/* Hero Section */}
       <section className="relative w-full h-[70vh] md:h-[85vh] flex items-center justify-center overflow-hidden bg-tactical-black">
         {/* Background Image */}

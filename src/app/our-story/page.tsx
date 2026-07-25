@@ -24,7 +24,7 @@ const principles = [
 
 export default function OurStoryPage() {
   return (
-    <main className="bg-tactical-black flex-grow">
+    <main id="main-content" className="bg-tactical-black flex-grow">
       <section
         className="relative min-h-[72vh] border-b border-surface-container-highest px-margin-edge py-section-gap"
         style={{

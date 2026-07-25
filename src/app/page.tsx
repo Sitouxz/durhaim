@@ -89,7 +89,7 @@ export default async function HomePage() {
   };
 
   return (
-    <main className="flex-grow">
+    <main id="main-content" className="flex-grow">
       <JsonLd data={homeSchema} />
       {/* Verification Section */}
       <section

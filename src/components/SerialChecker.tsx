@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Camera, Keyboard, RefreshCw } from 'lucide-react';
 import { useCommerce } from '@/components/CommerceProvider';
+import LocalizedText from '@/components/LocalizedText';
 import jsQR from 'jsqr';
 
 type VerifyResult = {
@@ -375,7 +376,13 @@ export default function SerialChecker() {
             {t.serialChecker.instructions}
           </p>
           <form onSubmit={handleVerify} className="w-full max-w-md mt-4">
+            {/* A placeholder is not a label: it disappears on input and is not reliably
+                announced. This is the primary input of the whole verification flow. */}
+            <label htmlFor="serial-input" className="sr-only">
+              <LocalizedText en="Serial number from your product label" id="Nomor serial pada label produk Anda" />
+            </label>
             <input
+              id="serial-input"
               className="w-full bg-tactical-black/70 border border-surface-container-highest text-stark-white font-data-mono text-center py-3 focus:border-signal-orange focus:ring-1 focus:ring-signal-orange transition-colors duration-200 uppercase"
               placeholder="XXXX-XXXX-XXXX"
               type="text"
