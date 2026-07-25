@@ -1,6 +1,6 @@
 # Audit Status — 2026-07-25
 
-`main` @ `c135a05`. `npm run verify` exits 0. Database reconciled to
+`main` @ `7cf7834`. `npm run verify` exits 0. Database reconciled to
 `backups/pre-audit-2026-07-25/` after every batch.
 
 ## Findings
@@ -27,8 +27,12 @@
 | F-18 | P2 | Cookies survive logout + password rotation | open, **needs 1 DDL column** |
 | F-19 | P2 | Malformed settings body reset all settings | **FIXED** |
 | F-20 | P3 | Login responses distinguished real accounts | **FIXED** |
+| F-21 | P2 | A11y: contrast 2.08:1, unlabelled inputs, no skip link, unnamed FAB | **mostly FIXED** |
+| F-22 | P2 | 4 dependency vulns; postcss fix blocked by an override pin | open |
+| F-23 | P2 | SPF authorises the old WordPress host; DMARC p=none | open |
+| F-24 | P2 | IP/UA logged with no privacy policy or retention (PDP Law) | open |
 
-**14 fixed · 2 blocked on your decision · 1 needs DDL · 3 open**
+**15 fixed · 2 blocked on your decision · 1 needs DDL · 6 open**
 
 Negative results (tested, not exploitable): N-1 anon write access, N-2 PostgREST `.or()`
 injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API header coverage.
@@ -54,11 +58,11 @@ injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API
 | A6 injection | done (N-2) |
 | A7 secrets | done (N-4) |
 | A8 rate limiting | done (N-3) |
-| A9 infrastructure | **not started** — Vercel preview exposure, DNS, SPF/DKIM/DMARC, `npm audit` |
-| A10 privacy | **not started** — IP/UA retention, no privacy policy, no cookie notice, PDP Law |
+| A9 infrastructure | done (F-22, F-23); Vercel preview exposure still unverified |
+| A10 privacy | done (F-24) |
 | B functional flows | partial — verification flows done; catalogue, WhatsApp, newsletter, admin CRUD outstanding |
 | C UI/UX | partial — baseline captured, F-12/F-13 fixed; admin UI and cross-browser outstanding |
-| D accessibility | **not started** — the largest untouched track |
+| D accessibility | partial (F-21) - keyboard/scanner, admin UI, zoom reflow, reduced-motion outstanding |
 | E performance | **not started** — F-7 is the known item |
 | F SEO | partial — F-6, F-15 fixed; structured data, crawl, hreflang outstanding |
 | G data integrity | partial — F-2 root cause found; collisions, orphans, restore drill outstanding |

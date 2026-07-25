@@ -679,6 +679,76 @@ is how `sr-only` works and is a false positive, not a regression.
 
 ---
 
+## F-22 · P2 · Four dependency vulnerabilities, one blocked by your own override
+
+**Status:** open · Track A9 · `npm audit --omit=dev`
+
+| Sev | Package | Issue | Fix |
+|---|---|---|---|
+| HIGH | `next` | Denial of Service in App Router via Server Actions | available |
+| HIGH | `postcss` | Path traversal in source-map auto-loading | `postcss@8.5.23` |
+| HIGH | `sharp` | Inherited libvips CVEs (CVE-2026-33327, CVE-2026-333xx) | available |
+| MODERATE | `dompurify` | Cross-realm in-place sanitization leaves executable markup | available |
+
+`postcss` is the notable one: `package.json` carries `"overrides": { "postcss": "8.5.15" }`, which
+pins the vulnerable version and prevents the fix from resolving. Whatever that pin was working
+around should be re-tested against 8.5.23 so it can be dropped.
+
+The `next` DoS is worth attention because the site is fully dynamic — no route is cacheable
+(F-7), so every request reaches a function.
+
+---
+
+## F-23 · P2 · SPF still authorises the old WordPress host; DMARC is not enforcing
+
+**Status:** open · Track A9
+
+```
+durhaim.com        TXT  "v=spf1 include:_spf.wpcloud.com ~all"
+_dmarc.durhaim.com TXT  "v=DMARC1;p=none;"
+```
+
+The site has migrated to Vercel and support mail runs through Gmail
+(`durhaimgear@gmail.com`), but SPF still authorises only `_spf.wpcloud.com` — the WordPress.com
+sender. So the record authorises a host no longer in use and does **not** authorise the sender
+actually in use, while `~all` merely soft-fails everything else.
+
+DMARC is `p=none`: monitor-only, with no `rua` reporting address, so failures are neither blocked
+nor observed. Combined, spoofing `@durhaim.com` is straightforward — and this is a brand whose
+customers are asked to trust authenticity messages.
+
+Fix: correct SPF to the real senders, publish DKIM, then move DMARC to `p=quarantine` and on to
+`p=reject` once reports are clean.
+
+---
+
+## F-24 · P2 · Personal data collected with no privacy policy, notice, or retention limit
+
+**Status:** open · Track A10
+
+`verification_logs` holds **1,031 rows of IP address + user-agent**, written on every serial
+verification, and `newsletter_subscribers` stores email addresses. Against that:
+
+| Page | Status |
+|---|---|
+| `/privacy` | 404 |
+| `/privacy-policy` | 404 |
+| `/kebijakan-privasi` | 404 |
+| `/terms` | 404 |
+| `/syarat-ketentuan` | 404 |
+
+No privacy policy, no terms, no cookie or consent notice, no stated retention period, and the
+verify page does not disclose that scanning logs the visitor's IP. The newsletter form captures an
+email with no consent record.
+
+Indonesia's PDP Law (UU 27/2022) expects notice of purpose, a lawful basis, and defined retention
+for personal data — and an IP address is personal data under it. This is the one open finding with
+a regulatory rather than technical exposure, and it needs a policy decision plus copy, not just
+code: what the retention window should be, and whether IP logging is needed at all versus a
+coarser signal (verification counts alone would still drive the scan analytics).
+
+---
+
 ## Verified safe — negative results worth recording
 
 Tested and **not** exploitable. Recorded so these are not re-litigated, and because a
