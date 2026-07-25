@@ -35,9 +35,9 @@
 | F-26 | P2 | No-pricing policy enforced in UI but not in API/database | open, **needs decision** |
 | F-27 | P2 | 1.45MB of unoptimised PNG; next/image unused | open |
 | F-28 | P3 | 36 of 46 image files unreferenced (5MB WP leftovers) | open, not deleted by choice |
-| F-29 | P2 | No tests, no error tracking, no uptime monitoring, no CI | open |
+| F-29 | P2 | No tests, no error tracking, no uptime monitoring, no CI | **partly FIXED** (RLS test + gate hardened; CI, error tracking, uptime open) |
 
-**16 fixed · 3 blocked on your decision · 1 needs DDL · 9 open**
+**17 fixed · 3 blocked on your decision · 1 needs DDL · 8 open**
 
 Negative results (tested, not exploitable): N-1 anon write access, N-2 PostgREST `.or()`
 injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API header coverage.
