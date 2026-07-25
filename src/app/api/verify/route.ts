@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
     // Look up serial number
@@ -69,33 +69,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-
-
     const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
-    const userAgent = req.headers.get('user-agent') ?? '';
-    
-    // Manually increment the verification count bypassing the RPC
-    const newCount = (data.verification_count || 0) + 1;
-    const { error: updateError } = await supabase
-      .from('serial_numbers')
-      .update({ verification_count: newCount })
-      .eq('id', data.id);
+    const { error: verificationError } = await supabase.rpc('record_serial_verification', {
+      p_serial: normalizedSerial,
+      p_ip_address: ip,
+      p_user_agent: req.headers.get('user-agent') ?? '',
+    });
 
-    if (updateError) {
-      console.error('Verify API log error (update):', updateError);
+    if (verificationError) {
+      console.error('Verify API log error:', verificationError);
       return NextResponse.json({ found: false, message: 'Unable to record verification attempt.' }, { status: 500 });
-    }
-
-    const { error: logError } = await supabase
-      .from('verification_logs')
-      .insert({
-        serial_id: data.id,
-        ip_address: ip.substring(0, 256),
-        user_agent: userAgent.substring(0, 512),
-      });
-      
-    if (logError) {
-      console.error('Verify API log error (insert):', logError);
     }
 
     // Supabase may return joined data as array or object depending on schema
