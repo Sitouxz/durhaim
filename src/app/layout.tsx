@@ -8,6 +8,7 @@ import WhatsAppFAB from "@/components/WhatsAppFAB";
 import { CommerceProvider } from "@/components/CommerceProvider";
 import JsonLd from "@/components/JsonLd";
 import { SiteSettingsProvider } from "@/components/SiteSettingsProvider";
+import { StorefrontChrome } from "@/components/StorefrontChrome";
 import {
   detectLanguageFromHeaders,
   detectRegionFromHeaders,
@@ -147,10 +148,14 @@ export default async function RootLayout({
             >
               Lompat ke konten utama
             </a>
-            <TopNavBar />
+            <StorefrontChrome>
+              <TopNavBar />
+            </StorefrontChrome>
             {children}
-            <Footer />
-            <WhatsAppFAB />
+            <StorefrontChrome>
+              <Footer />
+              <WhatsAppFAB />
+            </StorefrontChrome>
           </CommerceProvider>
         </SiteSettingsProvider>
       </body>

@@ -37,8 +37,8 @@
 | F-28 | P3 | 36 of 46 image files unreferenced (5MB WP leftovers) | open, not deleted by choice |
 | F-30 | P2 | Serial generation unbounded; count=100000 hung the server | **FIXED** |
 | F-31 | P3 | Duplicate product slug returns 400 where category returns 409 | open |
-| F-32 | P2 | WhatsApp FAB overlaps the Revoke control in admin; storefront chrome wraps admin | open |
-| F-33 | P3 | All admin pages share the default storefront title | open |
+| F-32 | P2 | WhatsApp FAB overlaps the Revoke control in admin; storefront chrome wraps admin | **FIXED** |
+| F-33 | P3 | All admin pages share the default storefront title | **FIXED** |
 | F-29 | P2 | No tests, no error tracking, no uptime monitoring, no CI | **partly FIXED** (RLS test + gate hardened; CI, error tracking, uptime open) |
 
 **19 fixed · 3 blocked on your decision · 1 needs DDL · 8 open**
