@@ -31,13 +31,15 @@
 | F-22 | P2 | 4 dependency vulns; postcss fix blocked by an override pin | open |
 | F-23 | P2 | SPF authorises the old WordPress host; DMARC p=none | open |
 | F-24 | P2 | IP/UA logged with no privacy policy or retention (PDP Law) | open |
-| F-25 | P3 | Serial generation can fail on keyspace collision at scale | open |
+| F-25 | P3 | Serial generation can fail on keyspace collision at scale | **FIXED** (batch 8) |
 | F-26 | P2 | No-pricing policy enforced in UI but not in API/database | open, **needs decision** |
 | F-27 | P2 | 1.45MB of unoptimised PNG; next/image unused | open |
 | F-28 | P3 | 36 of 46 image files unreferenced (5MB WP leftovers) | open, not deleted by choice |
+| F-30 | P2 | Serial generation unbounded; count=100000 hung the server | **FIXED** |
+| F-31 | P3 | Duplicate product slug returns 400 where category returns 409 | open |
 | F-29 | P2 | No tests, no error tracking, no uptime monitoring, no CI | **partly FIXED** (RLS test + gate hardened; CI, error tracking, uptime open) |
 
-**17 fixed · 3 blocked on your decision · 1 needs DDL · 8 open**
+**19 fixed · 3 blocked on your decision · 1 needs DDL · 8 open**
 
 Negative results (tested, not exploitable): N-1 anon write access, N-2 PostgREST `.or()`
 injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API header coverage.
@@ -65,7 +67,7 @@ injection, N-3 login rate limiting, N-4 secret exposure and git history, N-5 API
 | A8 rate limiting | done (N-3) |
 | A9 infrastructure | done (F-22, F-23); Vercel preview exposure still unverified |
 | A10 privacy | done (F-24) |
-| B functional flows | partial — verification flows done; catalogue, WhatsApp, newsletter, admin CRUD outstanding |
+| B functional flows | mostly done — verification + admin CRUD exercised (F-30, F-31, N-7); WhatsApp deep-link and camera scanner outstanding |
 | C UI/UX | partial — baseline captured, F-12/F-13 fixed; admin UI and cross-browser outstanding |
 | D accessibility | partial (F-21) - keyboard/scanner, admin UI, zoom reflow, reduced-motion outstanding |
 | E performance | partial — F-7 fixed and measured (4-5x); F-27 images and bundle documented; Lighthouse + fonts outstanding |
