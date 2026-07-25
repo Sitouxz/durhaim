@@ -138,6 +138,20 @@ function parseProductBody(body: Record<string, unknown>) {
     return { error: 'Name, slug, and valid regional prices are required.' };
   }
 
+  // There was no cap, and no column constraint behind it: a 5,000-character name was accepted
+  // and stored, which would break catalogue cards, page titles and the Product schema.
+  if (name.length > 160) {
+    return { error: 'Product name must be 160 characters or fewer.' };
+  }
+
+  if (slug.length > 120) {
+    return { error: 'Product slug must be 120 characters or fewer.' };
+  }
+
+  if (description.length > 2000) {
+    return { error: 'Product description must be 2000 characters or fewer.' };
+  }
+
   return { name, slug, description, categorySlug, price, regionalPrices, images, isPublished };
 }
 
