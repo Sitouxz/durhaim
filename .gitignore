@@ -28,6 +28,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# local database backups (contain serial codes and IP addresses; keep out of the public repo)
+/backups
+
 # vercel
 .vercel
 
