@@ -16,7 +16,24 @@ type VerifyResult = {
     status: string;
   };
   message?: string;
+  failure?: FailureKind;
 };
+
+// A rejected serial and a rejected *input* are different events, and only the first
+// is a statement about the product. /api/verify already distinguishes them by status
+// code; the UI used to render every !found response under "SERIAL NOT FOUND", so a
+// malformed scan read as a counterfeit.
+type FailureKind = 'not-registered' | 'revoked' | 'invalid-input' | 'service';
+
+const REVOKED_MESSAGE = 'This serial number has been revoked.';
+
+function classifyFailure(httpStatus: number, message?: string): FailureKind {
+  if (message === REVOKED_MESSAGE) return 'revoked';
+  if (httpStatus === 400) return 'invalid-input';
+  // 429 rate limit, 500 server, 503 missing schema — the serial is unjudged either way.
+  if (httpStatus !== 200) return 'service';
+  return 'not-registered';
+}
 
 type InputMode = 'scan' | 'manual';
 type ScannerState = 'starting' | 'scanning' | 'detected' | 'error';
@@ -101,16 +118,16 @@ export default function SerialChecker() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ serial: normalizedSerial }),
       });
-      const data = await res.json();
-      
+      const data: VerifyResult = await res.json();
+
       if (data.found) {
         router.push(`/verify/${data.serial}`);
       } else {
-        setResult(data);
+        setResult({ ...data, failure: classifyFailure(res.status, data.message) });
         setLoading(false);
       }
     } catch {
-      setResult({ found: false, message: t.serialChecker.connectionError });
+      setResult({ found: false, message: t.serialChecker.connectionError, failure: 'service' });
       setLoading(false);
     }
   }, [router, t.serialChecker.connectionError]);
@@ -270,6 +287,20 @@ export default function SerialChecker() {
     }[result.message] ?? result.message;
   })();
 
+  // Only a verdict about the serial itself earns the error treatment. A typo or an
+  // unreachable API is not evidence against the product, so those stay on the neutral
+  // orange panel rather than shouting counterfeit at a customer holding a real item.
+  const failure = result && !result.found ? result.failure ?? 'not-registered' : null;
+  const isSerialVerdict = failure === 'not-registered' || failure === 'revoked';
+  const failureTitle = failure
+    ? {
+        'not-registered': t.serialChecker.notFound,
+        revoked: t.serialChecker.revokedTitle,
+        'invalid-input': t.serialChecker.invalidInputTitle,
+        service: t.serialChecker.serviceErrorTitle,
+      }[failure]
+    : '';
+
   return (
     <div className="flex flex-col items-center gap-stack-md">
       {loading && (
@@ -282,7 +313,9 @@ export default function SerialChecker() {
         <div className={`w-full max-w-md p-4 border ${
           result.found
             ? 'border-signal-orange bg-operator-green/20'
-            : 'border-error bg-error-container/20'
+            : isSerialVerdict
+              ? 'border-error bg-error-container/20'
+              : 'border-signal-orange bg-signal-orange/10'
         }`}>
           {result.found ? (
             <div className="text-center">
@@ -299,8 +332,8 @@ export default function SerialChecker() {
             </div>
           ) : (
             <div className="text-center">
-              <div className="font-label-caps text-label-caps text-error mb-2">
-                {result.message === 'This serial number has been revoked.' ? t.serialChecker.revokedTitle : t.serialChecker.notFound}
+              <div className={`font-label-caps text-label-caps mb-2 ${isSerialVerdict ? 'text-error' : 'text-signal-orange'}`}>
+                {failureTitle}
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant">
                 {localizedResultMessage}

@@ -84,6 +84,8 @@ type Dictionary = {
     viewCertificate: string;
     notFound: string;
     revokedTitle: string;
+    invalidInputTitle: string;
+    serviceErrorTitle: string;
     notRegistered: string;
     connectionError: string;
     instructions: string;
@@ -215,6 +217,8 @@ export const dictionaries: Record<Language, Dictionary> = {
       viewCertificate: 'VIEW CERTIFICATE',
       notFound: 'SERIAL NOT FOUND',
       revokedTitle: 'SERIAL REVOKED',
+      invalidInputTitle: 'CHECK THE SERIAL',
+      serviceErrorTitle: 'VERIFICATION UNAVAILABLE',
       notRegistered: 'This serial number is not registered in our system.',
       connectionError: 'Connection error. Please try again.',
       instructions: 'Make sure the serial number is typed correctly, including any hyphens in the code, for example XXXX-XXXX-XXXX. Check the serial again before submitting. If you have trouble entering the code or see an error, contact Durhaim customer service.',
@@ -344,6 +348,8 @@ export const dictionaries: Record<Language, Dictionary> = {
       viewCertificate: 'LIHAT SERTIFIKAT',
       notFound: 'SERIAL TIDAK DITEMUKAN',
       revokedTitle: 'SERIAL DICABUT',
+      invalidInputTitle: 'PERIKSA NOMOR SERIAL',
+      serviceErrorTitle: 'VERIFIKASI TIDAK TERSEDIA',
       notRegistered: 'Nomor serial ini tidak terdaftar di sistem kami.',
       connectionError: 'Koneksi bermasalah. Silakan coba lagi.',
       instructions: 'Pastikan nomor serial diisi dengan benar dan sesuai, termasuk tanda - (strip) yang ada pada nomor serial, misalnya XXXX-XXXX-XXXX. Periksa kembali nomor serial sebelum dikirim. Jika mengalami kendala saat penginputan atau terjadi error, silakan hubungi customer service Durhaim.',
