@@ -40,6 +40,25 @@ test.describe("storefront behavior", () => {
     await expect(second).toHaveAttribute("aria-expanded", "true");
   });
 
+  test("catalogue products use the gray reference card treatment", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto("/catalogue?lang=en", { waitUntil: "domcontentloaded" });
+    const firstCard = page.locator(".store-product-card").first();
+    await expect(firstCard).toHaveCSS("background-color", "rgb(41, 41, 41)");
+    await expect(firstCard).toHaveCSS("border-top-color", "rgb(102, 102, 102)");
+    await expect(firstCard.locator(":scope > a")).toHaveCSS("background-color", "rgb(102, 102, 102)");
+  });
+
+  test("homepage category labels stay visible", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto("/?lang=en", { waitUntil: "domcontentloaded" });
+    const tile = page.locator(".home-category-strip a").first();
+    const label = tile.locator("span");
+
+    await expect(tile).toHaveCSS("opacity", "1");
+    await expect(label).toHaveCSS("opacity", "1");
+  });
+
   test("catalogue search, category filter, and product gallery remain interactive", async ({ page }) => {
     await page.goto("/catalogue?lang=en", { waitUntil: "domcontentloaded" });
     await page.waitForSelector(".store-product-card");
@@ -53,6 +72,16 @@ test.describe("storefront behavior", () => {
     await expect(page.locator(".store-product-gallery button")).toHaveCount(4);
     await page.locator(".store-product-gallery button").first().click();
     await expect(mainImage).not.toHaveAttribute("src", original ?? "");
+  });
+
+  test("Figma product detail nodes keep their reference copy and identifiers", async ({ page }) => {
+    await page.goto("/catalogue/black-chitto-mark-2?lang=en", { waitUntil: "domcontentloaded" });
+    await expect(page.locator('main[data-figma-node="63:1556"]')).toBeVisible();
+    await expect(page.locator(".store-product-specifications li").first()).toHaveText("Black Color.");
+
+    await page.goto("/catalogue/green-chitto-mark-2?lang=en", { waitUntil: "domcontentloaded" });
+    await expect(page.locator('main[data-figma-node="63:1581"]')).toBeVisible();
+    await expect(page.locator(".store-product-specifications li").first()).toHaveText("Green Color.");
   });
 
   test("camera permission is requested only after the scan action", async ({ page }) => {

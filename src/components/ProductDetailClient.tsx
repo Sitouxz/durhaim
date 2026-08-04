@@ -8,6 +8,11 @@ import { useSiteSettings } from "@/components/SiteSettingsProvider";
 import { localizeCategoryName, localizeProductDescription } from "@/lib/product-localization";
 import { buildWhatsAppUrl } from "@/lib/site-settings";
 
+function formatSpecification(item: string) {
+  const specification = item.trim();
+  return /[.!?]$/.test(specification) ? specification : `${specification}.`;
+}
+
 export default function ProductDetailClient({ product }: { product: CatalogueProduct }) {
   const { language, region, formatPrice, t } = useCommerce();
   const siteSettings = useSiteSettings();
@@ -43,7 +48,7 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
               <div className="store-product-specifications">
                 <h2>{t.product.specification.toUpperCase()}</h2>
                 <ul>
-                  {product.specifications.map((item) => <li key={item}>{item}</li>)}
+                  {product.specifications.map((item) => <li key={item}>{formatSpecification(item)}</li>)}
                 </ul>
               </div>
             )}
