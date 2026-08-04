@@ -1,6 +1,12 @@
-import { defaultRegionalPrices, getRegionalPrice, type RegionCode, type RegionalPrices } from '@/lib/commerce';
+import { defaultRegionalPrices, getRegionalPrice, type RegionCode, type RegionalPrices } from "@/lib/commerce";
+import { figmaCatalogueSeeds } from "@/data/figma-catalogue";
 
 export type ProductCategory = {
+  name: string;
+  slug: string;
+};
+
+export type ProductSeries = {
   name: string;
   slug: string;
 };
@@ -10,10 +16,15 @@ export type CatalogueProduct = {
   name: string;
   slug: string;
   description: string;
-  price: number;
+  price: number | null;
   regional_prices: RegionalPrices;
   categories: ProductCategory | null;
   category: ProductCategory;
+  product_series: ProductSeries | null;
+  series: ProductSeries | null;
+  colorway: string;
+  display_order: number;
+  specifications: string[];
   images: string[];
   tags: string[];
   is_published: boolean;
@@ -21,139 +32,155 @@ export type CatalogueProduct = {
 };
 
 export const categories: ProductCategory[] = [
-  { name: 'Vest & Chestrig', slug: 'vest' },
-  { name: 'Pack & Pouches', slug: 'pack' },
-  { name: 'Belt', slug: 'belt' },
-  { name: 'Accessories', slug: 'accessories' },
+  { name: "Vest & Chestrig", slug: "vest" },
+  { name: "Pack & Pouches", slug: "pack" },
+  { name: "Belt", slug: "belt" },
+  { name: "Accessories", slug: "accessories" },
 ];
 
-export const fallbackProducts: CatalogueProduct[] = [
-  {
-    id: 'fallback-cobra-mcb-vest',
-    name: 'Cobra Multicam Black Vest',
-    slug: 'cobra-multicam-black-vest',
-    description: 'MODULAR TACTICAL CARRIER / QUICK RELEASE SYSTEM / LASER CUT MOLLE',
-    price: 1850000,
-    regional_prices: defaultRegionalPrices(1850000),
-    categories: categories[0],
-    category: categories[0],
-    images: ['/images/29_VC-1.png'],
-    tags: ['BATTLE PROVEN'],
-    is_published: true,
-    created_at: '2026-05-01T00:00:00.000Z',
-  },
-  {
-    id: 'fallback-black-thunder-vest',
-    name: 'Black Thunder Vest',
-    slug: 'black-thunder-vest',
-    description: 'HEAVY DUTY PLATE CARRIER / TRIPLE MAG POUCH INCLUDED / ADJUSTABLE HARNESS',
-    price: 1750000,
-    regional_prices: defaultRegionalPrices(1750000),
-    categories: categories[0],
-    category: categories[0],
-    images: ['/images/29_VC-1.png'],
+const categoryBySlug = new Map(categories.map((category) => [category.slug, category]));
+
+export const fallbackProducts: CatalogueProduct[] = figmaCatalogueSeeds.map((seed) => {
+  const category = categoryBySlug.get(seed.category) ?? { name: "Unassigned", slug: "uncategorized" };
+  return {
+    id: `figma-${seed.slug}`,
+    name: seed.name,
+    slug: seed.slug,
+    description: seed.description,
+    price: seed.price,
+    regional_prices: seed.regional_prices,
+    categories: category,
+    category,
+    product_series: seed.series,
+    series: seed.series,
+    colorway: seed.colorway,
+    display_order: seed.display_order,
+    specifications: seed.specifications,
+    images: seed.images,
     tags: [],
     is_published: true,
-    created_at: '2026-04-20T00:00:00.000Z',
-  },
-  {
-    id: 'fallback-anaconda-mcb-pack',
-    name: 'Anaconda MCB Pack',
-    slug: 'anaconda-mcb-pack',
-    description: '30L CAPACITY / HYDRATION COMPATIBLE / MULTICAM BLACK CORDURA',
-    price: 1250000,
-    regional_prices: defaultRegionalPrices(1250000),
-    categories: categories[1],
-    category: categories[1],
-    images: ['/images/31_PP-1.png'],
-    tags: ['NEW ARRIVAL'],
-    is_published: true,
-    created_at: '2026-05-10T00:00:00.000Z',
-  },
-  {
-    id: 'fallback-black-trojan-pro-belt',
-    name: 'Black Trojan Pro Belt',
-    slug: 'black-trojan-pro-belt',
-    description: 'RIGGER BELT / QUICK RELEASE BUCKLE / INTEGRATED POUCH SYSTEM',
-    price: 850000,
-    regional_prices: defaultRegionalPrices(850000),
-    categories: categories[2],
-    category: categories[2],
-    images: ['/images/33_B-1.png'],
-    tags: [],
-    is_published: true,
-    created_at: '2026-04-02T00:00:00.000Z',
-  },
-  {
-    id: 'fallback-rattle-belt-mcb',
-    name: 'Rattle Belt MCB',
-    slug: 'rattle-belt-mcb',
-    description: 'TACTICAL WAIST BELT / MULTICAM BLACK / COBRA STYLE BUCKLE / MAG POUCHES',
-    price: 950000,
-    regional_prices: defaultRegionalPrices(950000),
-    categories: categories[2],
-    category: categories[2],
-    images: ['/images/33_B-1.png'],
-    tags: ['LIMITED STOCK'],
-    is_published: true,
-    created_at: '2026-03-22T00:00:00.000Z',
-  },
-];
+    created_at: new Date(Date.UTC(2026, 7, 3, 0, 0, seed.display_order)).toISOString(),
+  };
+});
 
 export function isMissingSchemaError(error: unknown) {
-  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'PGRST205');
+  return Boolean(error && typeof error === "object" && "code" in error && error.code === "PGRST205");
+}
+
+function normalizeRelation<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function normalizeSpecifications(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .flatMap((item) => Array.isArray(item) ? item : [item])
+      .map(String)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 export function normalizeProduct(raw: Record<string, unknown>): CatalogueProduct {
-  const relation = raw.categories as ProductCategory | ProductCategory[] | null | undefined;
-  const category = Array.isArray(relation) ? relation[0] : relation;
-  const safeCategory = category ?? { name: 'Unassigned', slug: 'uncategorized' };
-  const price = Number(raw.price ?? 0);
+  const category = normalizeRelation(raw.categories as ProductCategory | ProductCategory[] | null);
+  const safeCategory = category ?? { name: "Unassigned", slug: "uncategorized" };
+  const series = normalizeRelation(raw.product_series as ProductSeries | ProductSeries[] | null);
+  const rawPrice = raw.price;
+  const price = rawPrice === null || rawPrice === undefined || rawPrice === "" ? null : Number(rawPrice);
+  const safePrice = price !== null && Number.isFinite(price) ? price : null;
   const rawRegionalPrices = raw.regional_prices;
 
   return {
     id: String(raw.id),
-    name: String(raw.name ?? 'Untitled Product'),
+    name: String(raw.name ?? "Untitled Product"),
     slug: String(raw.slug ?? raw.id),
-    description: String(raw.description ?? ''),
-    price,
-    regional_prices: rawRegionalPrices && typeof rawRegionalPrices === 'object'
+    description: String(raw.description ?? ""),
+    price: safePrice,
+    regional_prices: rawRegionalPrices && typeof rawRegionalPrices === "object"
       ? rawRegionalPrices as RegionalPrices
-      : defaultRegionalPrices(price),
+      : safePrice === null
+        ? {}
+        : defaultRegionalPrices(safePrice),
     categories: safeCategory,
     category: safeCategory,
-    images: Array.isArray(raw.images) ? raw.images.map(String) : [],
+    product_series: series,
+    series,
+    colorway: String(raw.colorway ?? ""),
+    display_order: Number.isFinite(Number(raw.display_order)) ? Number(raw.display_order) : 9999,
+    specifications: normalizeSpecifications(raw.specifications),
+    images: Array.isArray(raw.images) ? raw.images.map(String).filter(Boolean) : [],
     tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
     is_published: raw.is_published !== false,
     created_at: String(raw.created_at ?? new Date(0).toISOString()),
   };
 }
 
+export function mergeCatalogueProducts(primary: CatalogueProduct[], additions = fallbackProducts) {
+  const merged = new Map(additions.map((product) => [product.slug, product]));
+  for (const product of primary) {
+    const seed = merged.get(product.slug);
+    merged.set(product.slug, seed ? {
+      ...seed,
+      ...product,
+      images: product.images.length ? product.images : seed.images,
+      specifications: product.specifications.length ? product.specifications : seed.specifications,
+      series: product.series ?? seed.series,
+      product_series: product.product_series ?? seed.product_series,
+      category: product.category.slug === "uncategorized" ? seed.category : product.category,
+      categories: product.category.slug === "uncategorized" ? seed.categories : product.categories,
+    } : product);
+  }
+  return [...merged.values()];
+}
+
+function sortablePrice(product: CatalogueProduct, region: RegionCode) {
+  const regionalPrice = product.regional_prices[region];
+  if (product.price === null && typeof regionalPrice !== "number") return null;
+  return getRegionalPrice(product.price ?? regionalPrice ?? 0, product.regional_prices, region);
+}
+
 export function filterProducts(
   products: CatalogueProduct[],
-  options: { category?: string | null; search?: string | null; sort?: string | null; region?: RegionCode },
+  options: {
+    category?: string | null;
+    series?: string | null;
+    search?: string | null;
+    sort?: string | null;
+    region?: RegionCode;
+  },
 ) {
   const category = options.category?.trim();
+  const series = options.series?.trim();
   const search = options.search?.trim().toLowerCase();
-  const sort = options.sort ?? 'newest';
+  const sort = options.sort ?? "newest";
+  const region = options.region ?? "ID";
 
   const filtered = products.filter((product) => {
-    const categoryMatches = !category || category === 'all' || product.category.slug === category;
+    const categoryMatches = !category || category === "all" || product.category.slug === category;
+    const seriesMatches = !series || series === "all" || product.series?.slug === series;
     const searchMatches = !search
       || product.name.toLowerCase().includes(search)
       || product.description.toLowerCase().includes(search)
-      || product.category.name.toLowerCase().includes(search);
-
-    return categoryMatches && searchMatches;
+      || product.category.name.toLowerCase().includes(search)
+      || product.series?.name.toLowerCase().includes(search)
+      || product.colorway.toLowerCase().includes(search);
+    return categoryMatches && seriesMatches && searchMatches;
   });
 
   return filtered.sort((a, b) => {
-    const region = options.region ?? 'ID';
-    if (sort === 'price-high') return getRegionalPrice(b.price, b.regional_prices, region) - getRegionalPrice(a.price, a.regional_prices, region);
-    if (sort === 'price-low') return getRegionalPrice(a.price, a.regional_prices, region) - getRegionalPrice(b.price, b.regional_prices, region);
-    if (sort === 'name-az') return a.name.localeCompare(b.name);
-    if (sort === 'name-za') return b.name.localeCompare(a.name);
-    if (sort === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    if (sort === "display") return a.display_order - b.display_order || a.name.localeCompare(b.name);
+    if (sort === "price-high" || sort === "price-low") {
+      const aPrice = sortablePrice(a, region);
+      const bPrice = sortablePrice(b, region);
+      if (aPrice === null) return 1;
+      if (bPrice === null) return -1;
+      return sort === "price-high" ? bPrice - aPrice : aPrice - bPrice;
+    }
+    if (sort === "name-az") return a.name.localeCompare(b.name);
+    if (sort === "name-za") return b.name.localeCompare(a.name);
+    if (sort === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 }
@@ -162,10 +189,8 @@ export function paginateProducts(products: CatalogueProduct[], page: number, lim
   const safePage = Number.isFinite(page) && page > 0 ? page : 1;
   const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : 12;
   const offset = (safePage - 1) * safeLimit;
-  const paginated = products.slice(offset, offset + safeLimit);
-
   return {
-    products: paginated,
+    products: products.slice(offset, offset + safeLimit),
     total: products.length,
     page: safePage,
     limit: safeLimit,

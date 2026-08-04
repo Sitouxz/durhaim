@@ -1,447 +1,284 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Camera, Keyboard, RefreshCw } from 'lucide-react';
-import { useCommerce } from '@/components/CommerceProvider';
-import LocalizedText from '@/components/LocalizedText';
-import jsQR from 'jsqr';
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Camera, Keyboard, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import jsQR from "jsqr";
+import LocalizedText from "@/components/LocalizedText";
+import { useCommerce } from "@/components/CommerceProvider";
 
+type FailureKind = "not-registered" | "revoked" | "invalid-input" | "service";
 type VerifyResult = {
   found: boolean;
   serial?: string;
-  product?: {
-    name: string;
-    status: string;
-  };
+  product?: { name: string; status: string };
   message?: string;
   failure?: FailureKind;
 };
+type ScannerState = "idle" | "starting" | "scanning" | "detected" | "error";
 
-// A rejected serial and a rejected *input* are different events, and only the first
-// is a statement about the product. /api/verify already distinguishes them by status
-// code; the UI used to render every !found response under "SERIAL NOT FOUND", so a
-// malformed scan read as a counterfeit.
-type FailureKind = 'not-registered' | 'revoked' | 'invalid-input' | 'service';
+const REVOKED_MESSAGE = "This serial number has been revoked.";
 
-const REVOKED_MESSAGE = 'This serial number has been revoked.';
-
-function classifyFailure(httpStatus: number, message?: string): FailureKind {
-  if (message === REVOKED_MESSAGE) return 'revoked';
-  if (httpStatus === 400) return 'invalid-input';
-  // 429 rate limit, 500 server, 503 missing schema — the serial is unjudged either way.
-  if (httpStatus !== 200) return 'service';
-  return 'not-registered';
+function classifyFailure(status: number, message?: string): FailureKind {
+  if (message === REVOKED_MESSAGE) return "revoked";
+  if (status === 400) return "invalid-input";
+  if (status !== 200) return "service";
+  return "not-registered";
 }
-
-type InputMode = 'scan' | 'manual';
-type ScannerState = 'starting' | 'scanning' | 'detected' | 'error';
 
 export default function SerialChecker() {
   const { language, t } = useCommerce();
-  const [serial, setSerial] = useState('');
-  const [inputMode, setInputMode] = useState<InputMode>('scan');
-  const [scannerState, setScannerState] = useState<ScannerState>('starting');
-  const [scannerMessage, setScannerMessage] = useState('');
+  const router = useRouter();
+  const [serial, setSerial] = useState("");
+  const [mode, setMode] = useState<"scan" | "manual">("scan");
+  const [scannerState, setScannerState] = useState<ScannerState>("idle");
+  const [scannerMessage, setScannerMessage] = useState("");
   const [scanAttempt, setScanAttempt] = useState(0);
+  const [scannerEnabled, setScannerEnabled] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
-  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanTimeoutRef = useRef<number | null>(null);
 
+  useEffect(() => setHydrated(true), []);
+
   const stopScanner = useCallback(() => {
-    if (scanTimeoutRef.current) {
-      window.clearTimeout(scanTimeoutRef.current);
-      scanTimeoutRef.current = null;
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    if (scanTimeoutRef.current) window.clearTimeout(scanTimeoutRef.current);
+    scanTimeoutRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
-  const extractSerialFromScan = useCallback((rawValue: string) => {
-    const trimmedValue = rawValue.trim();
-    if (!trimmedValue) return '';
-
+  const extractSerial = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
     try {
-      const scannedUrl = new URL(trimmedValue, window.location.origin);
-      const pathSegments = scannedUrl.pathname.split('/').filter(Boolean);
-      const verifySegmentIndex = pathSegments.findIndex((segment) => segment.toLowerCase() === 'verify');
-      const serialFromUrl = verifySegmentIndex >= 0 ? pathSegments[verifySegmentIndex + 1] : null;
-
-      if (serialFromUrl) {
-        return decodeURIComponent(serialFromUrl).trim().toUpperCase();
-      }
-
-      // Legacy WordPress labels encode https://durhaim.com/?code=XXXX&action=validate.
-      // src/middleware.ts rewrites those to /verify/XXXX, but only on a real navigation —
-      // the in-app scanner never navigates, so it has to read the query itself.
-      const legacyCode = scannedUrl.searchParams.get('code');
-      if (legacyCode?.trim()) {
-        return legacyCode.trim().toUpperCase();
-      }
+      const scannedUrl = new URL(trimmed, window.location.origin);
+      const segments = scannedUrl.pathname.split("/").filter(Boolean);
+      const verifyIndex = segments.findIndex((segment) => segment.toLowerCase() === "verify");
+      const fromPath = verifyIndex >= 0 ? segments[verifyIndex + 1] : null;
+      if (fromPath) return decodeURIComponent(fromPath).trim().toUpperCase();
+      const legacyCode = scannedUrl.searchParams.get("code");
+      if (legacyCode?.trim()) return legacyCode.trim().toUpperCase();
     } catch {
-      // Non-URL QR codes are treated as raw serial codes.
+      // Raw serial QR codes are valid.
     }
-
-    const parts = trimmedValue.split(/[\s\t]+/);
-    if (parts.length > 0) {
-      const possibleSerial = parts.find(p => /^[A-Za-z0-9-]{6,40}$/.test(p));
-      if (possibleSerial) {
-        return possibleSerial.toUpperCase();
-      }
-    }
-
-    return trimmedValue.toUpperCase();
+    return trimmed.toUpperCase();
   }, []);
 
-  const verifySerial = useCallback(async (serialToVerify: string) => {
-    const normalizedSerial = serialToVerify.trim().toUpperCase();
-    if (!normalizedSerial) return;
-
+  const verifySerial = useCallback(async (value: string) => {
+    const normalized = value.trim().toUpperCase();
+    if (!normalized) return;
+    setSerial(normalized);
     setLoading(true);
     setResult(null);
-    setSerial(normalizedSerial);
-
     try {
-      const res = await fetch('/api/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serial: normalizedSerial }),
+      const response = await fetch("/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serial: normalized }),
       });
-      const data: VerifyResult = await res.json();
-
-      if (data.found) {
+      const data: VerifyResult = await response.json();
+      if (data.found && data.serial) {
         router.push(`/verify/${data.serial}`);
-      } else {
-        setResult({ ...data, failure: classifyFailure(res.status, data.message) });
-        setLoading(false);
+        return;
       }
+      setResult({ ...data, failure: classifyFailure(response.status, data.message) });
     } catch {
-      setResult({ found: false, message: t.serialChecker.connectionError, failure: 'service' });
+      setResult({ found: false, failure: "service", message: t.serialChecker.connectionError });
+    } finally {
       setLoading(false);
     }
   }, [router, t.serialChecker.connectionError]);
 
-  const handleScannedValue = useCallback(async (rawValue: string) => {
-    const scannedSerial = extractSerialFromScan(rawValue);
-    if (!scannedSerial) return;
-
-    setScannerState('detected');
+  const handleScan = useCallback((rawValue: string) => {
+    const nextSerial = extractSerial(rawValue);
+    if (!nextSerial) return;
+    setScannerState("detected");
     setScannerMessage(t.serialChecker.scanDetected);
+    setScannerEnabled(false);
     stopScanner();
-    await verifySerial(scannedSerial);
-  }, [extractSerialFromScan, stopScanner, t.serialChecker.scanDetected, verifySerial]);
+    void verifySerial(nextSerial);
+  }, [extractSerial, stopScanner, t.serialChecker.scanDetected, verifySerial]);
 
   useEffect(() => {
-    if (inputMode !== 'scan') {
+    if (mode !== "scan" || !scannerEnabled) {
       stopScanner();
-      return undefined;
+      return;
     }
 
     let active = true;
-
     async function startScanner() {
-      setScannerState('starting');
+      setScannerState("starting");
       setScannerMessage(t.serialChecker.scanStarting);
-
       if (!navigator.mediaDevices?.getUserMedia) {
-        setScannerState('error');
+        setScannerState("error");
         setScannerMessage(t.serialChecker.scanUnsupported);
+        setScannerEnabled(false);
         return;
       }
-
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
+          video: { facingMode: { ideal: "environment" } },
           audio: false,
         });
-
         if (!active) {
           mediaStream.getTracks().forEach((track) => track.stop());
           return;
         }
-
         streamRef.current = mediaStream;
-
         if (!videoRef.current) return;
         videoRef.current.srcObject = mediaStream;
-        // play() might not return a promise in all browsers
-        await videoRef.current.play().catch(() => {});
-
-        setScannerState('scanning');
+        await videoRef.current.play().catch(() => undefined);
+        setScannerState("scanning");
         setScannerMessage(t.serialChecker.scanActive);
 
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { willReadFrequently: true });
         const scanFrame = () => {
           if (!active || !videoRef.current) return;
-
           try {
-            if (videoRef.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-              const video = videoRef.current;
-              
-              if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-              }
-
-              if (context && canvas.width > 0 && canvas.height > 0) {
+            const video = videoRef.current;
+            if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && context) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              if (canvas.width && canvas.height) {
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                  inversionAttempts: 'dontInvert',
-                });
-
-                if (code && code.data) {
+                const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(frame.data, frame.width, frame.height, { inversionAttempts: "dontInvert" });
+                if (code?.data) {
                   active = false;
-                  handleScannedValue(code.data);
+                  handleScan(code.data);
                   return;
                 }
               }
             }
+            scanTimeoutRef.current = window.setTimeout(scanFrame, 350);
           } catch {
             if (!active) return;
-            setScannerState('error');
+            setScannerState("error");
             setScannerMessage(t.serialChecker.scanError);
+            setScannerEnabled(false);
             stopScanner();
-            return;
           }
-
-          scanTimeoutRef.current = window.setTimeout(scanFrame, 350);
         };
-
         scanFrame();
       } catch {
         if (!active) return;
-        setScannerState('error');
+        setScannerState("error");
         setScannerMessage(t.serialChecker.scanBlocked);
+        setScannerEnabled(false);
         stopScanner();
       }
     }
-
-    startScanner();
-
+    void startScanner();
     return () => {
       active = false;
       stopScanner();
     };
-  }, [
-    handleScannedValue,
-    inputMode,
-    scanAttempt,
-    stopScanner,
-    t.serialChecker.scanActive,
-    t.serialChecker.scanBlocked,
-    t.serialChecker.scanError,
-    t.serialChecker.scanStarting,
-    t.serialChecker.scanUnsupported,
-  ]);
+  }, [handleScan, mode, scanAttempt, scannerEnabled, stopScanner, t.serialChecker]);
 
   useEffect(() => stopScanner, [stopScanner]);
 
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
+  function beginScan() {
+    setResult(null);
+    setMode("scan");
+    setScannerState("starting");
+    setScannerMessage(t.serialChecker.scanStarting);
+    setScanAttempt((attempt) => attempt + 1);
+    setScannerEnabled(true);
+  }
+
+  function showManual() {
+    setScannerEnabled(false);
+    stopScanner();
+    setMode("manual");
+    setScannerState("idle");
+  }
+
+  async function submitManual(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     await verifySerial(serial);
   }
 
-  function showManualEntry() {
-    stopScanner();
-    setInputMode('manual');
-    setScannerMessage('');
-  }
-
-  function showScanner() {
-    setResult(null);
-    setInputMode('scan');
-    setScannerState('starting');
-    setScannerMessage('');
-    setScanAttempt((currentAttempt) => currentAttempt + 1);
-  }
-
-  const localizedResultMessage = (() => {
-    if (!result?.message) return t.serialChecker.notRegistered;
-    if (language !== 'id') return result.message;
-
-    return {
-      'Invalid serial number': 'Nomor serial tidak valid.',
-      'Invalid serial number format': 'Format nomor serial tidak valid.',
-      'Too many verification attempts. Please try again later.': 'Terlalu banyak percobaan verifikasi. Silakan coba lagi nanti.',
-      'Database schema is not installed. Apply supabase/schema.sql.': 'Skema database belum terpasang. Hubungi admin Durhaim.',
-      'Serial number not found in our system.': 'Nomor serial tidak ditemukan di sistem kami.',
-      'This serial number has been revoked.': 'Nomor serial ini telah dicabut.',
-      'This serial number is registered but not active yet.': 'Nomor serial ini terdaftar, tetapi belum aktif.',
-      'Unable to record verification attempt.': 'Percobaan verifikasi belum dapat dicatat.',
-      'Server error. Please try again.': 'Server bermasalah. Silakan coba lagi.',
-    }[result.message] ?? result.message;
-  })();
-
-  // Only a verdict about the serial itself earns the error treatment. A typo or an
-  // unreachable API is not evidence against the product, so those stay on the neutral
-  // orange panel rather than shouting counterfeit at a customer holding a real item.
-  const failure = result && !result.found ? result.failure ?? 'not-registered' : null;
-  const isSerialVerdict = failure === 'not-registered' || failure === 'revoked';
-  const failureTitle = failure
-    ? {
-        'not-registered': t.serialChecker.notFound,
-        revoked: t.serialChecker.revokedTitle,
-        'invalid-input': t.serialChecker.invalidInputTitle,
-        service: t.serialChecker.serviceErrorTitle,
-      }[failure]
-    : '';
+  const failure = result?.found === false ? result.failure ?? "not-registered" : null;
+  const title = failure ? {
+    "not-registered": t.serialChecker.notFound,
+    revoked: t.serialChecker.revokedTitle,
+    "invalid-input": t.serialChecker.invalidInputTitle,
+    service: t.serialChecker.serviceErrorTitle,
+  }[failure] : "";
+  const translatedMessage = language === "id" && result?.message ? {
+    "Invalid serial number": "Nomor serial tidak valid.",
+    "Invalid serial number format": "Format nomor serial tidak valid.",
+    "Too many verification attempts. Please try again later.": "Terlalu banyak percobaan verifikasi. Silakan coba lagi nanti.",
+    "Serial number not found in our system.": "Nomor serial tidak ditemukan di sistem kami.",
+    "This serial number has been revoked.": "Nomor serial ini telah dicabut.",
+    "Server error. Please try again.": "Server bermasalah. Silakan coba lagi.",
+  }[result.message] ?? result.message : result?.message;
 
   return (
-    <div className="flex flex-col items-center gap-stack-md">
-      {loading && (
-        <span className="font-data-mono text-data-mono text-signal-orange">{t.serialChecker.loading}</span>
-      )}
-      {!loading && !result && inputMode === 'manual' && (
-        <span className="font-data-mono text-data-mono text-signal-orange">{t.serialChecker.prompt}</span>
-      )}
+    <div className="store-serial-checker" data-hydrated={hydrated}>
       {result && (
-        <div className={`w-full max-w-md p-4 border ${
-          result.found
-            ? 'border-signal-orange bg-operator-green/20'
-            : isSerialVerdict
-              ? 'border-error bg-error-container/20'
-              : 'border-signal-orange bg-signal-orange/10'
-        }`}>
-          {result.found ? (
-            <div className="text-center">
-              <div className="font-label-caps text-label-caps text-signal-orange mb-2">{t.serialChecker.authentic}</div>
-              {result.product?.name && (
-                <p className="font-data-mono text-data-mono text-stark-white">{result.product.name}</p>
-              )}
-              <Link
-                href={`/verify/${result.serial}`}
-                className="inline-block mt-3 border border-signal-orange text-signal-orange font-label-caps text-label-caps py-2 px-4 hover:bg-signal-orange hover:text-tactical-black transition-colors"
-              >
-                {t.serialChecker.viewCertificate}
-              </Link>
-            </div>
-          ) : (
-            <div className="text-center">
-              <div className={`font-label-caps text-label-caps mb-2 ${isSerialVerdict ? 'text-error' : 'text-signal-orange'}`}>
-                {failureTitle}
-              </div>
-              <p className="font-body-md text-body-md text-on-surface-variant">
-                {localizedResultMessage}
-              </p>
-            </div>
-          )}
+        <div className="store-serial-result" role="status">
+          <strong>{title}</strong>
+          <p>{translatedMessage || t.serialChecker.notRegistered}</p>
         </div>
       )}
 
-      {inputMode === 'scan' ? (
-        <div className="mx-auto w-full max-w-sm">
-          <span className="font-data-mono text-data-mono text-signal-orange">{t.serialChecker.scanPrompt}</span>
-          <div className="relative mt-4 aspect-video overflow-hidden border border-surface-container-highest bg-tactical-black shadow-inner">
-            <video
-              ref={videoRef}
-              aria-label={t.serialChecker.scanVideoLabel}
-              className={`h-full w-full object-cover transition-opacity duration-200 ${
-                scannerState === 'scanning' ? 'opacity-100' : 'opacity-35'
-              }`}
-              muted
-              playsInline
-            />
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-6 border border-signal-orange/80 shadow-[0_0_24px_rgba(255,86,34,0.22)]" />
-              <div className="absolute left-6 top-6 h-6 w-6 border-l-2 border-t-2 border-signal-orange" />
-              <div className="absolute right-6 top-6 h-6 w-6 border-r-2 border-t-2 border-signal-orange" />
-              <div className="absolute bottom-6 left-6 h-6 w-6 border-b-2 border-l-2 border-signal-orange" />
-              <div className="absolute bottom-6 right-6 h-6 w-6 border-b-2 border-r-2 border-signal-orange" />
-            </div>
-            {scannerState !== 'scanning' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-tactical-black/70 p-4">
-                <p className="font-data-mono text-data-mono text-on-surface-variant" aria-live="polite">
-                  {scannerMessage || t.serialChecker.scanStarting}
-                </p>
-              </div>
-            )}
+      {mode === "scan" ? (
+        <>
+          <p className="store-scan-prompt" aria-live="polite">
+            {scannerState === "idle" ? t.serialChecker.scanPrompt : scannerMessage}
+          </p>
+          <div className="store-scanner">
+            <video ref={videoRef} muted playsInline aria-label={t.serialChecker.scanVideoLabel} />
+            <div className="store-scanner__frame" aria-hidden="true" />
+            <span className="store-scanner__cross" aria-hidden="true" />
           </div>
-          {scannerState === 'scanning' && (
-            <p className="mt-3 font-data-mono text-data-mono text-on-surface-variant" aria-live="polite">
-              {scannerMessage}
-            </p>
-          )}
-          <div className={`mt-4 grid gap-3 ${scannerState === 'error' ? 'sm:grid-cols-2' : ''}`}>
-            <button
-              type="button"
-              onClick={showManualEntry}
-              className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap border border-surface-container-highest bg-tactical-black/50 px-4 py-3 font-label-caps text-[12px] leading-none tracking-[0.05em] text-stark-white transition-colors duration-200 hover:border-signal-orange hover:bg-signal-orange hover:text-tactical-black"
-            >
-              <Keyboard aria-hidden="true" size={16} />
+          <div className="store-serial-actions">
+            <button type="button" onClick={showManual}>
+              <Keyboard aria-hidden="true" />
               {t.serialChecker.manualEntry}
             </button>
-            {scannerState === 'error' && (
-              <button
-                type="button"
-                onClick={showScanner}
-                className="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap border border-surface-container-highest bg-tactical-black/50 px-4 py-3 font-label-caps text-[12px] leading-none tracking-[0.05em] text-stark-white transition-colors duration-200 hover:border-signal-orange hover:bg-signal-orange hover:text-tactical-black"
-              >
-                <RefreshCw aria-hidden="true" size={16} />
-                {t.serialChecker.tryScanAgain}
-              </button>
-            )}
+            <button type="button" onClick={beginScan}>
+              {scannerState === "error" ? <RefreshCw aria-hidden="true" /> : <Camera aria-hidden="true" />}
+              {t.serialChecker.tryScanAgain}
+            </button>
           </div>
-        </div>
+        </>
       ) : (
         <>
-          <p className="font-body-md text-body-md text-on-surface-variant max-w-lg mx-auto opacity-90 drop-shadow">
-            {t.serialChecker.instructions}
-          </p>
-          <form onSubmit={handleVerify} className="w-full max-w-md mt-4">
-            {/* A placeholder is not a label: it disappears on input and is not reliably
-                announced. This is the primary input of the whole verification flow. */}
-            <label htmlFor="serial-input" className="sr-only">
-              <LocalizedText en="Serial number from your product label" id="Nomor serial pada label produk Anda" />
+          <p className="store-serial-instructions">{t.serialChecker.instructions}</p>
+          <form className="store-serial-form" onSubmit={submitManual}>
+            <label htmlFor="serial-input">
+              <LocalizedText en="Serial number" id="Nomor serial" />
             </label>
             <input
               id="serial-input"
-              className="w-full bg-tactical-black/70 border border-surface-container-highest text-stark-white font-data-mono text-center py-3 focus:border-signal-orange focus:ring-1 focus:ring-signal-orange transition-colors duration-200 uppercase"
-              placeholder="XXXX-XXXX-XXXX"
               type="text"
+              autoComplete="off"
               value={serial}
-              onChange={(e) => setSerial(e.target.value.toUpperCase())}
-              maxLength={20}
+              onChange={(event) => setSerial(event.target.value.toUpperCase())}
+              placeholder="XXXX-XXXX-XXXX"
+              maxLength={40}
             />
-            <button
-              type="submit"
-              className="w-full mt-3 bg-signal-orange text-tactical-black font-label-caps text-label-caps py-3 hover:bg-stark-white transition-colors duration-200 uppercase"
-              disabled={loading}
-            >
+            <button type="submit" disabled={loading}>
               {loading ? t.serialChecker.verifying : t.serialChecker.verify}
             </button>
           </form>
-          <button
-            type="button"
-            onClick={showScanner}
-            className="inline-flex items-center justify-center gap-2 border border-surface-container-highest bg-tactical-black/50 px-6 py-2 font-label-caps text-label-caps text-stark-white backdrop-blur-sm transition-colors duration-200 hover:border-signal-orange hover:bg-signal-orange hover:text-tactical-black"
-          >
-            <Camera aria-hidden="true" size={16} />
+          <button className="store-serial-switch" type="button" onClick={beginScan}>
+            <Camera aria-hidden="true" />
             {t.serialChecker.scanQrCode}
           </button>
         </>
       )}
 
-      <Link
-        className="inline-block mt-2 border border-surface-container-highest text-stark-white font-label-caps text-label-caps py-2 px-6 hover:bg-signal-orange hover:border-signal-orange hover:text-tactical-black transition-colors duration-200 backdrop-blur-sm bg-tactical-black/50"
-        href="/qr-guide"
-      >
-        {t.serialChecker.qrGuide}
-      </Link>
+      <Link className="store-qr-guide" href="/qr-guide">{t.serialChecker.qrGuide}</Link>
     </div>
   );
 }

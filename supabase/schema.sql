@@ -10,16 +10,29 @@ CREATE TABLE IF NOT EXISTS public.categories (
   icon TEXT
 );
 
+CREATE TABLE IF NOT EXISTS public.product_series (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS public.products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
   description TEXT,
-  price NUMERIC NOT NULL DEFAULT 0,
+  price NUMERIC,
   regional_prices JSONB NOT NULL DEFAULT '{}'::jsonb,
   category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
   images TEXT[] DEFAULT '{}',
-  specifications JSONB DEFAULT '{}'::jsonb,
+  specifications JSONB NOT NULL DEFAULT '[]'::jsonb,
+  series_id UUID REFERENCES public.product_series(id) ON DELETE SET NULL,
+  colorway TEXT,
+  display_order INTEGER NOT NULL DEFAULT 0,
   is_published BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -109,6 +122,31 @@ ALTER TABLE public.serial_numbers
 ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS regional_prices JSONB NOT NULL DEFAULT '{}'::jsonb;
 
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS series_id UUID REFERENCES public.product_series(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS colorway TEXT,
+  ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS specifications JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+UPDATE public.products
+SET specifications = '[]'::jsonb
+WHERE specifications IS NULL OR jsonb_typeof(specifications) <> 'array';
+
+ALTER TABLE public.products
+  ALTER COLUMN specifications SET DEFAULT '[]'::jsonb,
+  ALTER COLUMN specifications SET NOT NULL,
+  ALTER COLUMN price DROP NOT NULL,
+  ALTER COLUMN price DROP DEFAULT;
+
+CREATE INDEX IF NOT EXISTS products_display_order_idx
+  ON public.products (display_order, name);
+
+CREATE INDEX IF NOT EXISTS products_series_id_idx
+  ON public.products (series_id);
+
+CREATE INDEX IF NOT EXISTS product_series_category_order_idx
+  ON public.product_series (category_id, display_order, name);
+
 ALTER TABLE public.admin_users
   DROP CONSTRAINT IF EXISTS admin_user_role_check;
 
@@ -128,6 +166,7 @@ ALTER TABLE public.admin_users
   ADD COLUMN IF NOT EXISTS password_updated_at TIMESTAMP WITH TIME ZONE;
 
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_series ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.serial_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.serial_numbers ENABLE ROW LEVEL SECURITY;
@@ -140,6 +179,13 @@ ALTER TABLE public.admin_activity_logs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS public_read_categories ON public.categories;
 CREATE POLICY public_read_categories
   ON public.categories
+  FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS public_read_product_series ON public.product_series;
+CREATE POLICY public_read_product_series
+  ON public.product_series
   FOR SELECT
   TO anon, authenticated
   USING (true);

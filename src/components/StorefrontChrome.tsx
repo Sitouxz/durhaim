@@ -15,3 +15,10 @@ export function StorefrontChrome({ children }: { children: React.ReactNode }) {
   if (pathname?.startsWith("/admin")) return null;
   return <>{children}</>;
 }
+
+export function StorefrontSurface({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) return <>{children}</>;
+
+  return <div className="storefront-v2 flex min-h-screen flex-1 flex-col">{children}</div>;
+}

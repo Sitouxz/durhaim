@@ -28,7 +28,7 @@ export default function OurStoryPage() {
       <section
         className="relative min-h-[72vh] border-b border-surface-container-highest px-margin-edge py-section-gap"
         style={{
-          backgroundImage: "url('/images/durhaim_image_1.png')",
+          backgroundImage: "url('/storefront/figma/homepage/page-1/bg-1.jpg')",
           backgroundPosition: 'center',
           backgroundSize: 'cover',
         }}

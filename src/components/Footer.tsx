@@ -2,10 +2,16 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { ArrowUp } from "lucide-react";
 import { useCommerce } from "@/components/CommerceProvider";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
-import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { buildWhatsAppUrl } from "@/lib/site-settings";
+
+const socialLinks = [
+  ["FB", "https://www.facebook.com/durhaimarmygear/"],
+  ["YT", "https://www.youtube.com/channel/UCRQa9l9_warxaVLGWLPVsXw"],
+  ["IG", "https://www.instagram.com/durhaimgear/"],
+] as const;
 
 export default function Footer() {
   const { t } = useCommerce();
@@ -13,180 +19,76 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
-  const submitNewsletter = async (event: FormEvent<HTMLFormElement>) => {
+  async function submitNewsletter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
-
-    const res = await fetch("/api/newsletter", {
+    const response = await fetch("/api/newsletter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
-    await res.json().catch(() => ({}));
-    setMessage(res.ok ? t.footer.subscribed : t.footer.failed);
-    if (res.ok) setEmail("");
-  };
+    await response.json().catch(() => ({}));
+    setMessage(response.ok ? t.footer.subscribed : t.footer.failed);
+    if (response.ok) setEmail("");
+  }
 
   return (
-    <footer className="bg-tactical-black w-full mt-section-gap border-t border-surface-container-highest">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-edge py-section-gap max-w-[1440px] mx-auto">
-        {/* Brand Column */}
-        <div className="flex flex-col">
-          <Link
-            href="/"
-            className="font-display-xl text-headline-md text-stark-white mb-stack-md"
-          >
-            DURHAIM
-          </Link>
-          <p className="font-label-caps text-label-caps text-signal-orange mb-stack-lg uppercase">
-            &quot;{t.footer.alwaysForward}&quot;
-          </p>
-          <div className="flex space-x-stack-sm">
-            <a
-              className="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200"
-              href="https://www.facebook.com/durhaimarmygear/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="font-data-mono text-data-mono">Fb</span>
-            </a>
-            <a
-              className="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200"
-              href={buildWhatsAppUrl(siteSettings)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="font-data-mono text-data-mono">Wa</span>
-            </a>
-            <a
-              className="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200"
-              href="https://www.youtube.com/channel/UCRQa9l9_warxaVLGWLPVsXw"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="font-data-mono text-data-mono">Yt</span>
-            </a>
-            <a
-              className="w-10 h-10 border border-surface-container-highest flex items-center justify-center text-on-tertiary-fixed-variant hover:text-signal-orange hover:border-signal-orange transition-colors duration-200"
-              href="https://www.instagram.com/durhaimgear/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span className="font-data-mono text-data-mono">Ig</span>
-            </a>
+    <footer className="store-footer" data-visual-diff-mask="retained-footer">
+      <div className="store-footer__grid">
+        <section className="store-footer__brand" aria-label="DURHAIM">
+          <Link href="/">DURHAIM</Link>
+          <p>“{t.footer.alwaysForward}”</p>
+          <div className="store-footer__social">
+            {socialLinks.map(([label, href]) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>{label}</a>
+            ))}
+            <a href={buildWhatsAppUrl(siteSettings)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">WA</a>
           </div>
-        </div>
+        </section>
 
-        {/* Contacts Column */}
-        <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">
-            {t.footer.contacts}
-          </h4>
-          <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant">
-            <li className="flex items-start gap-2">
-              <span className="material-symbols-outlined text-sm mt-1">
-                location_on
-              </span>
-              <span>{siteSettings.location}</span>
-            </li>
-            <li className="flex items-center gap-2 hover:text-signal-orange transition-colors">
-              <span className="material-symbols-outlined text-sm">mail</span>
-              <a href={`mailto:${siteSettings.support_email}`}>
-                {siteSettings.support_email}
-              </a>
-            </li>
-            <li className="flex items-center gap-2 hover:text-signal-orange transition-colors">
-              <WhatsAppIcon className="h-4 w-4 shrink-0" />
-              <a
-                href={buildWhatsAppUrl(siteSettings)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {siteSettings.whatsapp_contact}
-              </a>
-            </li>
-          </ul>
-        </div>
+        <section>
+          <h2>{t.footer.contacts}</h2>
+          <address>
+            <span>{siteSettings.location}</span>
+            <a href={`mailto:${siteSettings.support_email}`}>{siteSettings.support_email}</a>
+            <a href={buildWhatsAppUrl(siteSettings)} target="_blank" rel="noopener noreferrer">
+              {siteSettings.whatsapp_contact}
+            </a>
+          </address>
+        </section>
 
-        {/* Links Column */}
-        <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">
-            {t.footer.navigation}
-          </h4>
-          <ul className="space-y-stack-sm font-body-md text-body-md text-on-tertiary-fixed-variant flex flex-col">
-            <Link
-              className="hover:text-signal-orange hover:underline w-fit"
-              href="/catalogue?category=vest"
-            >
-              {t.catalogue.categoryLabels.vest}
-            </Link>
-            <Link
-              className="hover:text-signal-orange hover:underline w-fit"
-              href="/catalogue?category=pack"
-            >
-              {t.catalogue.categoryLabels.pack}
-            </Link>
-            <Link
-              className="hover:text-signal-orange hover:underline w-fit"
-              href="/catalogue?category=belt"
-            >
-              {t.catalogue.categoryLabels.belt}
-            </Link>
-            <Link
-              className="hover:text-signal-orange hover:underline w-fit"
-              href="/contact"
-            >
-              {t.footer.contact}
-            </Link>
-            <Link
-              className="hover:text-signal-orange hover:underline w-fit"
-              href="/latest-projects"
-            >
-              {t.footer.latestProjects}
-            </Link>
-          </ul>
-        </div>
+        <section>
+          <h2>{t.footer.navigation}</h2>
+          <nav className="store-footer__links" aria-label="Footer navigation">
+            <Link href="/catalogue?category=vest">{t.catalogue.categoryLabels.vest}</Link>
+            <Link href="/catalogue?category=pack">{t.catalogue.categoryLabels.pack}</Link>
+            <Link href="/catalogue?category=belt">{t.catalogue.categoryLabels.belt}</Link>
+            <Link href="/contact">{t.footer.contact}</Link>
+            <Link href="/latest-projects">{t.footer.latestProjects}</Link>
+          </nav>
+        </section>
 
-        {/* Subscribe Column */}
-        <div className="flex flex-col">
-          <h4 className="font-label-caps text-label-caps text-stark-white uppercase mb-stack-md">
-            {t.footer.subscribe}
-          </h4>
-          <p className="font-body-md text-body-md text-on-tertiary-fixed-variant mb-stack-md">
-            {t.footer.newsletter}
-          </p>
-          <form onSubmit={submitNewsletter} className="flex">
+        <section>
+          <h2>{t.footer.subscribe}</h2>
+          <p>{t.footer.newsletter}</p>
+          <form className="store-footer__form" onSubmit={submitNewsletter}>
+            <label className="sr-only" htmlFor="newsletter-email">{t.footer.email}</label>
             <input
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="bg-charcoal-field border border-surface-container-highest text-stark-white font-data-mono text-data-mono p-3 w-full focus:outline-none focus:border-signal-orange rounded-none placeholder-on-tertiary-fixed-variant"
-              placeholder={t.footer.email}
-              aria-label={t.footer.email}
+              id="newsletter-email"
               type="email"
               required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder={t.footer.email}
             />
-            <button
-              type="submit"
-              className="bg-signal-orange text-tactical-black px-4 flex items-center justify-center hover:bg-stark-white transition-colors duration-200"
-              aria-label={t.footer.subscribeAria}
-            >
-              <span className="material-symbols-outlined">arrow_upward</span>
+            <button type="submit" aria-label={t.footer.subscribeAria}>
+              <ArrowUp aria-hidden="true" />
             </button>
           </form>
-          {message && (
-            <p className="mt-2 font-data-mono text-data-mono text-signal-orange">
-              {message}
-            </p>
-          )}
-        </div>
+          <p className="store-footer__message" aria-live="polite">{message}</p>
+        </section>
       </div>
-
-      {/* Copyright Bottom Bar */}
-      <div className="w-full border-t border-surface-container-highest py-stack-md text-center">
-        <span className="font-data-mono text-data-mono text-on-tertiary-fixed-variant uppercase">
-          2024 DURHAIM TACTICAL. {t.footer.alwaysForward}.
-        </span>
-      </div>
+      <div className="store-footer__legal">© 2026 DURHAIM TACTICAL. {t.footer.alwaysForward}.</div>
     </footer>
   );
 }

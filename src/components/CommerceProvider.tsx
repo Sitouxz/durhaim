@@ -64,6 +64,8 @@ type Dictionary = {
   product: {
     enquire: string;
     back: string;
+    specification: string;
+    gallery: string;
     enquiry: (name: string, slug: string) => string;
   };
   serialChecker: {
@@ -197,6 +199,8 @@ export const dictionaries: Record<Language, Dictionary> = {
     product: {
       enquire: 'Enquire on WhatsApp',
       back: 'Back to Catalogue',
+      specification: 'Specification',
+      gallery: 'Product gallery',
       enquiry: (name, slug) => `Hi Durhaim, I would like to ask about ${name}. Product URL: /catalogue/${slug}`,
     },
     serialChecker: {
@@ -328,6 +332,8 @@ export const dictionaries: Record<Language, Dictionary> = {
     product: {
       enquire: 'Tanya via WhatsApp',
       back: 'Kembali ke Katalog',
+      specification: 'Spesifikasi',
+      gallery: 'Galeri produk',
       enquiry: (name, slug) => `Halo Durhaim, saya ingin bertanya tentang ${name}. URL produk: /catalogue/${slug}`,
     },
     serialChecker: {

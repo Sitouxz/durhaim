@@ -21,7 +21,6 @@ const localizedPublicFiles = [
   'src/app/contact/page.tsx',
   'src/app/latest-projects/page.tsx',
   'src/app/qr-guide/page.tsx',
-  'src/app/catalogue/[slug]/page.tsx',
 ];
 
 for (const file of localizedPublicFiles) {

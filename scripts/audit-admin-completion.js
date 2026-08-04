@@ -126,12 +126,19 @@ for (const [file, content, deleteFlag] of [
   }
 }
 
-if (productsPage.includes('Base Price') || productsPage.includes('handleBasePriceChange')) {
-  failures.push('src/app/admin/products/page.tsx: add/edit product form must use regional prices only, without a base price field');
-}
-
-if (productsPage.includes('price: Number(nextForm.price)')) {
-  failures.push('src/app/admin/products/page.tsx: product save payload must not send a manually edited base price');
+for (const needle of [
+  'Base Price (optional)',
+  "nextForm.price.trim() === '' ? null",
+  'seriesSlug',
+  'colorway',
+  'display_order',
+  'specifications',
+  'imageUrls',
+  'Ordered Gallery Image URLs',
+]) {
+  if (!productsPage.includes(needle)) {
+    failures.push(`src/app/admin/products/page.tsx: Figma catalogue management is missing ${needle}`);
+  }
 }
 
 if (!productsPage.includes('serial_count') || !productsPage.includes('Tied to QR')) {

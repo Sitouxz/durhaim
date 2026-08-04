@@ -18,7 +18,7 @@ export default function BattleProvenPage() {
           <img
             className="w-full h-full object-cover object-center opacity-60"
             alt="Tactical operators in combat gear"
-            src="/images/durhaim_image_3.png"
+            src="/storefront/figma/homepage/page-5/artboard-51.png"
           />
           {/* Tactical Mesh Overlay */}
           <div className="absolute inset-0 mesh-overlay"></div>

@@ -6,19 +6,18 @@ import { buildWhatsAppUrl } from "@/lib/site-settings";
 
 export default function WhatsAppFAB() {
   const siteSettings = useSiteSettings();
-  const waMessage = 'Halo, saya ingin bertanya tentang produk Durhaim.';
-  const waUrl = buildWhatsAppUrl(siteSettings, waMessage);
+  const waUrl = buildWhatsAppUrl(siteSettings, "Halo, saya ingin bertanya tentang produk Durhaim.");
 
   return (
     <a
-      className="fixed bottom-margin-edge right-margin-edge w-14 h-14 bg-operator-green border-2 border-stark-white rounded-full flex items-center justify-center shadow-lg hover:bg-signal-orange hover:border-tactical-black transition-all duration-300 z-50 group"
+      className="store-whatsapp"
       href={waUrl}
       target="_blank"
       rel="noopener noreferrer"
-      // The only child is an SVG icon, so without this the link is announced as just "link".
       aria-label="Hubungi Durhaim di WhatsApp"
+      data-visual-diff-mask="retained-whatsapp"
     >
-      <WhatsAppIcon className="h-6 w-6 text-stark-white group-hover:text-tactical-black" />
+      <WhatsAppIcon className="h-6 w-6" />
     </a>
   );
 }

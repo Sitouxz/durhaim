@@ -7,7 +7,7 @@ import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
 
-const PRODUCT_SELECT = 'id, name, slug, description, price, regional_prices, images, is_published, category_id, categories(name, slug)';
+const PRODUCT_SELECT = 'id, name, slug, description, price, regional_prices, images, specifications, colorway, display_order, is_published, category_id, series_id, categories(name, slug), product_series(name, slug)';
 const PRODUCT_SELECT_LEGACY = 'id, name, slug, description, price, images, is_published, category_id, categories(name, slug)';
 
 function isMissingRegionalPricesColumn(error: unknown) {
@@ -20,6 +20,13 @@ function isMissingRegionalPricesColumn(error: unknown) {
       && typeof error.message === 'string'
       && error.message.includes('regional_prices'),
   );
+}
+
+function isMissingCatalogueExtension(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  const record = error as { code?: string; message?: string };
+  return ['42703', '42P01', 'PGRST200'].includes(record.code ?? '')
+    || /product_series|series_id|display_order|colorway|specifications/i.test(record.message ?? '');
 }
 
 function withDefaultRegionalPrices<T extends { price?: number | string; regional_prices?: RegionalPrices }>(product: T) {
@@ -41,13 +48,13 @@ export async function GET() {
       .order('name');
 
     if (error) {
-      if (isMissingRegionalPricesColumn(error)) {
+      if (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error)) {
         const legacyResult = await supabase
           .from('products')
           .select(PRODUCT_SELECT_LEGACY)
           .order('name');
 
-        data = legacyResult.data?.map((product) => withDefaultRegionalPrices(product)) ?? null;
+        data = (legacyResult.data?.map((product) => withDefaultRegionalPrices(product)) ?? null) as unknown as typeof data;
         error = legacyResult.error;
       }
     }
@@ -111,11 +118,25 @@ async function getCategoryId(supabase: ReturnType<typeof createAdminClient>, cat
   return data?.id ?? null;
 }
 
+async function getSeriesId(supabase: ReturnType<typeof createAdminClient>, seriesSlug?: string) {
+  if (!seriesSlug) return null;
+  const { data, error } = await supabase
+    .from('product_series')
+    .select('id')
+    .eq('slug', seriesSlug)
+    .single();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
 function parseProductBody(body: Record<string, unknown>) {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const slug = typeof body.slug === 'string' ? body.slug.trim().toLowerCase() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
   const categorySlug = typeof body.categorySlug === 'string' ? body.categorySlug.trim() : '';
+  const seriesSlug = typeof body.seriesSlug === 'string' ? body.seriesSlug.trim() : '';
+  const colorway = typeof body.colorway === 'string' ? body.colorway.trim() : '';
+  const displayOrder = Number(body.display_order ?? 0);
   const regionalPrices = typeof body.regional_prices === 'object' && body.regional_prices
     ? supportedRegions.reduce<RegionalPrices>((prices, region) => {
         const value = Number((body.regional_prices as Record<string, unknown>)[region]);
@@ -123,19 +144,29 @@ function parseProductBody(body: Record<string, unknown>) {
         return prices;
       }, {})
     : {};
-  const price = Number(regionalPrices.ID ?? 0);
+  const explicitPrice = body.price === null || body.price === '' || body.price === undefined
+    ? null
+    : Number(body.price);
+  const price = explicitPrice !== null && Number.isFinite(explicitPrice)
+    ? explicitPrice
+    : typeof regionalPrices.ID === 'number'
+      ? regionalPrices.ID
+      : null;
   const images = Array.isArray(body.images)
     ? body.images.map(String).map((image) => image.trim()).filter(Boolean)
+    : [];
+  const specifications = Array.isArray(body.specifications)
+    ? body.specifications.map(String).map((item) => item.trim()).filter(Boolean)
     : [];
   const isPublished = body.is_published !== false;
 
   const hasValidRegionalPrices = supportedRegions.every((region) => {
     const value = regionalPrices[region];
-    return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+    return value === undefined || (typeof value === 'number' && Number.isFinite(value) && value >= 0);
   });
 
-  if (!name || !slug || !hasValidRegionalPrices) {
-    return { error: 'Name, slug, and valid regional prices are required.' };
+  if (!name || !slug || !hasValidRegionalPrices || !Number.isInteger(displayOrder) || displayOrder < 0) {
+    return { error: 'Name, slug, non-negative display order, and valid optional regional prices are required.' };
   }
 
   // There was no cap, and no column constraint behind it: a 5,000-character name was accepted
@@ -152,7 +183,24 @@ function parseProductBody(body: Record<string, unknown>) {
     return { error: 'Product description must be 2000 characters or fewer.' };
   }
 
-  return { name, slug, description, categorySlug, price, regionalPrices, images, isPublished };
+  if (colorway.length > 120) {
+    return { error: 'Colorway must be 120 characters or fewer.' };
+  }
+
+  return {
+    name,
+    slug,
+    description,
+    categorySlug,
+    seriesSlug,
+    colorway,
+    displayOrder,
+    price,
+    regionalPrices,
+    images,
+    specifications,
+    isPublished,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -169,6 +217,7 @@ export async function POST(req: NextRequest) {
     }
 
     const categoryId = await getCategoryId(supabase, parsed.categorySlug);
+    const seriesId = await getSeriesId(supabase, parsed.seriesSlug);
     const { data, error } = await supabase
       .from('products')
       .insert({
@@ -178,14 +227,18 @@ export async function POST(req: NextRequest) {
         price: parsed.price,
         regional_prices: parsed.regionalPrices,
         category_id: categoryId,
+        series_id: seriesId,
+        colorway: parsed.colorway || null,
+        display_order: parsed.displayOrder,
         images: parsed.images,
+        specifications: parsed.specifications,
         is_published: parsed.isPublished,
       })
       .select(PRODUCT_SELECT)
       .single();
 
     if (error) {
-      if (isMissingRegionalPricesColumn(error)) {
+      if (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error)) {
         return NextResponse.json(
           { error: 'Database migration required. Add products.regional_prices before saving regional prices.' },
           { status: 503 },
@@ -223,6 +276,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const categoryId = await getCategoryId(supabase, parsed.categorySlug);
+    const seriesId = await getSeriesId(supabase, parsed.seriesSlug);
     const { data, error } = await supabase
       .from('products')
       .update({
@@ -232,7 +286,11 @@ export async function PATCH(req: NextRequest) {
         price: parsed.price,
         regional_prices: parsed.regionalPrices,
         category_id: categoryId,
+        series_id: seriesId,
+        colorway: parsed.colorway || null,
+        display_order: parsed.displayOrder,
         images: parsed.images,
+        specifications: parsed.specifications,
         is_published: parsed.isPublished,
         updated_at: new Date().toISOString(),
       })
@@ -241,7 +299,7 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
-      if (isMissingRegionalPricesColumn(error)) {
+      if (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error)) {
         return NextResponse.json(
           { error: 'Database migration required. Add products.regional_prices before saving regional prices.' },
           { status: 503 },

@@ -8,21 +8,20 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-const forbidden = [
-  ['src/components/TopNavBar.tsx', 'priceRegion'],
-  ['src/components/TopNavBar.tsx', 'supportedRegions'],
-  ['src/app/catalogue/page.tsx', 'formatPrice'],
-  ['src/app/catalogue/page.tsx', 'price-high'],
-  ['src/app/catalogue/page.tsx', 'price-low'],
-  ['src/components/ProductDetailClient.tsx', 'formatPrice'],
-  ['src/app/catalogue/[slug]/page.tsx', 'offers:'],
-  ['src/app/catalogue/[slug]/page.tsx', 'regional pricing'],
-  ['src/app/page.tsx', 'regional pricing'],
+const required = [
+  ['src/lib/catalogue-data.ts', 'price: number | null'],
+  ['src/app/catalogue/page.tsx', 'const hasPrice = product.price !== null || typeof regionalPrice === "number"'],
+  ['src/app/catalogue/page.tsx', 'formatPrice(product.price ?? regionalPrice ?? 0, product.regional_prices)'],
+  ['src/components/ProductDetailClient.tsx', 'const hasPrice = product.price !== null || typeof regionalPrice === "number"'],
+  ['src/components/ProductDetailClient.tsx', 'formatPrice(product.price ?? regionalPrice ?? 0, product.regional_prices)'],
+  ['src/app/catalogue/[slug]/page.tsx', 'offers: product.price === null ? undefined'],
+  ['src/app/admin/products/page.tsx', "nextForm.price.trim() === '' ? null"],
+  ['supabase/schema.sql', 'ALTER COLUMN price DROP NOT NULL'],
 ];
 
-for (const [file, text] of forbidden) {
-  if (read(file).toLowerCase().includes(text.toLowerCase())) {
-    failures.push(`${file} still exposes public pricing through "${text}".`);
+for (const [file, text] of required) {
+  if (!read(file).includes(text)) {
+    failures.push(`${file} is missing nullable/regional pricing behavior "${text}".`);
   }
 }
 
@@ -32,4 +31,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Public storefront contains no visible pricing surfaces.');
+console.log('Nullable regional pricing is present and hidden when unavailable.');

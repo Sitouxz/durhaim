@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 import "./globals.css";
 import TopNavBar from "@/components/TopNavBar";
@@ -8,13 +9,30 @@ import WhatsAppFAB from "@/components/WhatsAppFAB";
 import { CommerceProvider } from "@/components/CommerceProvider";
 import JsonLd from "@/components/JsonLd";
 import { SiteSettingsProvider } from "@/components/SiteSettingsProvider";
-import { StorefrontChrome } from "@/components/StorefrontChrome";
+import { StorefrontChrome, StorefrontSurface } from "@/components/StorefrontChrome";
 import {
   detectLanguageFromHeaders,
   detectRegionFromHeaders,
 } from "@/lib/commerce";
 import { getSiteSettings } from "@/lib/site-settings-server";
 import { getSiteUrl } from "@/lib/site-settings";
+
+const tacticSans = localFont({
+  src: [
+    {
+      path: "./fonts/TacticSans-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/TacticSans-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-tactic-sans",
+  display: "swap",
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteSettings = await getSiteSettings();
@@ -120,7 +138,7 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang={initialLanguage} className="dark">
+    <html lang={initialLanguage} className={`dark ${tacticSans.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link
@@ -148,14 +166,16 @@ export default async function RootLayout({
             >
               Lompat ke konten utama
             </a>
-            <StorefrontChrome>
-              <TopNavBar />
-            </StorefrontChrome>
-            {children}
-            <StorefrontChrome>
-              <Footer />
-              <WhatsAppFAB />
-            </StorefrontChrome>
+            <StorefrontSurface>
+              <StorefrontChrome>
+                <TopNavBar />
+              </StorefrontChrome>
+              {children}
+              <StorefrontChrome>
+                <Footer />
+                <WhatsAppFAB />
+              </StorefrontChrome>
+            </StorefrontSurface>
           </CommerceProvider>
         </SiteSettingsProvider>
       </body>

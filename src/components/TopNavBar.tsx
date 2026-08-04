@@ -1,148 +1,126 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useCommerce } from '@/components/CommerceProvider';
-import type { Language } from '@/lib/commerce';
+import Link from "next/link";
+import { Search, X, Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { useCommerce } from "@/components/CommerceProvider";
+import type { Language } from "@/lib/commerce";
 
 const navLinks = [
-  { href: '/', labelKey: 'home' },
-  { href: '/catalogue', labelKey: 'catalogue' },
-  { href: '/battle-proven', labelKey: 'battleProven' },
-  { href: '/social-engagement', labelKey: 'socialEngagement' },
-  { href: '/our-story', labelKey: 'ourStory' },
+  { href: "/", labelKey: "home" },
+  { href: "/catalogue", labelKey: "catalogue" },
+  { href: "/battle-proven", labelKey: "battleProven" },
+  { href: "/social-engagement", labelKey: "socialEngagement" },
+  { href: "/our-story", labelKey: "ourStory" },
 ] as const;
 
 export default function TopNavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { language, setLanguage, t } = useCommerce();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
-  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => setHydrated(true), []);
+  useEffect(() => setOpen(false), [pathname]);
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = search.trim();
-    router.push(query ? `/catalogue?search=${encodeURIComponent(query)}` : '/catalogue');
-    setMobileMenuOpen(false);
-  };
+    router.push(query ? `/catalogue?search=${encodeURIComponent(query)}` : "/catalogue");
+    setOpen(false);
+  }
 
   return (
-    <>
-      <nav className="bg-tactical-black w-full top-0 sticky z-50 border-b border-surface-container-highest">
-        <div className="flex justify-between items-center px-margin-edge py-stack-md max-w-[1440px] mx-auto">
-          {/* Brand Logo */}
-          <Link href="/" className="font-display-xl text-headline-lg text-stark-white tracking-tighter hover:text-signal-orange transition-colors duration-200 uppercase">
-            DURHAIM
-          </Link>
+    <header className="store-header" data-hydrated={hydrated}>
+      <div className="store-header__inner">
+        <Link className="store-header__brand" href="/" aria-label="DURHAIM home">
+          {/* Exported Figma asset; its intrinsic whitespace is part of the desktop composition. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/storefront/figma/homepage/page-1/logo-1.png" alt="DURHAIM" />
+        </Link>
 
-          {/* Navigation Links (Desktop) */}
-          {/* Revealed at lg:, not md: — the full desktop header needs ~943px, so showing it
-              at 768px pushed the page into horizontal scroll. The mobile drawer below carries
-              the same links, language toggle and search between md: and lg:. */}
-          <div className="hidden lg:flex space-x-gutter items-center">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`font-label-caps text-label-caps uppercase transition-colors duration-200 ${
-                    isActive
-                      ? 'text-signal-orange border-b-2 border-signal-orange pb-2'
-                      : 'text-stark-white opacity-80 hover:text-signal-orange'
-                  }`}
-                >
-                  {t.nav[link.labelKey]}
-                </Link>
-              );
-            })}
-          </div>
+        <nav className="store-header__nav" aria-label="Primary navigation">
+          {navLinks.map((link) => {
+            const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+            return (
+              <Link key={link.href} href={link.href} aria-current={active ? "page" : undefined}>
+                {t.nav[link.labelKey]}
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* Trailing Actions */}
-          <div className="flex items-center space-x-stack-md">
-            {/* Search Bar (Desktop) */}
-            <form onSubmit={submitSearch} className="hidden lg:flex items-center bg-charcoal-field border border-surface-container-highest rounded-none focus-within:border-signal-orange transition-colors duration-200">
-              <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 w-32 xl:w-48 placeholder-stark-white placeholder-opacity-40"
-                placeholder={t.nav.search}
-                aria-label={t.nav.search}
-                type="search"
-              />
-            </form>
-            <div className="hidden items-center border border-surface-container-highest lg:flex">
-              {(['en', 'id'] as Language[]).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setLanguage(option)}
-                  className={`px-2 py-1 font-data-mono text-data-mono uppercase ${language === option ? 'bg-signal-orange text-tactical-black' : 'text-stark-white hover:text-signal-orange'}`}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-            {/* Mobile Menu Toggle */}
-            <button
-              className="lg:hidden text-stark-white hover:text-signal-orange transition-colors duration-200 active:scale-95"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
+        <div className="store-header__tools">
+          <form className="store-search" onSubmit={submitSearch} role="search">
+            <label className="sr-only" htmlFor="catalogue-search-header">{t.nav.search}</label>
+            <input
+              id="catalogue-search-header"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t.nav.search.replace("...", "")}
+            />
+            <button type="submit" aria-label={t.common.searchCatalogue}>
+              <Search aria-hidden="true" size={21} strokeWidth={1.6} />
             </button>
+          </form>
+          <div className="store-language" aria-label="Language">
+            {(["en", "id"] as Language[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={language === option}
+                onClick={() => setLanguage(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+          <button
+            className="store-menu-button"
+            type="button"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            aria-label={open ? "Close menu" : "Open menu"}
+            onClick={() => setOpen((current) => !current)}
+          >
+            {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <div className="store-mobile-nav" id="mobile-navigation">
+          <nav aria-label="Mobile navigation">
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href}>{t.nav[link.labelKey]}</Link>
+            ))}
+          </nav>
+          <form className="store-search" onSubmit={submitSearch} role="search">
+            <label className="sr-only" htmlFor="catalogue-search-mobile">{t.nav.search}</label>
+            <input
+              id="catalogue-search-mobile"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t.nav.search.replace("...", "")}
+            />
+            <button type="submit" aria-label={t.common.searchCatalogue}>
+              <Search aria-hidden="true" size={21} />
+            </button>
+          </form>
+          <div className="store-language store-language--mobile" aria-label="Language">
+            {(["en", "id"] as Language[]).map((option) => (
+              <button key={option} type="button" aria-pressed={language === option} onClick={() => setLanguage(option)}>
+                {option}
+              </button>
+            ))}
           </div>
         </div>
-
-        {/* Mobile Menu Drawer */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-tactical-black border-t border-surface-container-highest">
-            <div className="flex flex-col px-margin-edge py-stack-md gap-stack-md">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`font-label-caps text-label-caps uppercase transition-colors duration-200 py-2 border-b border-surface-container-highest ${
-                      isActive ? 'text-signal-orange' : 'text-stark-white opacity-80 hover:text-signal-orange'
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {t.nav[link.labelKey]}
-                  </Link>
-                );
-              })}
-              <div className="grid grid-cols-2 gap-2">
-                {(['en', 'id'] as Language[]).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setLanguage(option)}
-                    className={`border border-surface-container-highest px-3 py-2 font-label-caps uppercase ${language === option ? 'bg-signal-orange text-tactical-black' : 'text-stark-white'}`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-              {/* Mobile Search */}
-              <form onSubmit={submitSearch} className="flex items-center bg-charcoal-field border border-surface-container-highest">
-                <span className="material-symbols-outlined text-stark-white opacity-60 p-2">search</span>
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className="bg-transparent border-none text-stark-white font-data-mono text-data-mono focus:ring-0 p-2 flex-1 placeholder-stark-white placeholder-opacity-40"
-                  placeholder={t.nav.search}
-                aria-label={t.nav.search}
-                  type="search"
-                />
-              </form>
-            </div>
-          </div>
-        )}
-      </nav>
-    </>
+      )}
+    </header>
   );
 }

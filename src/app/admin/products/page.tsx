@@ -12,9 +12,13 @@ type Product = {
   name: string;
   slug: string;
   description?: string;
-  price?: number;
+  price?: number | null;
   regional_prices?: RegionalPrices;
   images?: string[];
+  specifications?: string[];
+  colorway?: string | null;
+  display_order?: number;
+  product_series?: { name: string; slug: string } | { name: string; slug: string }[] | null;
   is_published?: boolean;
   serial_count?: number;
   categories: CategoryRelation;
@@ -27,13 +31,26 @@ type Category = {
   icon?: string | null;
 };
 
+type ProductSeries = {
+  id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+  category_id?: string | null;
+};
+
 type ProductForm = {
   id?: string;
   name: string;
   slug: string;
   description: string;
+  price: string;
   regionalPrices: Record<RegionCode, string>;
   categorySlug: string;
+  seriesSlug: string;
+  colorway: string;
+  displayOrder: string;
+  specificationLines: string;
   imageUrls: string;
   is_published: boolean;
 };
@@ -42,11 +59,16 @@ const emptyForm: ProductForm = {
   name: '',
   slug: '',
   description: '',
+  price: '',
   regionalPrices: {
-    ID: '0',
-    GLOBAL: '0',
+    ID: '',
+    GLOBAL: '',
   },
   categorySlug: 'vest',
+  seriesSlug: '',
+  colorway: '',
+  displayOrder: '0',
+  specificationLines: '',
   imageUrls: '',
   is_published: true,
 };
@@ -67,6 +89,11 @@ function getCategorySlug(category: CategoryRelation) {
   return getCategory(category)?.slug ?? 'vest';
 }
 
+function getSeriesSlug(series: Product['product_series']) {
+  if (Array.isArray(series)) return series[0]?.slug ?? '';
+  return series?.slug ?? '';
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -76,21 +103,23 @@ function slugify(value: string) {
 }
 
 function productToForm(product: Product): ProductForm {
-  const regionalPrices = product.regional_prices ?? {
-    ID: Number(product.price ?? 0),
-    GLOBAL: 0,
-  };
+  const regionalPrices = product.regional_prices ?? {};
 
   return {
     id: product.id,
     name: product.name,
     slug: product.slug,
     description: product.description ?? '',
+    price: product.price === null || product.price === undefined ? '' : String(product.price),
     regionalPrices: supportedRegions.reduce<Record<RegionCode, string>>((prices, region) => {
-      prices[region] = String(regionalPrices[region] ?? 0);
+      prices[region] = regionalPrices[region] === undefined ? '' : String(regionalPrices[region]);
       return prices;
     }, { ...emptyForm.regionalPrices }),
     categorySlug: getCategorySlug(product.categories),
+    seriesSlug: getSeriesSlug(product.product_series),
+    colorway: product.colorway ?? '',
+    displayOrder: String(product.display_order ?? 0),
+    specificationLines: (product.specifications ?? []).join('\n'),
     imageUrls: (product.images ?? []).join('\n'),
     is_published: product.is_published !== false,
   };
@@ -99,6 +128,7 @@ function productToForm(product: Product): ProductForm {
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [series, setSeries] = useState<ProductSeries[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -149,9 +179,20 @@ export default function AdminProductsPage() {
     }
   };
 
+  const fetchSeries = async () => {
+    try {
+      const res = await fetch('/api/admin/product-series');
+      const data = await res.json().catch(() => ([]));
+      if (res.ok) setSeries(data);
+    } catch (fetchError) {
+      console.error('Failed to load product series:', fetchError);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchSeries();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -205,11 +246,17 @@ export default function AdminProductsPage() {
     name: nextForm.name,
     slug: nextForm.slug,
     description: nextForm.description,
+    price: nextForm.price.trim() === '' ? null : Number(nextForm.price),
     regional_prices: supportedRegions.reduce<RegionalPrices>((prices, region) => {
-      prices[region] = Number(nextForm.regionalPrices[region] || 0);
+      const value = nextForm.regionalPrices[region].trim();
+      if (value !== '') prices[region] = Number(value);
       return prices;
     }, {}),
     categorySlug: nextForm.categorySlug,
+    seriesSlug: nextForm.seriesSlug,
+    colorway: nextForm.colorway,
+    display_order: Number(nextForm.displayOrder || 0),
+    specifications: nextForm.specificationLines.split(/\r?\n/).map((item) => item.trim()).filter(Boolean),
     images: nextForm.imageUrls.split(/\r?\n|,/).map((image) => image.trim()).filter(Boolean),
     is_published: nextForm.is_published,
   });
@@ -517,8 +564,27 @@ export default function AdminProductsPage() {
                 {categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}
               </select>
             </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Series</label>
+              <select value={form.seriesSlug} onChange={(event) => setField('seriesSlug', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white">
+                <option value="">Unassigned</option>
+                {series.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Colorway</label>
+              <input value={form.colorway} onChange={(event) => setField('colorway', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="Optional" />
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Display Order</label>
+              <input type="number" min="0" value={form.displayOrder} onChange={(event) => setField('displayOrder', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+            </div>
+            <div>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Base Price (optional)</label>
+              <input type="number" min="0" value={form.price} onChange={(event) => setField('price', event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="Hidden when empty" />
+            </div>
             <div className="lg:col-span-2">
-              <label className="block font-label-caps text-on-surface-variant mb-2">Regional Prices</label>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Regional Prices (optional)</label>
               <div className="grid gap-3 sm:grid-cols-2">
                 {supportedRegions.map((region) => (
                   <label key={region} className="block border border-surface-container-highest bg-tactical-black p-3">
@@ -531,7 +597,6 @@ export default function AdminProductsPage() {
                       value={form.regionalPrices[region]}
                       onChange={(event) => setRegionalPrice(region, event.target.value)}
                       className="w-full border border-surface-container-highest bg-charcoal-field p-2 text-stark-white"
-                      required
                     />
                   </label>
                 ))}
@@ -542,7 +607,11 @@ export default function AdminProductsPage() {
               <textarea value={form.description} onChange={(event) => setField('description', event.target.value)} className="min-h-24 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" />
             </div>
             <div className="lg:col-span-2">
-              <label className="block font-label-caps text-on-surface-variant mb-2">Image URLs</label>
+              <label className="block font-label-caps text-on-surface-variant mb-2">Specifications</label>
+              <textarea value={form.specificationLines} onChange={(event) => setField('specificationLines', event.target.value)} className="min-h-32 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="One specification per line; order is preserved" />
+            </div>
+            <div className="lg:col-span-2">
+              <label className="block font-label-caps text-on-surface-variant mb-2">Ordered Gallery Image URLs</label>
               <textarea value={form.imageUrls} onChange={(event) => setField('imageUrls', event.target.value)} className="min-h-24 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="One URL per line" />
             </div>
             <div className="lg:col-span-2">

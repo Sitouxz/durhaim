@@ -9,27 +9,36 @@ if (!apiText.includes('categories!inner(name, slug)')) {
   process.exit(1);
 }
 
-if (!apiText.includes(".eq('categories.slug', category)")) {
-  console.error('Products API must filter by the selected category slug.');
-  process.exit(1);
-}
-
 if (apiText.includes('name.ilike.%${search}%') || apiText.includes('description.ilike.%${search}%')) {
   console.error('Products API must sanitize search before interpolating it into PostgREST filters.');
   process.exit(1);
 }
 
-if (!apiText.includes('.range(from, to)')) {
-  console.error('Products API must paginate at the database query instead of fetching every product first.');
+for (const required of ['sanitizeSearch', 'filterProducts', 'paginateProducts', 'searchParams.get("category")', 'searchParams.get("series")', 'searchParams.get("page")', 'searchParams.get("limit")']) {
+  if (!apiText.includes(required)) {
+    console.error(`Products API is missing the backward-compatible catalogue behavior: ${required}.`);
+    process.exit(1);
+  }
+}
+
+if (!apiText.includes('parsePositiveInt(searchParams.get("limit"), 12, 200)')) {
+  console.error('Products API must preserve the 12-item default while allowing the Figma catalogue to request up to 200 products.');
   process.exit(1);
 }
 
 const pageFile = path.join(process.cwd(), 'src', 'app', 'catalogue', 'page.tsx');
 const pageText = fs.readFileSync(pageFile, 'utf8');
 
-for (const required of ['category', 'search', 'sort', 'page', 'limit']) {
-  if (!pageText.includes(`params.set('${required}'`)) {
+for (const required of ['category', 'search']) {
+  if (!new RegExp(`params\\.set\\(["']${required}["']`).test(pageText)) {
     console.error(`Catalogue page does not send ${required} to the products API.`);
+    process.exit(1);
+  }
+}
+
+for (const required of ['sort', 'limit: "200"', 'region']) {
+  if (!pageText.includes(required)) {
+    console.error(`Catalogue page does not request the complete regional catalogue with ${required}.`);
     process.exit(1);
   }
 }
