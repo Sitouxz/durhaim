@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
-import { isMissingSchemaError } from '@/lib/catalogue-data';
+import {
+  fallbackProducts,
+  isMissingSchemaError,
+  mergeCatalogueProducts,
+  normalizeProduct,
+} from '@/lib/catalogue-data';
 import { defaultRegionalPrices, supportedRegions, type RegionalPrices } from '@/lib/commerce';
 import { requireAdminRole } from '@/lib/admin-permissions';
 
@@ -95,10 +100,20 @@ export async function GET() {
       serialCounts.set(productId, (serialCounts.get(productId) ?? 0) + 1);
     }
 
-    return NextResponse.json((data ?? []).map((product) => ({
-      ...product,
-      serial_count: serialCounts.get(product.id) ?? 0,
-    })));
+    const databaseProducts = (data ?? []).map((product) =>
+      normalizeProduct(product as Record<string, unknown>));
+    const databaseSlugs = new Set(databaseProducts.map((product) => product.slug));
+    const dashboardProducts = process.env.STOREFRONT_V2_ENABLED === 'false'
+      ? databaseProducts
+      : mergeCatalogueProducts(databaseProducts, fallbackProducts);
+
+    return NextResponse.json(dashboardProducts
+      .map((product) => ({
+        ...product,
+        catalogue_only: !databaseSlugs.has(product.slug),
+        serial_count: serialCounts.get(product.id) ?? 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name)));
   } catch (error) {
     console.error('Error fetching admin products:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

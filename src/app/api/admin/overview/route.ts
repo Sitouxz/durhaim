@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
-import { isMissingSchemaError } from '@/lib/catalogue-data';
+import { fallbackProducts, isMissingSchemaError } from '@/lib/catalogue-data';
 import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,26 @@ async function countRows(
   const { count, error } = await query;
   if (error) throw error;
   return count ?? 0;
+}
+
+async function countDashboardProducts(supabase: ReturnType<typeof createAdminClient>) {
+  const { data, error } = await supabase
+    .from('products')
+    .select('slug');
+
+  if (error) throw error;
+
+  if (process.env.STOREFRONT_V2_ENABLED === 'false') {
+    return data?.length ?? 0;
+  }
+
+  // The public catalogue combines database records with the bundled Figma
+  // catalogue. Count the same unique slugs here so the overview cannot report
+  // only the database subset while customers can browse many more products.
+  return new Set([
+    ...fallbackProducts.map((product) => product.slug),
+    ...(data ?? []).map((product) => product.slug),
+  ]).size;
 }
 
 async function sumVerificationCounts(supabase: ReturnType<typeof createAdminClient>) {
@@ -56,7 +76,7 @@ export async function GET() {
       verificationTotal,
       recentSerialsResult,
     ] = await Promise.all([
-      countRows(supabase, 'products'),
+      countDashboardProducts(supabase),
       countRows(supabase, 'serial_numbers'),
       countRows(supabase, 'serial_numbers', 'INACTIVE'),
       countRows(supabase, 'serial_numbers', 'REVOKED'),

@@ -20,6 +20,7 @@ type Product = {
   display_order?: number;
   product_series?: { name: string; slug: string } | { name: string; slug: string }[] | null;
   is_published?: boolean;
+  catalogue_only?: boolean;
   serial_count?: number;
   categories: CategoryRelation;
 };
@@ -206,6 +207,11 @@ export default function AdminProductsPage() {
         || category.includes(normalizedQuery);
     });
   }, [products, query]);
+
+  const catalogueOnlyCount = useMemo(
+    () => products.filter((product) => product.catalogue_only).length,
+    [products],
+  );
 
   const openNewProductForm = () => {
     setForm({ ...emptyForm, categorySlug: categories[0]?.slug ?? '' });
@@ -438,6 +444,11 @@ export default function AdminProductsPage() {
             {message}
           </div>
         )}
+        {!loading && catalogueOnlyCount > 0 && (
+          <div className="border-b border-surface-container-highest bg-surface-container-lowest p-4 font-body-md text-on-surface-variant">
+            {catalogueOnlyCount} public catalogue products are synchronized here. Entries marked CATALOGUE stay read-only until the storefront catalogue database migration is applied.
+          </div>
+        )}
         <div className="border-b border-surface-container-highest p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <form className="flex max-w-md items-center border border-surface-container-highest bg-tactical-black px-3 py-2">
             <Search className="mr-2 h-5 w-5 text-on-surface-variant" />
@@ -502,9 +513,9 @@ export default function AdminProductsPage() {
                     <td className="break-words px-3 py-4 align-top text-on-surface-variant">{product.slug}</td>
                     <td className="px-3 py-4 align-top text-right">
                       <div className="ml-auto grid max-w-[340px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2">
-                        <span className={`inline-flex min-w-0 items-center gap-2 justify-self-end whitespace-nowrap px-2 py-1 text-xs ${product.is_published === false ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-operator-green/15 text-operator-green'}`}>
+                        <span className={`inline-flex min-w-0 items-center gap-2 justify-self-end whitespace-nowrap px-2 py-1 text-xs ${product.catalogue_only || product.is_published === false ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-operator-green/15 text-operator-green'}`}>
                             <Archive className="h-3 w-3" />
-                            {product.is_published === false ? 'DRAFT' : 'SERIAL READY'}
+                            {product.catalogue_only ? 'CATALOGUE' : product.is_published === false ? 'DRAFT' : 'SERIAL READY'}
                           </span>
                           {(product.serial_count ?? 0) > 0 ? (
                             <span className="inline-flex items-center gap-1 justify-self-end whitespace-nowrap bg-signal-orange/15 px-2 py-1 text-xs text-signal-orange" title="This product is tied to QR serials and cannot be deleted.">
@@ -515,18 +526,30 @@ export default function AdminProductsPage() {
                             <span aria-hidden="true" />
                           )}
                         <div className="col-span-2 flex justify-end gap-x-3 gap-y-1">
-                          <button type="button" onClick={() => openEditProductForm(product)} className="inline-flex items-center gap-1 whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange">
+                          <button
+                            type="button"
+                            onClick={() => openEditProductForm(product)}
+                            disabled={product.catalogue_only}
+                            title={product.catalogue_only ? 'Apply the storefront catalogue database migration to manage this product.' : 'Edit product'}
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-40"
+                          >
                             <Edit className="h-3 w-3" />
                             Edit
                           </button>
-                          <button type="button" onClick={() => togglePublished(product)} className="whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange">
+                          <button
+                            type="button"
+                            onClick={() => togglePublished(product)}
+                            disabled={product.catalogue_only}
+                            title={product.catalogue_only ? 'Apply the storefront catalogue database migration to change publication status.' : undefined}
+                            className="whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-40"
+                          >
                             {product.is_published === false ? 'Publish' : 'Unpublish'}
                           </button>
                           <button
                             type="button"
                             onClick={() => setProductPendingDelete(product)}
-                            disabled={(product.serial_count ?? 0) > 0 || saving}
-                            title={(product.serial_count ?? 0) > 0 ? 'This product is tied to QR serials and cannot be deleted.' : 'Delete product'}
+                            disabled={product.catalogue_only || (product.serial_count ?? 0) > 0 || saving}
+                            title={product.catalogue_only ? 'Bundled catalogue products cannot be deleted from the dashboard.' : (product.serial_count ?? 0) > 0 ? 'This product is tied to QR serials and cannot be deleted.' : 'Delete product'}
                             className="inline-flex items-center gap-1 whitespace-nowrap text-error underline hover:text-error/80 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             <Trash2 className="h-3 w-3" />

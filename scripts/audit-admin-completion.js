@@ -54,6 +54,9 @@ if (serialsTable.includes('Activate') || serialsTable.includes("updateSerialStat
 }
 
 const productsApi = read('src/app/api/admin/products/route.ts');
+if (!productsApi.includes('mergeCatalogueProducts(databaseProducts, fallbackProducts)') || !productsApi.includes('catalogue_only')) {
+  failures.push('src/app/api/admin/products/route.ts: admin products must include bundled public catalogue products');
+}
 for (const handler of ['export async function POST', 'export async function PATCH', 'export async function DELETE']) {
   if (!productsApi.includes(handler)) {
     failures.push(`src/app/api/admin/products/route.ts: missing ${handler}`);
@@ -80,6 +83,9 @@ if (!fs.existsSync(overviewApiPath)) {
   const overviewApi = fs.readFileSync(overviewApiPath, 'utf8');
   for (const needle of ['export async function GET', 'totalSerials', 'unactivatedSerials', 'verificationTotal', 'recentSerials']) {
     if (!overviewApi.includes(needle)) failures.push(`src/app/api/admin/overview/route.ts: missing overview metric ${needle}`);
+  }
+  if (!overviewApi.includes('fallbackProducts') || !overviewApi.includes('countDashboardProducts')) {
+    failures.push('src/app/api/admin/overview/route.ts: product metric must include the public catalogue source');
   }
 }
 
