@@ -58,9 +58,9 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
 
         {product.images.length > 1 && (
           <div className="store-product-gallery" aria-label={t.product.gallery}>
-            {product.images.slice(1).map((image, index) => (
+            {product.images.slice(1, 5).map((image, index) => (
               <button
-                key={image}
+                key={`${image}-${index}`}
                 type="button"
                 aria-label={`Show product image ${index + 2}`}
                 aria-pressed={selectedImage === image}

@@ -8,6 +8,14 @@ const categoryTranslations: Record<string, string> = {
   uncategorized: 'Tanpa Kategori',
 };
 
+const defaultCategoryNames: Record<string, string> = {
+  vest: 'Vest & Chestrig',
+  pack: 'Pack & Pouches',
+  belt: 'Belt',
+  accessories: 'Accessories',
+  uncategorized: 'Unassigned',
+};
+
 const tagTranslations: Record<string, string> = {
   'BATTLE PROVEN': 'TERUJI LAPANGAN',
   'NEW ARRIVAL': 'BARU',
@@ -35,6 +43,7 @@ const descriptionTranslations: Record<string, string> = {
 
 export function localizeCategoryName(slug: string | undefined, fallback: string, language: Language) {
   if (language !== 'id') return fallback;
+  if (slug && defaultCategoryNames[slug] && fallback !== defaultCategoryNames[slug]) return fallback;
   return slug ? categoryTranslations[slug] ?? fallback : fallback;
 }
 

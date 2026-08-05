@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import {
+  applyCategoryOverrides,
   fallbackProducts,
   isMissingSchemaError,
   mergeCatalogueProducts,
@@ -32,6 +33,13 @@ async function getProduct(slug: string): Promise<CatalogueProduct | null> {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+    const categoryResult = await supabase
+      .from("categories")
+      .select("name, slug");
+    const categoryOverrides = categoryResult.error ? [] : categoryResult.data;
+    const categorizedFallback = fallback
+      ? applyCategoryOverrides([fallback], categoryOverrides)[0]
+      : null;
     let { data, error } = await supabase
       .from("products")
       .select("*, categories(name, slug), product_series(name, slug)")
@@ -51,11 +59,13 @@ async function getProduct(slug: string): Promise<CatalogueProduct | null> {
     }
 
     if (error) {
-      if (isMissingSchemaError(error)) return fallback;
-      return fallback;
+      if (isMissingSchemaError(error)) return categorizedFallback;
+      return categorizedFallback;
     }
-    return mergeCatalogueProducts([normalizeProduct(data as Record<string, unknown>)])
-      .find((product) => product.slug === slug) ?? fallback;
+    return applyCategoryOverrides(
+      mergeCatalogueProducts([normalizeProduct(data as Record<string, unknown>)]),
+      categoryOverrides,
+    ).find((product) => product.slug === slug) ?? categorizedFallback;
   } catch {
     return fallback;
   }

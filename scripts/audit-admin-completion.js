@@ -140,7 +140,10 @@ for (const needle of [
   'display_order',
   'specifications',
   'imageUrls',
-  'Ordered Gallery Image URLs',
+  'PRODUCT_IMAGE_SLOTS',
+  'Main Image',
+  'Detail Image 4',
+  'product-image-url-',
 ]) {
   if (!productsPage.includes(needle)) {
     failures.push(`src/app/admin/products/page.tsx: Figma catalogue management is missing ${needle}`);
@@ -157,6 +160,19 @@ if (!productsPage.includes("fetch('/api/admin/categories')")) {
 
 if (!productsPage.includes('type="file"') || !productsPage.includes('handleProductImageUpload')) {
   failures.push('src/app/admin/products/page.tsx: product form must support image file uploads');
+}
+
+const editProductButtonStart = productsPage.indexOf('onClick={() => openEditProductForm(product)}');
+const editProductButton = editProductButtonStart >= 0
+  ? productsPage.slice(editProductButtonStart, productsPage.indexOf('</button>', editProductButtonStart))
+  : '';
+if (!editProductButton || editProductButton.includes('disabled=')) {
+  failures.push('src/app/admin/products/page.tsx: bundled catalogue products must remain editable');
+}
+
+const productDetail = read('src/components/ProductDetailClient.tsx');
+if (!productDetail.includes('product.images.slice(1, 5)')) {
+  failures.push('src/components/ProductDetailClient.tsx: product detail must render exactly four lower gallery images');
 }
 
 for (const needle of ['MAX_PRODUCT_IMAGE_SIZE', 'ALLOWED_PRODUCT_IMAGE_TYPES']) {

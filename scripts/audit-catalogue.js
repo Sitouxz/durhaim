@@ -26,6 +26,11 @@ if (!apiText.includes('parsePositiveInt(searchParams.get("limit"), 12, 200)')) {
   process.exit(1);
 }
 
+if (!apiText.includes('categories: categoryOverrides')) {
+  console.error('Products API must expose managed category names to public catalogue controls.');
+  process.exit(1);
+}
+
 const pageFile = path.join(process.cwd(), 'src', 'app', 'catalogue', 'page.tsx');
 const pageText = fs.readFileSync(pageFile, 'utf8');
 
@@ -39,6 +44,13 @@ for (const required of ['category', 'search']) {
 for (const required of ['sort', 'limit: "200"', 'region']) {
   if (!pageText.includes(required)) {
     console.error(`Catalogue page does not request the complete regional catalogue with ${required}.`);
+    process.exit(1);
+  }
+}
+
+for (const required of ['managedCategoryNames', 'data.categories', 'localizeCategoryName']) {
+  if (!pageText.includes(required)) {
+    console.error(`Catalogue filters must follow managed category names: ${required}.`);
     process.exit(1);
   }
 }

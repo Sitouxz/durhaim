@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import {
+  applyCategoryOverrides,
   fallbackProducts,
   isMissingSchemaError,
   mergeCatalogueProducts,
@@ -13,6 +14,7 @@ import { requireAdminRole } from '@/lib/admin-permissions';
 export const dynamic = 'force-dynamic';
 
 const PRODUCT_SELECT = 'id, name, slug, description, price, regional_prices, images, specifications, colorway, display_order, is_published, category_id, series_id, categories(name, slug), product_series(name, slug)';
+const PRODUCT_SELECT_LEGACY_RICH = 'id, name, slug, description, price, regional_prices, images, specifications, is_published, category_id, categories(name, slug)';
 const PRODUCT_SELECT_LEGACY = 'id, name, slug, description, price, images, is_published, category_id, categories(name, slug)';
 
 function isMissingRegionalPricesColumn(error: unknown) {
@@ -32,6 +34,12 @@ function isMissingCatalogueExtension(error: unknown) {
   const record = error as { code?: string; message?: string };
   return ['42703', '42P01', 'PGRST200'].includes(record.code ?? '')
     || /product_series|series_id|display_order|colorway|specifications/i.test(record.message ?? '');
+}
+
+function isMissingLegacyProductColumn(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  const record = error as { code?: string; message?: string };
+  return record.code === '42703' && /regional_prices|specifications/i.test(record.message ?? '');
 }
 
 function withDefaultRegionalPrices<T extends { price?: number | string; regional_prices?: RegionalPrices }>(product: T) {
@@ -54,12 +62,24 @@ export async function GET() {
 
     if (error) {
       if (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error)) {
-        const legacyResult = await supabase
+        let legacyResult = await supabase
           .from('products')
-          .select(PRODUCT_SELECT_LEGACY)
+          .select(PRODUCT_SELECT_LEGACY_RICH)
           .order('name');
 
-        data = (legacyResult.data?.map((product) => withDefaultRegionalPrices(product)) ?? null) as unknown as typeof data;
+        if (legacyResult.error && isMissingLegacyProductColumn(legacyResult.error)) {
+          const basicLegacyResult = await supabase
+            .from('products')
+            .select(PRODUCT_SELECT_LEGACY)
+            .order('name');
+
+          legacyResult = {
+            ...basicLegacyResult,
+            data: basicLegacyResult.data?.map((product) => withDefaultRegionalPrices(product)) ?? null,
+          } as typeof legacyResult;
+        }
+
+        data = legacyResult.data as unknown as typeof data;
         error = legacyResult.error;
       }
     }
@@ -100,12 +120,20 @@ export async function GET() {
       serialCounts.set(productId, (serialCounts.get(productId) ?? 0) + 1);
     }
 
+    const categoryResult = await supabase
+      .from('categories')
+      .select('name, slug');
+    if (categoryResult.error) throw categoryResult.error;
+
     const databaseProducts = (data ?? []).map((product) =>
       normalizeProduct(product as Record<string, unknown>));
     const databaseSlugs = new Set(databaseProducts.map((product) => product.slug));
-    const dashboardProducts = process.env.STOREFRONT_V2_ENABLED === 'false'
+    const dashboardProducts = applyCategoryOverrides(
+      process.env.STOREFRONT_V2_ENABLED === 'false'
       ? databaseProducts
-      : mergeCatalogueProducts(databaseProducts, fallbackProducts);
+      : mergeCatalogueProducts(databaseProducts, fallbackProducts),
+      categoryResult.data,
+    );
 
     return NextResponse.json(dashboardProducts
       .map((product) => ({
@@ -140,11 +168,27 @@ async function getSeriesId(supabase: ReturnType<typeof createAdminClient>, serie
     .select('id')
     .eq('slug', seriesSlug)
     .single();
+  if (error && isMissingCatalogueExtension(error)) return null;
   if (error) throw error;
   return data?.id ?? null;
 }
 
-function parseProductBody(body: Record<string, unknown>) {
+type ParsedProductBody = {
+  name: string;
+  slug: string;
+  description: string;
+  categorySlug: string;
+  seriesSlug: string;
+  colorway: string;
+  displayOrder: number;
+  price: number | null;
+  regionalPrices: RegionalPrices;
+  images: string[];
+  specifications: string[];
+  isPublished: boolean;
+};
+
+function parseProductBody(body: Record<string, unknown>): ParsedProductBody | { error: string } {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const slug = typeof body.slug === 'string' ? body.slug.trim().toLowerCase() : '';
   const description = typeof body.description === 'string' ? body.description.trim() : '';
@@ -218,6 +262,46 @@ function parseProductBody(body: Record<string, unknown>) {
   };
 }
 
+function fullProductPayload(
+  parsed: ParsedProductBody,
+  categoryId: string | null,
+  seriesId: string | null,
+) {
+  return {
+    name: parsed.name,
+    slug: parsed.slug,
+    description: parsed.description,
+    price: parsed.price,
+    regional_prices: parsed.regionalPrices,
+    category_id: categoryId,
+    series_id: seriesId,
+    colorway: parsed.colorway || null,
+    display_order: parsed.displayOrder,
+    images: parsed.images,
+    specifications: parsed.specifications,
+    is_published: parsed.isPublished,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function legacyProductPayload(parsed: ParsedProductBody, categoryId: string | null) {
+  return {
+    name: parsed.name,
+    slug: parsed.slug,
+    description: parsed.description,
+    // The deployed legacy schema still requires a numeric price. Zero is only
+    // a storage sentinel; mergeCatalogueProducts converts it back to null when
+    // the bundled catalogue product has no regional prices.
+    price: parsed.price ?? 0,
+    regional_prices: parsed.regionalPrices,
+    category_id: categoryId,
+    images: parsed.images,
+    specifications: parsed.specifications,
+    is_published: parsed.isPublished,
+    updated_at: new Date().toISOString(),
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = createAdminClient();
@@ -233,32 +317,23 @@ export async function POST(req: NextRequest) {
 
     const categoryId = await getCategoryId(supabase, parsed.categorySlug);
     const seriesId = await getSeriesId(supabase, parsed.seriesSlug);
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('products')
-      .insert({
-        name: parsed.name,
-        slug: parsed.slug,
-        description: parsed.description,
-        price: parsed.price,
-        regional_prices: parsed.regionalPrices,
-        category_id: categoryId,
-        series_id: seriesId,
-        colorway: parsed.colorway || null,
-        display_order: parsed.displayOrder,
-        images: parsed.images,
-        specifications: parsed.specifications,
-        is_published: parsed.isPublished,
-      })
+      .insert(fullProductPayload(parsed, categoryId, seriesId))
       .select(PRODUCT_SELECT)
       .single();
 
+    if (error && (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error))) {
+      const legacyResult = await supabase
+        .from('products')
+        .insert(legacyProductPayload(parsed, categoryId))
+        .select(PRODUCT_SELECT_LEGACY_RICH)
+        .single();
+      data = legacyResult.data as unknown as typeof data;
+      error = legacyResult.error;
+    }
+
     if (error) {
-      if (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error)) {
-        return NextResponse.json(
-          { error: 'Database migration required. Add products.regional_prices before saving regional prices.' },
-          { status: 503 },
-        );
-      }
       if (error.code === '23505') {
         return NextResponse.json({ error: 'Product slug already exists.' }, { status: 409 });
       }
@@ -292,34 +367,55 @@ export async function PATCH(req: NextRequest) {
 
     const categoryId = await getCategoryId(supabase, parsed.categorySlug);
     const seriesId = await getSeriesId(supabase, parsed.seriesSlug);
-    const { data, error } = await supabase
-      .from('products')
-      .update({
-        name: parsed.name,
-        slug: parsed.slug,
-        description: parsed.description,
-        price: parsed.price,
-        regional_prices: parsed.regionalPrices,
-        category_id: categoryId,
-        series_id: seriesId,
-        colorway: parsed.colorway || null,
-        display_order: parsed.displayOrder,
-        images: parsed.images,
-        specifications: parsed.specifications,
-        is_published: parsed.isPublished,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', productId)
-      .select(PRODUCT_SELECT)
-      .single();
+    const catalogueSeed = fallbackProducts.find((product) => product.id === productId) ?? null;
+
+    if (catalogueSeed && parsed.slug !== catalogueSeed.slug) {
+      return NextResponse.json(
+        { error: 'The slug of a bundled catalogue product cannot be changed.' },
+        { status: 400 },
+      );
+    }
+
+    const fullPayload = {
+      ...fullProductPayload(parsed, categoryId, seriesId),
+      slug: catalogueSeed?.slug ?? parsed.slug,
+    };
+    let fullResult = catalogueSeed
+      ? await supabase
+          .from('products')
+          .upsert(fullPayload, { onConflict: 'slug' })
+          .select(PRODUCT_SELECT)
+          .single()
+      : await supabase
+          .from('products')
+          .update(fullPayload)
+          .eq('id', productId)
+          .select(PRODUCT_SELECT)
+          .single();
+
+    if (fullResult.error && (isMissingRegionalPricesColumn(fullResult.error) || isMissingCatalogueExtension(fullResult.error))) {
+      const legacyPayload = {
+        ...legacyProductPayload(parsed, categoryId),
+        slug: catalogueSeed?.slug ?? parsed.slug,
+      };
+      const legacyResult = catalogueSeed
+        ? await supabase
+            .from('products')
+            .upsert(legacyPayload, { onConflict: 'slug' })
+            .select(PRODUCT_SELECT_LEGACY_RICH)
+            .single()
+        : await supabase
+            .from('products')
+            .update(legacyPayload)
+            .eq('id', productId)
+            .select(PRODUCT_SELECT_LEGACY_RICH)
+            .single();
+      fullResult = legacyResult as unknown as typeof fullResult;
+    }
+
+    const { data, error } = fullResult;
 
     if (error) {
-      if (isMissingRegionalPricesColumn(error) || isMissingCatalogueExtension(error)) {
-        return NextResponse.json(
-          { error: 'Database migration required. Add products.regional_prices before saving regional prices.' },
-          { status: 503 },
-        );
-      }
       if (error.code === '23505') {
         return NextResponse.json({ error: 'Product slug already exists.' }, { status: 409 });
       }

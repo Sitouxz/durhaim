@@ -52,9 +52,18 @@ type ProductForm = {
   colorway: string;
   displayOrder: string;
   specificationLines: string;
-  imageUrls: string;
+  imageUrls: string[];
   is_published: boolean;
+  catalogueOnly: boolean;
 };
+
+const PRODUCT_IMAGE_SLOTS = [
+  { label: 'Main Image', help: 'Large image shown at the top of the product detail page.' },
+  { label: 'Detail Image 1', help: 'First thumbnail shown below the product.' },
+  { label: 'Detail Image 2', help: 'Second thumbnail shown below the product.' },
+  { label: 'Detail Image 3', help: 'Third thumbnail shown below the product.' },
+  { label: 'Detail Image 4', help: 'Fourth thumbnail shown below the product.' },
+] as const;
 
 const emptyForm: ProductForm = {
   name: '',
@@ -70,8 +79,9 @@ const emptyForm: ProductForm = {
   colorway: '',
   displayOrder: '0',
   specificationLines: '',
-  imageUrls: '',
+  imageUrls: PRODUCT_IMAGE_SLOTS.map(() => ''),
   is_published: true,
+  catalogueOnly: false,
 };
 
 const MAX_PRODUCT_IMAGE_SIZE = 3 * 1024 * 1024;
@@ -103,6 +113,14 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
+function normalizeSlugInput(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+/, '');
+}
+
 function productToForm(product: Product): ProductForm {
   const regionalPrices = product.regional_prices ?? {};
 
@@ -121,8 +139,9 @@ function productToForm(product: Product): ProductForm {
     colorway: product.colorway ?? '',
     displayOrder: String(product.display_order ?? 0),
     specificationLines: (product.specifications ?? []).join('\n'),
-    imageUrls: (product.images ?? []).join('\n'),
+    imageUrls: PRODUCT_IMAGE_SLOTS.map((_, index) => product.images?.[index] ?? ''),
     is_published: product.is_published !== false,
+    catalogueOnly: product.catalogue_only === true,
   };
 }
 
@@ -132,7 +151,7 @@ export default function AdminProductsPage() {
   const [series, setSeries] = useState<ProductSeries[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingImageIndex, setUploadingImageIndex] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -214,7 +233,7 @@ export default function AdminProductsPage() {
   );
 
   const openNewProductForm = () => {
-    setForm({ ...emptyForm, categorySlug: categories[0]?.slug ?? '' });
+    setForm({ ...emptyForm, imageUrls: [...emptyForm.imageUrls], categorySlug: categories[0]?.slug ?? '' });
     setMessage('');
     setShowProductForm(true);
   };
@@ -263,18 +282,18 @@ export default function AdminProductsPage() {
     colorway: nextForm.colorway,
     display_order: Number(nextForm.displayOrder || 0),
     specifications: nextForm.specificationLines.split(/\r?\n/).map((item) => item.trim()).filter(Boolean),
-    images: nextForm.imageUrls.split(/\r?\n|,/).map((image) => image.trim()).filter(Boolean),
+    images: nextForm.imageUrls.map((image) => image.trim()).filter(Boolean),
     is_published: nextForm.is_published,
   });
 
-  const appendImageUrl = (url: string) => {
+  const setImageUrl = (index: number, url: string) => {
     setForm((current) => ({
       ...current,
-      imageUrls: [current.imageUrls.trim(), url].filter(Boolean).join('\n'),
+      imageUrls: current.imageUrls.map((currentUrl, currentIndex) => currentIndex === index ? url : currentUrl),
     }));
   };
 
-  const handleProductImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleProductImageUpload = async (index: number, event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -292,7 +311,7 @@ export default function AdminProductsPage() {
       return;
     }
 
-    setUploadingImage(true);
+    setUploadingImageIndex(index);
     try {
       const uploadBody = new FormData();
       uploadBody.append('image', file);
@@ -308,13 +327,13 @@ export default function AdminProductsPage() {
         return;
       }
 
-      appendImageUrl(data.url);
-      setMessage('Image uploaded and added to product.');
+      setImageUrl(index, data.url);
+      setMessage(`${PRODUCT_IMAGE_SLOTS[index].label} uploaded.`);
     } catch (uploadError) {
       console.error('Failed to upload product image:', uploadError);
       setError('Failed to connect to product image upload API.');
     } finally {
-      setUploadingImage(false);
+      setUploadingImageIndex(null);
     }
   };
 
@@ -446,7 +465,7 @@ export default function AdminProductsPage() {
         )}
         {!loading && catalogueOnlyCount > 0 && (
           <div className="border-b border-surface-container-highest bg-surface-container-lowest p-4 font-body-md text-on-surface-variant">
-            {catalogueOnlyCount} public catalogue products are synchronized here. Entries marked CATALOGUE stay read-only until the storefront catalogue database migration is applied.
+            {catalogueOnlyCount} public catalogue products are synchronized here. Open Edit and save once to create an editable database record.
           </div>
         )}
         <div className="border-b border-surface-container-highest p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -529,9 +548,8 @@ export default function AdminProductsPage() {
                           <button
                             type="button"
                             onClick={() => openEditProductForm(product)}
-                            disabled={product.catalogue_only}
-                            title={product.catalogue_only ? 'Apply the storefront catalogue database migration to manage this product.' : 'Edit product'}
-                            className="inline-flex items-center gap-1 whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange disabled:cursor-not-allowed disabled:opacity-40"
+                            title={product.catalogue_only ? 'Edit and save to synchronize this catalogue product to the database.' : 'Edit product'}
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-on-surface-variant underline hover:text-signal-orange"
                           >
                             <Edit className="h-3 w-3" />
                             Edit
@@ -577,8 +595,17 @@ export default function AdminProductsPage() {
               <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
             </div>
             <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
-              <input value={form.slug} onChange={(event) => setField('slug', slugify(event.target.value))} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+              <label htmlFor="product-slug" className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
+              <input
+                id="product-slug"
+                value={form.slug}
+                onChange={(event) => setField('slug', normalizeSlugInput(event.target.value))}
+                onBlur={() => setField('slug', slugify(form.slug))}
+                disabled={form.catalogueOnly}
+                title={form.catalogueOnly ? 'Bundled catalogue slugs remain fixed when first synchronized.' : undefined}
+                className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white disabled:cursor-not-allowed disabled:opacity-60"
+                required
+              />
             </div>
             <div>
               <label className="block font-label-caps text-on-surface-variant mb-2">Category</label>
@@ -634,27 +661,48 @@ export default function AdminProductsPage() {
               <textarea value={form.specificationLines} onChange={(event) => setField('specificationLines', event.target.value)} className="min-h-32 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="One specification per line; order is preserved" />
             </div>
             <div className="lg:col-span-2">
-              <label className="block font-label-caps text-on-surface-variant mb-2">Ordered Gallery Image URLs</label>
-              <textarea value={form.imageUrls} onChange={(event) => setField('imageUrls', event.target.value)} className="min-h-24 w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" placeholder="One URL per line" />
-            </div>
-            <div className="lg:col-span-2">
-              <label className="block font-label-caps text-on-surface-variant mb-2">Upload Product Image</label>
-              <div className="flex flex-col gap-2 border border-surface-container-highest bg-tactical-black p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="font-body-md text-on-surface-variant">
-                  JPG, PNG, or WEBP. Max 3 MB.
-                </div>
-                <label className="inline-flex cursor-pointer items-center justify-center gap-2 border border-surface-container-highest px-4 py-2 font-label-caps text-stark-white hover:text-signal-orange">
-                  <ImageUp className="h-4 w-4" />
-                  {uploadingImage ? 'Uploading...' : 'Choose Image'}
-                  <input
-                    type="file"
-                    accept={ALLOWED_PRODUCT_IMAGE_TYPES.join(',')}
-                    onChange={handleProductImageUpload}
-                    disabled={uploadingImage || saving}
-                    className="sr-only"
-                  />
-                </label>
+              <div className="mb-3">
+                <h3 className="font-label-caps text-stark-white">Product Images</h3>
+                <p className="font-body-md text-on-surface-variant">One main image plus exactly four detail images shown as the lower thumbnails.</p>
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {PRODUCT_IMAGE_SLOTS.map((slot, index) => {
+                  const inputId = `product-image-${index}`;
+                  const uploadId = `product-image-upload-${index}`;
+                  const isUploading = uploadingImageIndex === index;
+
+                  return (
+                    <div key={slot.label} className={`border border-surface-container-highest bg-tactical-black p-3 ${index === 0 ? 'sm:col-span-2' : ''}`}>
+                      <label htmlFor={inputId} className="block font-label-caps text-stark-white">{slot.label}</label>
+                      <p className="mb-2 text-xs text-on-surface-variant">{slot.help}</p>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          id={inputId}
+                          data-testid={`product-image-url-${index}`}
+                          type="url"
+                          value={form.imageUrls[index]}
+                          onChange={(event) => setImageUrl(index, event.target.value)}
+                          className="min-w-0 flex-1 border border-surface-container-highest bg-charcoal-field p-2 text-stark-white"
+                          placeholder="https://... or /storefront/..."
+                        />
+                        <label htmlFor={uploadId} className="inline-flex cursor-pointer items-center justify-center gap-2 border border-surface-container-highest px-3 py-2 font-label-caps text-stark-white hover:text-signal-orange">
+                          <ImageUp className="h-4 w-4" />
+                          {isUploading ? 'Uploading...' : 'Upload'}
+                        </label>
+                        <input
+                          id={uploadId}
+                          type="file"
+                          accept={ALLOWED_PRODUCT_IMAGE_TYPES.join(',')}
+                          onChange={(event) => handleProductImageUpload(index, event)}
+                          disabled={uploadingImageIndex !== null || saving}
+                          className="sr-only"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-on-surface-variant">Uploads accept JPG, PNG, or WEBP up to 3 MB.</p>
             </div>
             <label className="flex items-center gap-3 font-label-caps text-stark-white">
               <input type="checkbox" checked={form.is_published} onChange={(event) => setField('is_published', event.target.checked)} />

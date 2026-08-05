@@ -31,6 +31,14 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '');
 }
 
+function normalizeSlugInput(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+/, '');
+}
+
 function categoryToForm(category: Category): CategoryForm {
   return {
     id: category.id,
@@ -274,12 +282,26 @@ export default function AdminCategoriesPage() {
               <h2 className="font-headline-md uppercase text-stark-white">{form.id ? 'Edit Category' : 'New Category'}</h2>
             </div>
             <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Name</label>
-              <input value={form.name} onChange={(event) => handleNameChange(event.target.value)} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+              <label htmlFor="category-name" className="block font-label-caps text-on-surface-variant mb-2">Name</label>
+              <input
+                id="category-name"
+                data-testid="category-name-input"
+                value={form.name}
+                onChange={(event) => handleNameChange(event.target.value)}
+                className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white"
+                required
+              />
             </div>
             <div>
-              <label className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
-              <input value={form.slug} onChange={(event) => setField('slug', slugify(event.target.value))} className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white" required />
+              <label htmlFor="category-slug" className="block font-label-caps text-on-surface-variant mb-2">Slug</label>
+              <input
+                id="category-slug"
+                value={form.slug}
+                onChange={(event) => setField('slug', normalizeSlugInput(event.target.value))}
+                onBlur={() => setField('slug', slugify(form.slug))}
+                className="w-full bg-tactical-black border border-surface-container-highest p-3 text-stark-white"
+                required
+              />
             </div>
             <div>
               <label className="block font-label-caps text-on-surface-variant mb-2">Icon</label>

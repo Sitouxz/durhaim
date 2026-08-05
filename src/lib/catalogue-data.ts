@@ -121,9 +121,16 @@ export function mergeCatalogueProducts(primary: CatalogueProduct[], additions = 
   const merged = new Map(additions.map((product) => [product.slug, product]));
   for (const product of primary) {
     const seed = merged.get(product.slug);
+    const usesLegacyNullPriceSentinel = Boolean(
+      seed
+      && seed.price === null
+      && product.price === 0
+      && Object.keys(product.regional_prices).length === 0,
+    );
     merged.set(product.slug, seed ? {
       ...seed,
       ...product,
+      price: usesLegacyNullPriceSentinel ? null : product.price,
       images: product.images.length ? product.images : seed.images,
       specifications: product.specifications.length ? product.specifications : seed.specifications,
       series: product.series ?? seed.series,
@@ -133,6 +140,24 @@ export function mergeCatalogueProducts(primary: CatalogueProduct[], additions = 
     } : product);
   }
   return [...merged.values()];
+}
+
+export function applyCategoryOverrides(
+  products: CatalogueProduct[],
+  overrides: ProductCategory[] | null | undefined,
+) {
+  const categoriesBySlug = new Map((overrides ?? []).map((category) => [category.slug, category]));
+
+  return products.map((product) => {
+    const category = categoriesBySlug.get(product.category.slug);
+    if (!category) return product;
+
+    return {
+      ...product,
+      category,
+      categories: category,
+    };
+  });
 }
 
 function sortablePrice(product: CatalogueProduct, region: RegionCode) {

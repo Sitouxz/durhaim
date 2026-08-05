@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
-import type { CatalogueProduct } from "@/lib/catalogue-data";
+import type { CatalogueProduct, ProductCategory } from "@/lib/catalogue-data";
 import { useCommerce } from "@/components/CommerceProvider";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
 import { localizeCategoryName } from "@/lib/product-localization";
@@ -35,6 +35,7 @@ export default function CataloguePage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("display");
   const [products, setProducts] = useState<CatalogueProduct[]>([]);
+  const [managedCategoryNames, setManagedCategoryNames] = useState<Record<string, string>>({});
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,6 +67,9 @@ export default function CataloguePage() {
         if (!response.ok) throw new Error(data.error || t.catalogue.unableToLoad);
         const nextProducts = data.products ?? [];
         setProducts(nextProducts);
+        setManagedCategoryNames(Object.fromEntries(
+          ((data.categories ?? []) as ProductCategory[]).map((managedCategory) => [managedCategory.slug, managedCategory.name]),
+        ));
         setWarning(data.warning ?? "");
         setOpenSeries((current) => {
           if (current.size) return current;
@@ -163,7 +167,15 @@ export default function CataloguePage() {
                     checked={category === option}
                     onChange={() => selectCategory(option)}
                   />
-                  <span>{t.catalogue.categoryLabels[option]}</span>
+                  <span>
+                    {option === "all"
+                      ? t.catalogue.categoryLabels.all
+                      : localizeCategoryName(
+                          option,
+                          managedCategoryNames[option] ?? t.catalogue.categoryLabels[option],
+                          language,
+                        )}
+                  </span>
                 </label>
               ))}
             </div>

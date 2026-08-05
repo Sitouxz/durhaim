@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import {
+  applyCategoryOverrides,
   fallbackProducts,
   filterProducts,
   isMissingSchemaError,
@@ -52,6 +53,10 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+    const categoryResult = await supabase
+      .from("categories")
+      .select("name, slug");
+    const categoryOverrides = categoryResult.error ? [] : categoryResult.data;
 
     let { data, error } = await supabase
       .from("products")
@@ -72,7 +77,8 @@ export async function GET(req: NextRequest) {
     if (error) {
       if (isMissingSchemaError(error)) {
         return NextResponse.json({
-          ...buildProductResponse(req, fallbackProducts),
+          ...buildProductResponse(req, applyCategoryOverrides(fallbackProducts, categoryOverrides)),
+          categories: categoryOverrides,
           source: "figma-fallback",
           warning: "Database schema is not installed. Showing the bundled Figma catalogue.",
         });
@@ -86,14 +92,17 @@ export async function GET(req: NextRequest) {
     const sourceProducts = includeFigmaCatalogue
       ? mergeCatalogueProducts(databaseProducts).filter((product) => figmaSlugs.has(product.slug))
       : databaseProducts;
+    const categorizedProducts = applyCategoryOverrides(sourceProducts, categoryOverrides);
     return NextResponse.json({
-      ...buildProductResponse(req, sourceProducts),
+      ...buildProductResponse(req, categorizedProducts),
+      categories: categoryOverrides,
       source: includeFigmaCatalogue ? "database+figma" : "database",
     });
   } catch (error) {
     console.error("Products API error:", error);
     return NextResponse.json({
       ...buildProductResponse(req, fallbackProducts),
+      categories: [],
       source: "figma-fallback",
       warning: "Products database is unavailable. Showing the bundled Figma catalogue.",
     });
