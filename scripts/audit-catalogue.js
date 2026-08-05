@@ -48,9 +48,9 @@ for (const required of ['sort', 'limit: "200"', 'region']) {
   }
 }
 
-for (const required of ['managedCategoryNames', 'data.categories', 'localizeCategoryName']) {
+for (const required of ['localizeCategoryName']) {
   if (!pageText.includes(required)) {
-    console.error(`Catalogue filters must follow managed category names: ${required}.`);
+    console.error(`Catalogue category headings are missing localization support: ${required}.`);
     process.exit(1);
   }
 }

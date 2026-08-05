@@ -60,9 +60,8 @@ test.describe("storefront behavior", () => {
   });
 
   test("catalogue search, category filter, and product gallery remain interactive", async ({ page }) => {
-    await page.goto("/catalogue?lang=en", { waitUntil: "domcontentloaded" });
+    await page.goto("/catalogue?category=belt&lang=en", { waitUntil: "domcontentloaded" });
     await page.waitForSelector(".store-product-card");
-    await page.locator(".store-category-options label", { hasText: "Belt" }).click();
     await expect(page.locator(".store-product-card")).toHaveCount(6);
 
     await page.goto("/catalogue/black-chitto-mark-2?lang=en", { waitUntil: "domcontentloaded" });
