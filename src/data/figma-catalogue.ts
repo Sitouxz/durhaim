@@ -372,25 +372,9 @@ export const figmaCatalogueSeeds: FigmaCatalogueSeed[] = [
     "display_order": 18,
     "specifications": [],
     "images": [
-      "/storefront/figma/catalogue/open/dsc-076041.png"
-    ]
-  },
-  {
-    "name": "Black Aim Vortex",
-    "slug": "black-aim-vortex-2",
-    "description": "Aim Vortex Rifle Bag / Black",
-    "price": null,
-    "regional_prices": {},
-    "category": "pack",
-    "series": {
-      "name": "Aim Vortex Rifle Bag",
-      "slug": "aim-vortex-rifle-bag"
-    },
-    "colorway": "Black",
-    "display_order": 19,
-    "specifications": [],
-    "images": [
-      "/storefront/figma/catalogue/open/dsc-065231.png"
+      "/storefront/figma/catalogue/open/dsc-076041.png",
+      "/storefront/figma/catalogue/open/dsc-065231.png",
+      "/storefront/figma/catalogue/open/dpn-1.png"
     ]
   },
   {
@@ -445,24 +429,6 @@ export const figmaCatalogueSeeds: FigmaCatalogueSeed[] = [
     "specifications": [],
     "images": [
       "/storefront/figma/catalogue/open/gjh-09708-edit-1.png"
-    ]
-  },
-  {
-    "name": "Black Aim Vortex",
-    "slug": "black-aim-vortex-3",
-    "description": "Aim Vortex Rifle Bag / Black",
-    "price": null,
-    "regional_prices": {},
-    "category": "pack",
-    "series": {
-      "name": "Aim Vortex Rifle Bag",
-      "slug": "aim-vortex-rifle-bag"
-    },
-    "colorway": "Black",
-    "display_order": 23,
-    "specifications": [],
-    "images": [
-      "/storefront/figma/catalogue/open/dpn-1.png"
     ]
   },
   {
@@ -1218,24 +1184,7 @@ export const figmaCatalogueSeeds: FigmaCatalogueSeed[] = [
     "display_order": 65,
     "specifications": [],
     "images": [
-      "/storefront/figma/catalogue/open/gjh-060681.png"
-    ]
-  },
-  {
-    "name": "Multicam Black Aim Vortex",
-    "slug": "multicam-black-aim-vortex-2",
-    "description": "Aim Vortex Rifle Bag / Multicam Black",
-    "price": null,
-    "regional_prices": {},
-    "category": "pack",
-    "series": {
-      "name": "Aim Vortex Rifle Bag",
-      "slug": "aim-vortex-rifle-bag"
-    },
-    "colorway": "Multicam Black",
-    "display_order": 66,
-    "specifications": [],
-    "images": [
+      "/storefront/figma/catalogue/open/gjh-060681.png",
       "/storefront/figma/catalogue/open/gjh-060511.png"
     ]
   },

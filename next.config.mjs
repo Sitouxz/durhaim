@@ -11,6 +11,25 @@ const nextConfig = {
   images: {
     remotePatterns: [],
   },
+  async redirects() {
+    return [
+      {
+        source: '/catalogue/black-aim-vortex-2',
+        destination: '/catalogue/black-aim-vortex',
+        permanent: true,
+      },
+      {
+        source: '/catalogue/black-aim-vortex-3',
+        destination: '/catalogue/black-aim-vortex',
+        permanent: true,
+      },
+      {
+        source: '/catalogue/multicam-black-aim-vortex-2',
+        destination: '/catalogue/multicam-black-aim-vortex',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     const securityHeaders = [
       {

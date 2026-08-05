@@ -55,4 +55,39 @@ for (const required of ['managedCategoryNames', 'data.categories', 'localizeCate
   }
 }
 
+const catalogueDataFile = path.join(process.cwd(), 'src', 'data', 'figma-catalogue.ts');
+const catalogueDataText = fs.readFileSync(catalogueDataFile, 'utf8');
+const catalogueDataMatch = catalogueDataText.match(/export const figmaCatalogueSeeds:[^=]+?=\s*(\[[\s\S]*\]);\s*$/);
+if (!catalogueDataMatch) {
+  console.error('Unable to parse the bundled catalogue data.');
+  process.exit(1);
+}
+
+const catalogueSeeds = JSON.parse(catalogueDataMatch[1]);
+const productIdentities = new Set();
+for (const product of catalogueSeeds) {
+  const identity = [product.name, product.category, product.series.slug, product.colorway]
+    .map((value) => String(value).trim().toLowerCase())
+    .join('|');
+  if (productIdentities.has(identity)) {
+    console.error(`Catalogue photos must be grouped into one product gallery: ${product.name}.`);
+    process.exit(1);
+  }
+  productIdentities.add(identity);
+}
+
+const blackAimVortex = catalogueSeeds.find((product) => product.slug === 'black-aim-vortex');
+if (!blackAimVortex || blackAimVortex.images.length !== 3) {
+  console.error('Black Aim Vortex must keep one main image and two detail images.');
+  process.exit(1);
+}
+
+const nextConfig = fs.readFileSync(path.join(process.cwd(), 'next.config.mjs'), 'utf8');
+for (const legacySlug of ['black-aim-vortex-2', 'black-aim-vortex-3', 'multicam-black-aim-vortex-2']) {
+  if (!nextConfig.includes(`/catalogue/${legacySlug}`)) {
+    console.error(`Missing permanent redirect for legacy catalogue slug: ${legacySlug}.`);
+    process.exit(1);
+  }
+}
+
 console.log('Catalogue API and controls are wired.');

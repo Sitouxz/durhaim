@@ -25,10 +25,10 @@ test.describe("storefront behavior", () => {
     });
   }
 
-  test("catalogue imports 80 products and keeps accordions independent", async ({ page }) => {
+  test("catalogue consolidates duplicate photos into 77 products and keeps accordions independent", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1200 });
     await page.goto("/catalogue?lang=en", { waitUntil: "domcontentloaded" });
-    await expect(page.locator(".store-product-card")).toHaveCount(80, { timeout: 60_000 });
+    await expect(page.locator(".store-product-card")).toHaveCount(77, { timeout: 60_000 });
     await expect(page.locator(".store-series")).toHaveCount(18);
 
     const first = page.locator(".store-series__trigger").first();
@@ -72,6 +72,21 @@ test.describe("storefront behavior", () => {
     await expect(page.locator(".store-product-gallery button")).toHaveCount(4);
     await page.locator(".store-product-gallery button").first().click();
     await expect(mainImage).not.toHaveAttribute("src", original ?? "");
+  });
+
+  test("Aim Vortex photos render as one gallery and legacy photo slugs redirect", async ({ page }) => {
+    await page.goto("/catalogue/black-aim-vortex-2?lang=en", { waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/\/catalogue\/black-aim-vortex\?lang=en$/);
+    await expect(page.locator(".store-product-detail__reference")).toHaveAttribute("data-hydrated", "true", { timeout: 60_000 });
+
+    const mainImage = page.locator(".store-product-stage__image img");
+    const gallery = page.locator(".store-product-gallery button");
+    await expect(gallery).toHaveCount(2);
+
+    const original = await mainImage.getAttribute("src");
+    await gallery.first().click();
+    await expect(mainImage).not.toHaveAttribute("src", original ?? "");
+    await expect(gallery.first()).toHaveAttribute("aria-pressed", "true");
   });
 
   test("Figma product detail nodes keep their reference copy and identifiers", async ({ page }) => {
