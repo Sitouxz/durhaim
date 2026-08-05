@@ -198,7 +198,7 @@ export default function SerialsPage() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState(CUSTOM_PRODUCT);
-  const [generateCount, setGenerateCount] = useState(1);
+  const [generateCount, setGenerateCount] = useState('1');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchSerials = useCallback(async (
@@ -631,14 +631,20 @@ export default function SerialsPage() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProduct || generateCount < 1) return;
+    const parsedGenerateCount = Number(generateCount);
+    if (
+      !selectedProduct
+      || !Number.isInteger(parsedGenerateCount)
+      || parsedGenerateCount < 1
+      || parsedGenerateCount > 1000
+    ) return;
     setIsGenerating(true);
 
     try {
       const res = await fetch('/api/admin/serials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: selectedProduct, count: generateCount })
+        body: JSON.stringify({ productId: selectedProduct, count: parsedGenerateCount })
       });
       if (res.ok) {
         setShowGenerateModal(false);
@@ -1441,14 +1447,16 @@ export default function SerialsPage() {
               </div>
 
               <div>
-                <label className="block font-label-caps text-on-surface-variant mb-2">Quantity to Generate</label>
+                <label htmlFor="generate-serial-count" className="block font-label-caps text-on-surface-variant mb-2">Quantity to Generate</label>
                 <input
+                  id="generate-serial-count"
+                  data-testid="generate-serial-count"
                   type="number"
                   min="1"
                   max="1000"
                   className="w-full bg-tactical-black border border-surface-container-highest text-stark-white p-3 focus:border-signal-orange font-data-mono"
                   value={generateCount}
-                  onChange={(e) => setGenerateCount(parseInt(e.target.value) || 1)}
+                  onChange={(e) => setGenerateCount(e.target.value)}
                   required
                 />
               </div>
