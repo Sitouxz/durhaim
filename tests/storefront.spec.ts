@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import axe from "axe-core";
 
-const responsiveWidths = [1440, 1024, 768, 390, 320];
+const responsiveWidths = [1440, 1280, 1024, 768, 390, 320];
 
 test.describe("storefront behavior", () => {
   for (const width of responsiveWidths) {

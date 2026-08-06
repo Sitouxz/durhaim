@@ -1711,6 +1711,15 @@
   color: var(--store-black);
 }
 
+@media (max-width: 1300px) {
+  .store-catalogue__layout {
+    grid-template-columns: 1fr;
+  }
+  .store-catalogue__filters {
+    position: static;
+  }
+}
+
 @media (max-width: 1200px) {
   .store-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .store-product-stage__image { height: 760px; }
