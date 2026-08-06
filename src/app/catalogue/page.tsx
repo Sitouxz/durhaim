@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
-import type { CatalogueProduct } from "@/lib/catalogue-data";
+import type { CatalogueProduct, ProductCategory } from "@/lib/catalogue-data";
 import { useCommerce } from "@/components/CommerceProvider";
 import { useSiteSettings } from "@/components/SiteSettingsProvider";
 import { localizeCategoryName } from "@/lib/product-localization";
 import { buildWhatsAppUrl } from "@/lib/site-settings";
 
 const categoryOrder = ["vest", "pack", "belt"];
+const categoryOptions = ["all", "vest", "pack", "belt", "accessories"] as const;
 const seriesOrder = [
   "chitto-series", "cobra-series", "mamba-series", "thunder-chestrig-series", "viper-series",
   "aim-vortex-rifle-bag", "anaconda", "bite-bee-handbag", "cobra-backpack",
@@ -34,6 +35,7 @@ export default function CataloguePage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("display");
   const [products, setProducts] = useState<CatalogueProduct[]>([]);
+  const [managedCategoryNames, setManagedCategoryNames] = useState<Record<string, string>>({});
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,6 +67,9 @@ export default function CataloguePage() {
         if (!response.ok) throw new Error(data.error || t.catalogue.unableToLoad);
         const nextProducts = data.products ?? [];
         setProducts(nextProducts);
+        setManagedCategoryNames(Object.fromEntries(
+          ((data.categories ?? []) as ProductCategory[]).map((managedCategory) => [managedCategory.slug, managedCategory.name]),
+        ));
         setWarning(data.warning ?? "");
         setOpenSeries((current) => {
           if (current.size) return current;
@@ -124,6 +129,10 @@ export default function CataloguePage() {
     setQuery(queryInput.trim());
   }
 
+  function selectCategory(value: string) {
+    setCategory(value);
+  }
+
   function toggleSeries(key: string) {
     setOpenSeries((current) => {
       const next = new Set(current);
@@ -147,6 +156,30 @@ export default function CataloguePage() {
 
       <div className="store-catalogue__layout">
         <aside className="store-catalogue__filters">
+          <section>
+            <h2>{language === "id" ? "KATEGORI" : "CATEGORIES"}</h2>
+            <div className="store-category-options">
+              {categoryOptions.map((option) => (
+                <label key={option}>
+                  <input
+                    type="radio"
+                    name="catalogue-category"
+                    checked={category === option}
+                    onChange={() => selectCategory(option)}
+                  />
+                  <span>
+                    {option === "all"
+                      ? t.catalogue.categoryLabels.all
+                      : localizeCategoryName(
+                          option,
+                          managedCategoryNames[option] ?? t.catalogue.categoryLabels[option],
+                          language,
+                        )}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </section>
           <section>
             <h2>{language === "id" ? "CARI PRODUK" : "SEARCH ITEM"}</h2>
             <form className="store-catalogue-search" onSubmit={submitSearch}>

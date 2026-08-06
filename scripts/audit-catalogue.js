@@ -48,7 +48,7 @@ for (const required of ['sort', 'limit: "200"', 'region']) {
   }
 }
 
-for (const required of ['localizeCategoryName']) {
+for (const required of ['managedCategoryNames', 'data.categories', 'localizeCategoryName']) {
   if (!pageText.includes(required)) {
     console.error(`Catalogue category headings are missing localization support: ${required}.`);
     process.exit(1);
