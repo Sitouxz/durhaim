@@ -157,6 +157,20 @@ export default function CataloguePage() {
       <div className="store-catalogue__layout">
         <aside className="store-catalogue__filters">
           <section>
+            <h2>{language === "id" ? "CARI PRODUK" : "SEARCH ITEM"}</h2>
+            <form className="store-catalogue-search" onSubmit={submitSearch}>
+              <label className="sr-only" htmlFor="catalogue-query">{t.catalogue.keyword}</label>
+              <input
+                id="catalogue-query"
+                type="search"
+                value={queryInput}
+                onChange={(event) => setQueryInput(event.target.value)}
+                placeholder={t.catalogue.keyword}
+              />
+              <button type="submit" aria-label={t.common.searchCatalogue}><Search aria-hidden="true" /></button>
+            </form>
+          </section>
+          <section>
             <h2>{language === "id" ? "KATEGORI" : "CATEGORIES"}</h2>
             <div className="store-category-options">
               {categoryOptions.map((option) => (
@@ -179,20 +193,6 @@ export default function CataloguePage() {
                 </label>
               ))}
             </div>
-          </section>
-          <section>
-            <h2>{language === "id" ? "CARI PRODUK" : "SEARCH ITEM"}</h2>
-            <form className="store-catalogue-search" onSubmit={submitSearch}>
-              <label className="sr-only" htmlFor="catalogue-query">{t.catalogue.keyword}</label>
-              <input
-                id="catalogue-query"
-                type="search"
-                value={queryInput}
-                onChange={(event) => setQueryInput(event.target.value)}
-                placeholder={t.catalogue.keyword}
-              />
-              <button type="submit" aria-label={t.common.searchCatalogue}><Search aria-hidden="true" /></button>
-            </form>
           </section>
         </aside>
 

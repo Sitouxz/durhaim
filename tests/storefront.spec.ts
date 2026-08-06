@@ -62,6 +62,10 @@ test.describe("storefront behavior", () => {
   test("catalogue search, category filter, and product gallery remain interactive", async ({ page }) => {
     await page.goto("/catalogue?lang=en", { waitUntil: "domcontentloaded" });
     await page.waitForSelector(".store-product-card");
+    const filterSections = page.locator(".store-catalogue__filters > section");
+    await expect(filterSections).toHaveCount(2);
+    await expect(filterSections.nth(0).locator("h2")).toHaveText("SEARCH ITEM");
+    await expect(filterSections.nth(1).locator("h2")).toHaveText("CATEGORIES");
     await expect(page.locator(".store-category-options label")).toHaveCount(5);
     await page.locator(".store-category-options label", { hasText: "Belt" }).click();
     await expect(page.locator(".store-product-card")).toHaveCount(6);
