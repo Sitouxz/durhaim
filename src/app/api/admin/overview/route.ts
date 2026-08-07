@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase';
 import { fallbackProducts, isMissingSchemaError } from '@/lib/catalogue-data';
+import { getCatalogueTombstoneSlugs } from '@/lib/catalogue-tombstones';
 import { requireAdminRole } from '@/lib/admin-permissions';
 
 export const dynamic = 'force-dynamic';
@@ -27,17 +28,22 @@ async function countDashboardProducts(supabase: ReturnType<typeof createAdminCli
     .select('slug');
 
   if (error) throw error;
+  const tombstonedSlugs = await getCatalogueTombstoneSlugs(supabase);
 
   if (process.env.STOREFRONT_V2_ENABLED === 'false') {
-    return data?.length ?? 0;
+    return (data ?? []).filter((product) => !tombstonedSlugs.has(product.slug)).length;
   }
 
   // The public catalogue combines database records with the bundled Figma
   // catalogue. Count the same unique slugs here so the overview cannot report
   // only the database subset while customers can browse many more products.
   return new Set([
-    ...fallbackProducts.map((product) => product.slug),
-    ...(data ?? []).map((product) => product.slug),
+    ...fallbackProducts
+      .map((product) => product.slug)
+      .filter((slug) => !tombstonedSlugs.has(slug)),
+    ...(data ?? [])
+      .map((product) => product.slug)
+      .filter((slug) => !tombstonedSlugs.has(slug)),
   ]).size;
 }
 

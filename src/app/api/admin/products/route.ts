@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase';
 import {
   applyCategoryOverrides,
@@ -8,6 +9,11 @@ import {
   mergeCatalogueProducts,
   normalizeProduct,
 } from '@/lib/catalogue-data';
+import {
+  getCatalogueTombstoneSlugs,
+  restoreCatalogueProduct,
+  tombstoneCatalogueProduct,
+} from '@/lib/catalogue-tombstones';
 import { defaultRegionalPrices, supportedRegions, type RegionalPrices } from '@/lib/commerce';
 import { requireAdminRole } from '@/lib/admin-permissions';
 
@@ -16,6 +22,12 @@ export const dynamic = 'force-dynamic';
 const PRODUCT_SELECT = 'id, name, slug, description, price, regional_prices, images, specifications, colorway, display_order, is_published, category_id, series_id, categories(name, slug), product_series(name, slug)';
 const PRODUCT_SELECT_LEGACY_RICH = 'id, name, slug, description, price, regional_prices, images, specifications, is_published, category_id, categories(name, slug)';
 const PRODUCT_SELECT_LEGACY = 'id, name, slug, description, price, images, is_published, category_id, categories(name, slug)';
+
+function revalidateCatalogueProduct(slug: string) {
+  revalidatePath('/catalogue');
+  revalidatePath(`/catalogue/${slug}`);
+  revalidatePath('/sitemap.xml');
+}
 
 function isMissingRegionalPricesColumn(error: unknown) {
   return Boolean(
@@ -124,6 +136,7 @@ export async function GET() {
       .from('categories')
       .select('name, slug');
     if (categoryResult.error) throw categoryResult.error;
+    const tombstonedSlugs = await getCatalogueTombstoneSlugs(supabase);
 
     const databaseProducts = (data ?? []).map((product) =>
       normalizeProduct(product as Record<string, unknown>));
@@ -131,7 +144,7 @@ export async function GET() {
     const dashboardProducts = applyCategoryOverrides(
       process.env.STOREFRONT_V2_ENABLED === 'false'
       ? databaseProducts
-      : mergeCatalogueProducts(databaseProducts, fallbackProducts),
+      : mergeCatalogueProducts(databaseProducts, fallbackProducts, tombstonedSlugs),
       categoryResult.data,
     );
 
@@ -340,6 +353,9 @@ export async function POST(req: NextRequest) {
       throw error;
     }
 
+    await restoreCatalogueProduct(supabase, parsed.slug);
+    revalidateCatalogueProduct(parsed.slug);
+
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Error creating product:', error);
@@ -422,6 +438,9 @@ export async function PATCH(req: NextRequest) {
       throw error;
     }
 
+    await restoreCatalogueProduct(supabase, parsed.slug);
+    revalidateCatalogueProduct(parsed.slug);
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error updating product:', error);
@@ -440,6 +459,26 @@ export async function DELETE(req: NextRequest) {
 
     if (!productId) {
       return NextResponse.json({ error: 'Product id is required.' }, { status: 400 });
+    }
+
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select('id, slug')
+      .eq('id', productId)
+      .maybeSingle();
+
+    if (productError) {
+      if (isMissingSchemaError(productError)) {
+        return NextResponse.json(
+          { error: 'Database schema is not installed. Apply supabase/schema.sql.' },
+          { status: 503 },
+        );
+      }
+      throw productError;
+    }
+
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found.' }, { status: 404 });
     }
 
     const { count, error: serialsError } = await supabase
@@ -465,12 +504,27 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const { error } = await supabase
+    const isBundledProduct = fallbackProducts.some((item) => item.slug === product.slug);
+    if (isBundledProduct) {
+      await tombstoneCatalogueProduct(supabase, product.slug);
+    }
+
+    const { data: deletedProduct, error } = await supabase
       .from('products')
       .delete()
-      .eq('id', productId);
+      .eq('id', productId)
+      .select('id, slug')
+      .maybeSingle();
 
-    if (error) {
+    if (error || !deletedProduct) {
+      if (isBundledProduct) {
+        try {
+          await restoreCatalogueProduct(supabase, product.slug);
+        } catch (rollbackError) {
+          console.error('Failed to roll back catalogue product tombstone:', rollbackError);
+        }
+      }
+
       if (isMissingSchemaError(error)) {
         return NextResponse.json(
           { error: 'Database schema is not installed. Apply supabase/schema.sql.' },
@@ -478,10 +532,12 @@ export async function DELETE(req: NextRequest) {
         );
       }
 
-      throw error;
+      if (error) throw error;
+      return NextResponse.json({ error: 'Product was not deleted.' }, { status: 409 });
     }
 
-    return NextResponse.json({ success: true });
+    revalidateCatalogueProduct(product.slug);
+    return NextResponse.json({ success: true, product: deletedProduct });
   } catch (error) {
     console.error('Error deleting product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

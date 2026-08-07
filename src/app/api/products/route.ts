@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase";
 import {
   applyCategoryOverrides,
   fallbackProducts,
@@ -10,6 +11,7 @@ import {
   paginateProducts,
   type CatalogueProduct,
 } from "@/lib/catalogue-data";
+import { getCatalogueTombstoneSlugs } from "@/lib/catalogue-tombstones";
 import { detectRegionFromHeaders, type RegionCode } from "@/lib/commerce";
 
 export const dynamic = "force-dynamic";
@@ -48,11 +50,14 @@ function buildProductResponse(req: NextRequest, sourceProducts: CatalogueProduct
 
 export async function GET(req: NextRequest) {
   const includeFigmaCatalogue = process.env.STOREFRONT_V2_ENABLED !== "false";
+  let tombstonedSlugs = new Set<string>();
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
+    tombstonedSlugs = await getCatalogueTombstoneSlugs(createAdminClient());
+    const visibleFallbackProducts = fallbackProducts.filter((product) => !tombstonedSlugs.has(product.slug));
     const categoryResult = await supabase
       .from("categories")
       .select("name, slug");
@@ -77,7 +82,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       if (isMissingSchemaError(error)) {
         return NextResponse.json({
-          ...buildProductResponse(req, applyCategoryOverrides(fallbackProducts, categoryOverrides)),
+          ...buildProductResponse(req, applyCategoryOverrides(visibleFallbackProducts, categoryOverrides)),
           categories: categoryOverrides,
           source: "figma-fallback",
           warning: "Database schema is not installed. Showing the bundled Figma catalogue.",
@@ -90,7 +95,8 @@ export async function GET(req: NextRequest) {
     const databaseProducts = (data ?? []).map((product) => normalizeProduct(product as Record<string, unknown>));
     const figmaSlugs = new Set(fallbackProducts.map((product) => product.slug));
     const sourceProducts = includeFigmaCatalogue
-      ? mergeCatalogueProducts(databaseProducts).filter((product) => figmaSlugs.has(product.slug))
+      ? mergeCatalogueProducts(databaseProducts, fallbackProducts, tombstonedSlugs)
+          .filter((product) => figmaSlugs.has(product.slug))
       : databaseProducts;
     const categorizedProducts = applyCategoryOverrides(sourceProducts, categoryOverrides);
     return NextResponse.json({
@@ -101,7 +107,10 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Products API error:", error);
     return NextResponse.json({
-      ...buildProductResponse(req, fallbackProducts),
+      ...buildProductResponse(
+        req,
+        fallbackProducts.filter((product) => !tombstonedSlugs.has(product.slug)),
+      ),
       categories: [],
       source: "figma-fallback",
       warning: "Products database is unavailable. Showing the bundled Figma catalogue.",

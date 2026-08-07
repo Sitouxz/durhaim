@@ -61,7 +61,9 @@ if (!serialsPage.includes("const [generateCount, setGenerateCount] = useState('1
 }
 
 const productsApi = read('src/app/api/admin/products/route.ts');
-if (!productsApi.includes('mergeCatalogueProducts(databaseProducts, fallbackProducts)') || !productsApi.includes('catalogue_only')) {
+if (!productsApi.includes('mergeCatalogueProducts(databaseProducts, fallbackProducts, tombstonedSlugs)')
+  || !productsApi.includes('getCatalogueTombstoneSlugs')
+  || !productsApi.includes('catalogue_only')) {
   failures.push('src/app/api/admin/products/route.ts: admin products must include bundled public catalogue products');
 }
 for (const handler of ['export async function POST', 'export async function PATCH', 'export async function DELETE']) {

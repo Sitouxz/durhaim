@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { fallbackProducts } from '@/lib/catalogue-data';
+import { getCatalogueTombstoneSlugs } from '@/lib/catalogue-tombstones';
+import { createAdminClient } from '@/lib/supabase';
 import { getSiteSettings } from '@/lib/site-settings-server';
 import { getSiteUrl } from '@/lib/site-settings';
 
@@ -14,11 +16,16 @@ const routes = [
 ];
 
 async function getPublishedProductRoutes() {
+  let tombstonedSlugs = new Set<string>();
   try {
+    tombstonedSlugs = await getCatalogueTombstoneSlugs(createAdminClient());
+    const fallbackRoutes = fallbackProducts
+      .filter((product) => !tombstonedSlugs.has(product.slug))
+      .map((product) => `/catalogue/${product.slug}`);
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey) {
-      return fallbackProducts.map((product) => `/catalogue/${product.slug}`);
+      return fallbackRoutes;
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -28,15 +35,18 @@ async function getPublishedProductRoutes() {
       .eq('is_published', true);
 
     if (error) {
-      return fallbackProducts.map((product) => `/catalogue/${product.slug}`);
+      return fallbackRoutes;
     }
 
     return (data ?? [])
       .map((product) => product.slug)
       .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)
+      .filter((slug) => !tombstonedSlugs.has(slug))
       .map((slug) => `/catalogue/${slug}`);
   } catch {
-    return fallbackProducts.map((product) => `/catalogue/${product.slug}`);
+    return fallbackProducts
+      .filter((product) => !tombstonedSlugs.has(product.slug))
+      .map((product) => `/catalogue/${product.slug}`);
   }
 }
 

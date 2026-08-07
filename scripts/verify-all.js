@@ -8,6 +8,7 @@
 const { spawnSync } = require('child_process');
 
 const steps = [
+  ['test:unit', ['run', 'test:unit']],
   ['lint', ['run', 'lint']],
   ['audit:routes', ['run', 'audit:routes']],
   ['audit:whatsapp-only', ['run', 'audit:whatsapp-only']],

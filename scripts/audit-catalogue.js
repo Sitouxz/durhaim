@@ -31,6 +31,38 @@ if (!apiText.includes('categories: categoryOverrides')) {
   process.exit(1);
 }
 
+for (const required of [
+  'getCatalogueTombstoneSlugs',
+  'mergeCatalogueProducts(databaseProducts, fallbackProducts, tombstonedSlugs)',
+  '!tombstonedSlugs.has(product.slug)',
+]) {
+  if (!apiText.includes(required)) {
+    console.error(`Products API can resurrect deleted bundled products; missing ${required}.`);
+    process.exit(1);
+  }
+}
+
+const adminProductsFile = path.join(process.cwd(), 'src', 'app', 'api', 'admin', 'products', 'route.ts');
+const adminProductsText = fs.readFileSync(adminProductsFile, 'utf8');
+for (const required of [
+  'tombstoneCatalogueProduct(supabase, product.slug)',
+  ".select('id, slug')",
+  'if (error || !deletedProduct)',
+  'restoreCatalogueProduct(supabase, parsed.slug)',
+]) {
+  if (!adminProductsText.includes(required)) {
+    console.error(`Admin product deletion is missing its persistence guard: ${required}.`);
+    process.exit(1);
+  }
+}
+
+const productDetailFile = path.join(process.cwd(), 'src', 'app', 'catalogue', '[slug]', 'page.tsx');
+const productDetailText = fs.readFileSync(productDetailFile, 'utf8');
+if (!productDetailText.includes('if (tombstonedSlugs.has(slug)) return null;')) {
+  console.error('Product detail pages must return not-found for deleted bundled products.');
+  process.exit(1);
+}
+
 const pageFile = path.join(process.cwd(), 'src', 'app', 'catalogue', 'page.tsx');
 const pageText = fs.readFileSync(pageFile, 'utf8');
 

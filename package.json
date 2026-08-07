@@ -30,6 +30,7 @@
     "catalogue:import:apply": "node scripts/import-figma-catalogue.js --apply",
     "catalogue:import:publish": "node scripts/import-figma-catalogue.js --apply --publish",
     "test:e2e": "playwright test",
+    "test:unit": "node --experimental-strip-types --test tests/catalogue-tombstones.test.ts",
     "test:visual": "playwright test tests/visual/storefront.visual.spec.ts",
     "test:a11y": "playwright test tests/storefront.spec.ts --grep accessibility",
     "supabase:apply": "node scripts/apply-supabase-schema.js",

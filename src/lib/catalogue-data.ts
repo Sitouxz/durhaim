@@ -117,9 +117,18 @@ export function normalizeProduct(raw: Record<string, unknown>): CatalogueProduct
   };
 }
 
-export function mergeCatalogueProducts(primary: CatalogueProduct[], additions = fallbackProducts) {
-  const merged = new Map(additions.map((product) => [product.slug, product]));
+export function mergeCatalogueProducts(
+  primary: CatalogueProduct[],
+  additions = fallbackProducts,
+  excludedSlugs: ReadonlySet<string> = new Set(),
+) {
+  const merged = new Map(
+    additions
+      .filter((product) => !excludedSlugs.has(product.slug))
+      .map((product) => [product.slug, product]),
+  );
   for (const product of primary) {
+    if (excludedSlugs.has(product.slug)) continue;
     const seed = merged.get(product.slug);
     const usesLegacyNullPriceSentinel = Boolean(
       seed

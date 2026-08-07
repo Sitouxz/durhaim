@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase";
 import {
   applyCategoryOverrides,
   fallbackProducts,
@@ -10,6 +11,7 @@ import {
   normalizeProduct,
   type CatalogueProduct,
 } from "@/lib/catalogue-data";
+import { getCatalogueTombstoneSlugs } from "@/lib/catalogue-tombstones";
 import ProductDetailClient from "@/components/ProductDetailClient";
 import JsonLd from "@/components/JsonLd";
 import { getSiteSettings } from "@/lib/site-settings-server";
@@ -29,6 +31,9 @@ function isMissingCatalogueExtension(error: unknown) {
 async function getProduct(slug: string): Promise<CatalogueProduct | null> {
   const fallback = fallbackProducts.find((product) => product.slug === slug) ?? null;
   try {
+    const tombstonedSlugs = await getCatalogueTombstoneSlugs(createAdminClient());
+    if (tombstonedSlugs.has(slug)) return null;
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -63,7 +68,11 @@ async function getProduct(slug: string): Promise<CatalogueProduct | null> {
       return categorizedFallback;
     }
     return applyCategoryOverrides(
-      mergeCatalogueProducts([normalizeProduct(data as Record<string, unknown>)]),
+      mergeCatalogueProducts(
+        [normalizeProduct(data as Record<string, unknown>)],
+        fallbackProducts,
+        tombstonedSlugs,
+      ),
       categoryOverrides,
     ).find((product) => product.slug === slug) ?? categorizedFallback;
   } catch {
